@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth (NextAuth v5) ──────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(BUYER)
+  phone         String?
+  cityId        String?
+  city          City?     @relation(fields: [cityId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  seller    Seller?
+  orders    Order[]
+  reviews   Review[]
+  cartItems CartItem[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Location ────────────────────────────────────────────────────────────────
+
+model City {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  state     String
+  country   String   @default("PE")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users    User[]
+  sellers  Seller[]
+  products Product[]
+
+  @@map("cities")
+}
+
+// ─── Seller ──────────────────────────────────────────────────────────────────
+
+model Seller {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id])
+  cityId          String
+  city            City         @relation(fields: [cityId], references: [id])
+  businessName    String
+  description     String?      @db.Text
+  logo            String?
+  banner          String?
+  phone           String?
+  address         String?
+  status          SellerStatus @default(PENDING)
+  commissionRate  Float        @default(0.10)
+  stripeAccountId String?
+  rating          Float        @default(0)
+  totalSales      Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  products Product[]
+  orders   Order[]
+
+  @@map("sellers")
+}
+
+// ─── Category & Products ─────────────────────────────────────────────────────
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  icon      String?
+  image     String?
+  parentId  String?
+  parent    Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children  Category[] @relation("SubCategories")
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  sellerId     String
+  seller       Seller        @relation(fields: [sellerId], references: [id])
+  cityId       String
+  city         City          @relation(fields: [cityId], references: [id])
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id])
+  name         String
+  slug         String        @unique
+  description  String?       @db.Text
+  price        Float
+  comparePrice Float?
+  stock        Int           @default(0)
+  images       String[]
+  tags         String[]
+  status       ProductStatus @default(DRAFT)
+  featured     Boolean       @default(false)
+  views        Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+  reviews    Review[]
+
+  @@map("products")
+}
+
+// ─── Cart ────────────────────────────────────────────────────────────────────
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+model Order {
+  id              String      @id @default(cuid())
+  buyerId         String
+  buyer           User        @relation(fields: [buyerId], references: [id])
+  sellerId        String
+  seller          Seller      @relation(fields: [sellerId], references: [id])
+  status          OrderStatus @default(PENDING)
+  subtotal        Float
+  commission      Float
+  total           Float
+  shippingAddress Json
+  notes           String?     @db.Text
+  stripePaymentId String?
+  stripeSessionId String?
+  paidAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+  total     Float
+
+  @@map("order_items")
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("reviews")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum SellerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  DELETED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
