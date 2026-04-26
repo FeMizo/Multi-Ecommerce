@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { ArrowRight, Shield, Truck, Star, MapPin } from "lucide-react"
+import Image from "next/image"
+import { ArrowRight, Shield, Truck, Star, MapPin, CheckCircle2, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { db } from "@/lib/db"
@@ -23,8 +24,20 @@ async function getCategories() {
   })
 }
 
+async function getFeaturedStores() {
+  return db.store.findMany({
+    where: { isActive: true, deletedAt: null },
+    include: {
+      city: { select: { name: true } },
+      _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
+    },
+    orderBy: [{ isVerified: "desc" }, { createdAt: "desc" }],
+    take: 8,
+  })
+}
+
 export default async function HomePage() {
-  const [products, categories] = await Promise.all([getFeaturedProducts(), getCategories()])
+  const [products, categories, stores] = await Promise.all([getFeaturedProducts(), getCategories(), getFeaturedStores()])
 
   return (
     <div className="flex flex-col gap-12 pb-16">
@@ -83,6 +96,59 @@ export default async function HomePage() {
             </Link>
           </div>
           <CategoryGrid categories={categories} />
+        </section>
+      )}
+
+      {/* Featured Stores */}
+      {stores.length > 0 && (
+        <section className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Tiendas</h2>
+            <Link href="/stores" className="text-sm text-primary hover:underline flex items-center gap-1">
+              Ver todas <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {stores.map((store) => (
+              <Link
+                key={store.id}
+                href={`/${store.slug}`}
+                className="group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="relative h-20 bg-muted overflow-hidden">
+                  {store.bannerUrl ? (
+                    <Image src={store.bannerUrl} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  ) : (
+                    <div className="w-full h-full" style={{ backgroundColor: store.primaryColor ?? "#000000", opacity: 0.12 }} />
+                  )}
+                </div>
+                <div className="p-3">
+                  <div className="flex items-start gap-2 -mt-6 mb-2">
+                    <div
+                      className="h-11 w-11 rounded-lg border-2 border-background bg-card flex items-center justify-center text-base font-bold shrink-0 overflow-hidden shadow-sm"
+                      style={{ color: store.primaryColor ?? undefined }}
+                    >
+                      {store.logoUrl ? (
+                        <Image src={store.logoUrl} alt={store.name} width={44} height={44} className="object-cover" />
+                      ) : store.name[0].toUpperCase()}
+                    </div>
+                    <div className="pt-6 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold text-sm truncate">{store.name}</span>
+                        {store.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    {store.city ? (
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{store.city.name}</span>
+                    ) : <span />}
+                    <span className="flex items-center gap-1"><Package className="h-3 w-3" />{store._count.products}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 

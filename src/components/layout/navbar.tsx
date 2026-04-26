@@ -35,6 +35,15 @@ export function Navbar() {
             <CitySelector />
           </div>
 
+          <nav className="hidden md:flex items-center gap-1">
+            <Link href="/stores" className="text-sm px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              Tiendas
+            </Link>
+            <Link href="/search" className="text-sm px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              Productos
+            </Link>
+          </nav>
+
           <div className="flex-1 max-w-md hidden md:block">
             <form action="/search">
               <input
