@@ -7,21 +7,25 @@ export async function POST(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
 
-  const { items, shippingAddress } = await req.json()
+  const { items, storeId, shippingAddress } = await req.json()
   if (!items?.length) return NextResponse.json({ message: "Carrito vacío" }, { status: 400 })
+  if (!storeId) return NextResponse.json({ message: "Tienda requerida" }, { status: 400 })
 
   const productIds = items.map((i: { productId: string }) => i.productId)
   const products = await db.product.findMany({
-    where: { id: { in: productIds }, status: "ACTIVE" },
-    include: { seller: true },
+    where: { id: { in: productIds }, storeId, status: "ACTIVE" },
+    include: { store: { select: { stripeAccountId: true, subscription: { include: { plan: true } } } } },
   })
 
   if (products.length !== items.length) {
     return NextResponse.json({ message: "Algunos productos no están disponibles" }, { status: 400 })
   }
 
+  const store = products[0].store
+  const commissionRate = store.subscription?.plan.commissionRate ?? 0.05
+
   const lineItems = items.map((item: { productId: string; name: string; quantity: number }) => {
-    const product = products.find((p: { id: string }) => p.id === item.productId)!
+    const product = products.find((p) => p.id === item.productId)!
     return {
       price_data: {
         currency: "pen",
@@ -35,13 +39,28 @@ export async function POST(req: Request) {
     }
   })
 
+  const subtotal = items.reduce((acc: number, item: { productId: string; quantity: number }) => {
+    const product = products.find((p) => p.id === item.productId)!
+    return acc + product.price * item.quantity
+  }, 0)
+
+  const platformFee = Math.round(subtotal * commissionRate * 100)
+
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: lineItems,
+    ...(store.stripeAccountId && {
+      payment_intent_data: {
+        application_fee_amount: platformFee,
+        transfer_data: { destination: store.stripeAccountId },
+      },
+    }),
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cart`,
     metadata: {
       userId: session.user?.id ?? "",
+      storeId,
+      commissionRate: String(commissionRate),
       shippingAddress: JSON.stringify(shippingAddress),
       items: JSON.stringify(items.map((i: { productId: string; quantity: number }) => ({ productId: i.productId, quantity: i.quantity }))),
     },

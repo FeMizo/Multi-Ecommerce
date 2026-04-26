@@ -6,13 +6,13 @@ import { es } from "date-fns/locale"
 import { formatPrice } from "@/lib/utils"
 
 type Props = {
-  data: Array<{ createdAt: Date; _sum: { commission: number | null } }>
+  data: Array<{ createdAt: Date; _sum: { platformFee: number | null } }>
 }
 
 export function AdminRevenueChart({ data }: Props) {
   const chartData = data.map((d) => ({
     date: format(new Date(d.createdAt), "dd MMM", { locale: es }),
-    commission: d._sum.commission ?? 0,
+    commission: d._sum.platformFee ?? 0,
   }))
 
   if (chartData.length === 0) {

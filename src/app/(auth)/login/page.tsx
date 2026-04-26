@@ -32,7 +32,7 @@ export default function LoginPage() {
     if (res?.error) {
       toast.error("Credenciales incorrectas")
     } else {
-      router.push("/")
+      router.push("/dashboard")
       router.refresh()
     }
   }

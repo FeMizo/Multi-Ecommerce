@@ -81,15 +81,13 @@ export function Navbar() {
                     Mi perfil
                   </Link>
                 </DropdownMenuItem>
-                {(session.user.role === "SELLER" || session.user.role === "ADMIN") && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/seller/dashboard">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Dashboard vendedor
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {session.user.role === "ADMIN" && (
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Mi tienda
+                  </Link>
+                </DropdownMenuItem>
+                {session.user.globalRole === "PLATFORM_ADMIN" && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">
                       <LayoutDashboard className="mr-2 h-4 w-4" />

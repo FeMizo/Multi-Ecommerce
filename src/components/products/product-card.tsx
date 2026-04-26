@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Star, MapPin, ShoppingCart } from "lucide-react"
+import { MapPin, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
@@ -14,12 +14,13 @@ type ProductCardProps = {
     id: string
     name: string
     slug: string
+    storeId: string
     price: number
     comparePrice?: number | null
     images: string[]
-    seller: {
-      businessName: string
-      city: { name: string }
+    store: {
+      name: string
+      city?: { name: string } | null
     }
   }
 }
@@ -35,11 +36,11 @@ export function ProductCard({ product }: ProductCardProps) {
     addItem({
       id: product.id,
       productId: product.id,
+      storeId: product.storeId,
       name: product.name,
       price: product.price,
       image: product.images[0] ?? "",
-      sellerId: "",
-      sellerName: product.seller.businessName,
+      storeName: product.store.name,
     })
     toast.success("Agregado al carrito")
   }
@@ -69,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="p-3">
           <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
             <MapPin className="h-3 w-3" />
-            {product.seller.businessName} · {product.seller.city.name}
+            {product.store.name}{product.store.city ? ` · ${product.store.city.name}` : ""}
           </p>
           <h3 className="font-medium text-sm line-clamp-2 mb-2">{product.name}</h3>
           <div className="flex items-center justify-between">

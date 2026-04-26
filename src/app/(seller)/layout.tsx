@@ -14,7 +14,7 @@ const nav = [
 
 export default async function SellerLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session?.user || (session.user.role !== "SELLER" && session.user.role !== "ADMIN")) {
+  if (!session?.user) {
     redirect("/login")
   }
 

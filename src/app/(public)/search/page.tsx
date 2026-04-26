@@ -14,7 +14,7 @@ async function searchProducts(params: SearchParams) {
   const where: Record<string, unknown> = { status: "ACTIVE" }
   if (params.q) where.name = { contains: params.q, mode: "insensitive" }
   if (params.category) where.category = { slug: params.category }
-  if (params.city) where.city = { slug: params.city }
+  if (params.city) where.store = { city: { slug: params.city } }
   if (params.min || params.max) {
     where.price = {
       ...(params.min ? { gte: Number(params.min) } : {}),
@@ -25,7 +25,7 @@ async function searchProducts(params: SearchParams) {
   const [products, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: { seller: { select: { businessName: true, city: true } }, category: true },
+      include: { store: { select: { name: true, city: true } }, category: true },
       take,
       skip,
       orderBy: { createdAt: "desc" },

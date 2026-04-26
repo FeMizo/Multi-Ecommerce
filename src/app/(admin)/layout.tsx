@@ -15,7 +15,7 @@ const nav = [
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session?.user || session.user.role !== "ADMIN") redirect("/")
+  if (!session?.user || session.user.globalRole !== "PLATFORM_ADMIN") redirect("/")
 
   return (
     <SessionProvider session={session}>

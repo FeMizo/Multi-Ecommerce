@@ -16,18 +16,15 @@ const schema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres"),
   email: z.string().email("Email inválido"),
   password: z.string().min(8, "Mínimo 8 caracteres"),
-  role: z.enum(["BUYER", "SELLER"]),
 })
 type FormData = z.infer<typeof schema>
 
 export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { role: "BUYER" },
   })
-  const role = watch("role")
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -55,22 +52,6 @@ export default function RegisterPage() {
           <CardDescription>Únete a tu comunidad local</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Role toggle */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
-            {(["BUYER", "SELLER"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setValue("role", r)}
-                className={`py-2 text-sm font-medium rounded-md transition-all ${
-                  role === r ? "bg-white shadow text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                {r === "BUYER" ? "Comprador" : "Vendedor"}
-              </button>
-            ))}
-          </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div className="space-y-1">
               <Label>Nombre completo</Label>

@@ -11,10 +11,10 @@ import { AddToCartButton } from "@/components/products/add-to-cart-button"
 export const dynamic = "force-dynamic"
 
 async function getProduct(slug: string) {
-  return db.product.findUnique({
-    where: { slug, status: "ACTIVE" },
+  return db.product.findFirst({
+    where: { slug, status: "ACTIVE", deletedAt: null },
     include: {
-      seller: { include: { city: true, user: { select: { name: true } } } },
+      store: { include: { city: true } },
       category: true,
       reviews: { include: { user: { select: { name: true, image: true } } }, take: 10 },
       _count: { select: { reviews: true } },
@@ -96,19 +96,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <Separator />
 
-          {/* Seller info */}
+          {/* Store info */}
           <div className="rounded-xl border p-4 space-y-2">
             <p className="font-semibold">Vendedor</p>
-            <Link href={`/sellers/${product.seller.id}`} className="flex items-center gap-3 hover:opacity-80">
+            <Link href={`/${product.store.slug}`} className="flex items-center gap-3 hover:opacity-80">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                {product.seller.businessName[0]}
+                {product.store.name[0]}
               </div>
               <div>
-                <p className="font-medium">{product.seller.businessName}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {product.seller.city.name}
-                </p>
+                <p className="font-medium">{product.store.name}</p>
+                {product.store.city && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {product.store.city.name}
+                  </p>
+                )}
               </div>
             </Link>
           </div>

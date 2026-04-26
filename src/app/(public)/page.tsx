@@ -9,7 +9,7 @@ import { CategoryGrid } from "@/components/products/category-grid"
 async function getFeaturedProducts() {
   return db.product.findMany({
     where: { status: "ACTIVE", featured: true },
-    include: { seller: { select: { businessName: true, city: true } }, category: true },
+    include: { store: { select: { name: true, city: true } }, category: true },
     take: 8,
     orderBy: { createdAt: "desc" },
   })
@@ -46,7 +46,7 @@ export default async function HomePage() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/seller/register">Vender aquí</Link>
+              <Link href="/register">Vender aquí</Link>
             </Button>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default async function HomePage() {
             Regístrate como vendedor, sube tus productos en minutos y llega a clientes de tu ciudad.
           </p>
           <Button size="lg" variant="secondary" asChild>
-            <Link href="/seller/register">
+            <Link href="/register">
               Comenzar a vender <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

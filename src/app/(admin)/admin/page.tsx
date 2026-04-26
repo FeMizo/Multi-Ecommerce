@@ -5,21 +5,21 @@ import { Users, Store, Package, DollarSign, TrendingUp, ShoppingBag } from "luci
 import { AdminRevenueChart } from "@/components/admin/revenue-chart"
 
 async function getAdminStats() {
-  const [totalUsers, totalSellers, totalProducts, totalOrders, revenue, recentOrders] = await Promise.all([
+  const [totalUsers, totalStores, totalProducts, totalOrders, revenue, recentOrders] = await Promise.all([
     db.user.count(),
-    db.seller.count({ where: { status: "ACTIVE" } }),
+    db.store.count({ where: { isActive: true } }),
     db.product.count({ where: { status: "ACTIVE" } }),
     db.order.count(),
     db.order.aggregate({
       where: { status: { in: ["PAID", "DELIVERED"] } },
-      _sum: { commission: true, total: true },
+      _sum: { platformFee: true, total: true },
     }),
     db.order.findMany({
       take: 10,
       orderBy: { createdAt: "desc" },
       include: {
-        buyer: { select: { name: true } },
-        seller: { select: { businessName: true } },
+        customer: { select: { name: true } },
+        store: { select: { name: true } },
       },
     }),
   ])
@@ -29,16 +29,16 @@ async function getAdminStats() {
   const revenueByDay = await db.order.groupBy({
     by: ["createdAt"],
     where: { createdAt: { gte: last30 }, status: { in: ["PAID", "DELIVERED"] } },
-    _sum: { commission: true },
+    _sum: { platformFee: true },
   })
 
   return {
     totalUsers,
-    totalSellers,
+    totalStores,
     totalProducts,
     totalOrders,
     totalRevenue: revenue._sum.total ?? 0,
-    platformRevenue: revenue._sum.commission ?? 0,
+    platformRevenue: revenue._sum.platformFee ?? 0,
     recentOrders,
     revenueByDay,
   }
@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
 
   const cards = [
     { title: "Usuarios", value: stats.totalUsers, icon: Users, desc: "Total registrados" },
-    { title: "Vendedores activos", value: stats.totalSellers, icon: Store, desc: "" },
+    { title: "Tiendas activas", value: stats.totalStores, icon: Store, desc: "" },
     { title: "Productos activos", value: stats.totalProducts, icon: Package, desc: "" },
     { title: "Total pedidos", value: stats.totalOrders, icon: ShoppingBag, desc: "" },
     { title: "Volumen total", value: formatPrice(stats.totalRevenue), icon: TrendingUp, desc: "" },
@@ -91,12 +91,12 @@ export default async function AdminDashboardPage() {
             {stats.recentOrders.map((order) => (
               <div key={order.id} className="flex items-center justify-between p-3 rounded-lg border text-sm">
                 <div>
-                  <p className="font-medium">{order.buyer.name} → {order.seller.businessName}</p>
+                  <p className="font-medium">{order.customer.name} → {order.store.name}</p>
                   <p className="text-muted-foreground text-xs">{new Date(order.createdAt).toLocaleDateString("es-PE")}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold">{formatPrice(order.total)}</p>
-                  <p className="text-xs text-muted-foreground">Comisión: {formatPrice(order.commission)}</p>
+                  <p className="text-xs text-muted-foreground">Fee: {formatPrice(order.platformFee)}</p>
                 </div>
               </div>
             ))}

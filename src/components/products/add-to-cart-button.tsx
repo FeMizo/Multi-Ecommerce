@@ -13,7 +13,8 @@ type Props = {
     price: number
     images: string[]
     stock: number
-    seller: { id: string; businessName: string }
+    storeId: string
+    store: { name: string }
   }
 }
 
@@ -26,11 +27,11 @@ export function AddToCartButton({ product }: Props) {
       addItem({
         id: product.id,
         productId: product.id,
+        storeId: product.storeId,
         name: product.name,
         price: product.price,
         image: product.images[0] ?? "",
-        sellerId: product.seller.id,
-        sellerName: product.seller.businessName,
+        storeName: product.store.name,
       })
     }
     toast.success(`${qty} producto${qty > 1 ? "s" : ""} agregado${qty > 1 ? "s" : ""} al carrito`)

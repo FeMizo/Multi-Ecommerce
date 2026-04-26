@@ -36,7 +36,7 @@ export default function CartPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{item.sellerName}</p>
+                <p className="text-xs text-muted-foreground">{item.storeName}</p>
                 <p className="font-bold mt-1">{formatPrice(item.price)}</p>
               </div>
               <div className="flex flex-col items-end justify-between">

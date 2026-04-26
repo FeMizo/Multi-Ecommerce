@@ -4,12 +4,12 @@ import { persist } from "zustand/middleware"
 type CartItem = {
   id: string
   productId: string
+  storeId: string
   name: string
   price: number
   image: string
   quantity: number
-  sellerId: string
-  sellerName: string
+  storeName: string
 }
 
 interface CartStore {
