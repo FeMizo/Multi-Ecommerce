@@ -9,25 +9,23 @@ datasource db {
 // ─── Auth (NextAuth v5) ──────────────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
+  id            String     @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String     @unique
   emailVerified DateTime?
   image         String?
   password      String?
-  role          Role      @default(BUYER)
+  globalRole    GlobalRole @default(USER)
   phone         String?
-  cityId        String?
-  city          City?     @relation(fields: [cityId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
-  accounts  Account[]
-  sessions  Session[]
-  seller    Seller?
-  orders    Order[]
-  reviews   Review[]
-  cartItems CartItem[]
+  accounts     Account[]
+  sessions     Session[]
+  storeMembers StoreMember[]
+  orders       Order[]
+  reviews      Review[]
+  cartItems    CartItem[]
 
   @@map("users")
 }
@@ -82,42 +80,94 @@ model City {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  users    User[]
-  sellers  Seller[]
-  products Product[]
+  stores Store[]
 
   @@map("cities")
 }
 
-// ─── Seller ──────────────────────────────────────────────────────────────────
+// ─── Stores (Tenants) ────────────────────────────────────────────────────────
 
-model Seller {
-  id              String       @id @default(cuid())
-  userId          String       @unique
-  user            User         @relation(fields: [userId], references: [id])
-  cityId          String
-  city            City         @relation(fields: [cityId], references: [id])
-  businessName    String
-  description     String?      @db.Text
-  logo            String?
-  banner          String?
-  phone           String?
-  address         String?
-  status          SellerStatus @default(PENDING)
-  commissionRate  Float        @default(0.10)
-  stripeAccountId String?
-  rating          Float        @default(0)
-  totalSales      Int          @default(0)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+model Store {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  name             String
+  description      String?   @db.Text
+  logoUrl          String?
+  bannerUrl        String?
+  primaryColor     String?   @default("#000000")
+  fontFamily       String?   @default("Inter")
+  cityId           String?
+  city             City?     @relation(fields: [cityId], references: [id])
+  stripeAccountId  String?
+  stripeOnboarded  Boolean   @default(false)
+  customDomain     String?   @unique
+  isActive         Boolean   @default(true)
+  isVerified       Boolean   @default(false)
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  products Product[]
-  orders   Order[]
+  members      StoreMember[]
+  products     Product[]
+  orders       Order[]
+  cartItems    CartItem[]
+  subscription StoreSubscription?
 
-  @@map("sellers")
+  @@map("stores")
 }
 
-// ─── Category & Products ─────────────────────────────────────────────────────
+model StoreMember {
+  id        String    @id @default(cuid())
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id])
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  role      StoreRole @default(CUSTOMER)
+  createdAt DateTime  @default(now())
+
+  @@unique([storeId, userId])
+  @@index([userId])
+  @@map("store_members")
+}
+
+// ─── Plans & Subscriptions ───────────────────────────────────────────────────
+
+model Plan {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  priceMonthly   Float    @default(0)
+  priceYearly    Float    @default(0)
+  maxProducts    Int?
+  maxOrdersMonth Int?
+  commissionRate Float    @default(0.05)
+  features       Json     @default("{}")
+  stripePriceId  String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  subscriptions StoreSubscription[]
+
+  @@map("plans")
+}
+
+model StoreSubscription {
+  id                   String             @id @default(cuid())
+  storeId              String             @unique
+  store                Store              @relation(fields: [storeId], references: [id])
+  planId               String
+  plan                 Plan               @relation(fields: [planId], references: [id])
+  stripeSubscriptionId String?
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@map("store_subscriptions")
+}
+
+// ─── Categories (global, plataforma) ─────────────────────────────────────────
 
 model Category {
   id        String     @id @default(cuid())
@@ -136,25 +186,27 @@ model Category {
   @@map("categories")
 }
 
+// ─── Products ────────────────────────────────────────────────────────────────
+
 model Product {
   id           String        @id @default(cuid())
-  sellerId     String
-  seller       Seller        @relation(fields: [sellerId], references: [id])
-  cityId       String
-  city         City          @relation(fields: [cityId], references: [id])
+  storeId      String
+  store        Store         @relation(fields: [storeId], references: [id])
   categoryId   String
   category     Category      @relation(fields: [categoryId], references: [id])
   name         String
-  slug         String        @unique
+  slug         String
   description  String?       @db.Text
   price        Float
   comparePrice Float?
   stock        Int           @default(0)
+  sku          String?
   images       String[]
   tags         String[]
   status       ProductStatus @default(DRAFT)
   featured     Boolean       @default(false)
   views        Int           @default(0)
+  deletedAt    DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -162,6 +214,9 @@ model Product {
   cartItems  CartItem[]
   reviews    Review[]
 
+  @@unique([storeId, slug])
+  @@index([storeId])
+  @@index([storeId, status])
   @@map("products")
 }
 
@@ -171,51 +226,78 @@ model CartItem {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
   productId String
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Int      @default(1)
   createdAt DateTime @default(now())
 
-  @@unique([userId, productId])
+  @@unique([userId, storeId, productId])
   @@map("cart_items")
 }
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 model Order {
-  id              String      @id @default(cuid())
-  buyerId         String
-  buyer           User        @relation(fields: [buyerId], references: [id])
-  sellerId        String
-  seller          Seller      @relation(fields: [sellerId], references: [id])
-  status          OrderStatus @default(PENDING)
-  subtotal        Float
-  commission      Float
-  total           Float
-  shippingAddress Json
-  notes           String?     @db.Text
-  stripePaymentId String?
-  stripeSessionId String?
-  paidAt          DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                    String      @id @default(cuid())
+  storeId               String
+  store                 Store       @relation(fields: [storeId], references: [id])
+  customerId            String
+  customer              User        @relation(fields: [customerId], references: [id])
+  status                OrderStatus @default(PENDING)
+  subtotal              Float
+  platformFee           Float       @default(0)
+  total                 Float
+  shippingAddress       Json
+  notes                 String?     @db.Text
+  stripePaymentIntentId String?
+  stripeSessionId       String?
+  paidAt                DateTime?
+  deletedAt             DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
 
-  items OrderItem[]
+  items   OrderItem[]
+  payment Payment?
 
+  @@index([storeId])
+  @@index([storeId, customerId])
+  @@index([storeId, status])
   @@map("orders")
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-  price     Float
-  total     Float
+  id              String  @id @default(cuid())
+  orderId         String
+  order           Order   @relation(fields: [orderId], references: [id])
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+  quantity        Int
+  unitPrice       Float
+  total           Float
+  productSnapshot Json
 
   @@map("order_items")
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+model Payment {
+  id                    String        @id @default(cuid())
+  storeId               String
+  orderId               String        @unique
+  order                 Order         @relation(fields: [orderId], references: [id])
+  stripePaymentIntentId String?
+  amount                Float
+  currency              String        @default("pen")
+  platformFee           Float         @default(0)
+  status                PaymentStatus @default(PENDING)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([storeId])
+  @@map("payments")
 }
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────
@@ -236,16 +318,23 @@ model Review {
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-enum Role {
-  BUYER
-  SELLER
-  ADMIN
+enum GlobalRole {
+  USER
+  PLATFORM_ADMIN
 }
 
-enum SellerStatus {
-  PENDING
+enum StoreRole {
+  OWNER
+  STAFF
+  CUSTOMER
+}
+
+enum SubscriptionStatus {
+  TRIALING
   ACTIVE
-  SUSPENDED
+  PAST_DUE
+  CANCELLED
+  UNPAID
 }
 
 enum ProductStatus {
@@ -262,5 +351,12 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
   REFUNDED
 }
