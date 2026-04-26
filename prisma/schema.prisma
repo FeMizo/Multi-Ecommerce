@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth (NextAuth v5) ──────────────────────────────────────────────────────
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  globalRole    GlobalRole @default(USER)
+  phone         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  storeMembers StoreMember[]
+  orders       Order[]
+  reviews      Review[]
+  cartItems    CartItem[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Location ────────────────────────────────────────────────────────────────
+
+model City {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  state     String
+  country   String   @default("PE")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  stores Store[]
+
+  @@map("cities")
+}
+
+// ─── Stores (Tenants) ────────────────────────────────────────────────────────
+
+model Store {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  name             String
+  description      String?   @db.Text
+  logoUrl          String?
+  bannerUrl        String?
+  primaryColor     String?   @default("#000000")
+  fontFamily       String?   @default("Inter")
+  cityId           String?
+  city             City?     @relation(fields: [cityId], references: [id])
+  stripeAccountId  String?
+  stripeOnboarded  Boolean   @default(false)
+  customDomain     String?   @unique
+  isActive         Boolean   @default(true)
+  isVerified       Boolean   @default(false)
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  members      StoreMember[]
+  products     Product[]
+  orders       Order[]
+  cartItems    CartItem[]
+  subscription StoreSubscription?
+
+  @@map("stores")
+}
+
+model StoreMember {
+  id        String    @id @default(cuid())
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id])
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  role      StoreRole @default(CUSTOMER)
+  createdAt DateTime  @default(now())
+
+  @@unique([storeId, userId])
+  @@index([userId])
+  @@map("store_members")
+}
+
+// ─── Plans & Subscriptions ───────────────────────────────────────────────────
+
+model Plan {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  priceMonthly   Float    @default(0)
+  priceYearly    Float    @default(0)
+  maxProducts    Int?
+  maxOrdersMonth Int?
+  commissionRate Float    @default(0.05)
+  features       Json     @default("{}")
+  stripePriceId  String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  subscriptions StoreSubscription[]
+
+  @@map("plans")
+}
+
+model StoreSubscription {
+  id                   String             @id @default(cuid())
+  storeId              String             @unique
+  store                Store              @relation(fields: [storeId], references: [id])
+  planId               String
+  plan                 Plan               @relation(fields: [planId], references: [id])
+  stripeSubscriptionId String?
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@map("store_subscriptions")
+}
+
+// ─── Categories (global, plataforma) ─────────────────────────────────────────
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  icon      String?
+  image     String?
+  parentId  String?
+  parent    Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children  Category[] @relation("SubCategories")
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  products Product[]
+
+  @@map("categories")
+}
+
+// ─── Products ────────────────────────────────────────────────────────────────
+
+model Product {
+  id           String        @id @default(cuid())
+  storeId      String
+  store        Store         @relation(fields: [storeId], references: [id])
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id])
+  name         String
+  slug         String
+  description  String?       @db.Text
+  price        Float
+  comparePrice Float?
+  stock        Int           @default(0)
+  sku          String?
+  images       String[]
+  tags         String[]
+  status       ProductStatus @default(DRAFT)
+  featured     Boolean       @default(false)
+  views        Int           @default(0)
+  deletedAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+  reviews    Review[]
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+  @@index([storeId, status])
+  @@map("products")
+}
+
+// ─── Cart ────────────────────────────────────────────────────────────────────
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, storeId, productId])
+  @@map("cart_items")
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+model Order {
+  id                    String      @id @default(cuid())
+  storeId               String
+  store                 Store       @relation(fields: [storeId], references: [id])
+  customerId            String
+  customer              User        @relation(fields: [customerId], references: [id])
+  status                OrderStatus @default(PENDING)
+  subtotal              Float
+  platformFee           Float       @default(0)
+  total                 Float
+  shippingAddress       Json
+  notes                 String?     @db.Text
+  stripePaymentIntentId String?
+  stripeSessionId       String?
+  paidAt                DateTime?
+  deletedAt             DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  items   OrderItem[]
+  payment Payment?
+
+  @@index([storeId])
+  @@index([storeId, customerId])
+  @@index([storeId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  order           Order   @relation(fields: [orderId], references: [id])
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+  quantity        Int
+  unitPrice       Float
+  total           Float
+  productSnapshot Json
+
+  @@map("order_items")
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+model Payment {
+  id                    String        @id @default(cuid())
+  storeId               String
+  orderId               String        @unique
+  order                 Order         @relation(fields: [orderId], references: [id])
+  stripePaymentIntentId String?
+  amount                Float
+  currency              String        @default("pen")
+  platformFee           Float         @default(0)
+  status                PaymentStatus @default(PENDING)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([storeId])
+  @@map("payments")
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("reviews")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum GlobalRole {
+  USER
+  PLATFORM_ADMIN
+}
+
+enum StoreRole {
+  OWNER
+  STAFF
+  CUSTOMER
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  UNPAID
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  DELETED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
