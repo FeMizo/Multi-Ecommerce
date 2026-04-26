@@ -36,10 +36,11 @@ export default function CheckoutPage() {
     if (items.length === 0) return
     setLoading(true)
 
+    const storeId = items[0]?.storeId
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items, shippingAddress: data }),
+      body: JSON.stringify({ items, storeId, shippingAddress: data }),
     })
 
     setLoading(false)

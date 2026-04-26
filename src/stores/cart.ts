@@ -14,10 +14,13 @@ type CartItem = {
 
 interface CartStore {
   items: CartItem[]
+  isOpen: boolean
   addItem: (item: Omit<CartItem, "quantity">) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
   clearCart: () => void
+  openCart: () => void
+  closeCart: () => void
   total: () => number
 }
 
@@ -25,6 +28,7 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      isOpen: false,
       addItem: (item) =>
         set((state) => {
           const existing = state.items.find((i) => i.productId === item.productId)
@@ -47,8 +51,13 @@ export const useCartStore = create<CartStore>()(
               : state.items.map((i) => (i.productId === productId ? { ...i, quantity } : i)),
         })),
       clearCart: () => set({ items: [] }),
+      openCart: () => set({ isOpen: true }),
+      closeCart: () => set({ isOpen: false }),
       total: () => get().items.reduce((acc, i) => acc + i.price * i.quantity, 0),
     }),
-    { name: "cart-store" }
+    {
+      name: "cart-store",
+      partialize: (state) => ({ items: state.items }),
+    }
   )
 )

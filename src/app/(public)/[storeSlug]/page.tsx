@@ -32,7 +32,7 @@ async function getStoreProducts(storeId: string, categorySlug?: string, page = 1
   const [products, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: { store: { select: { name: true, city: true } }, category: true },
+      include: { store: { select: { name: true, slug: true, city: true } }, category: true },
       orderBy: { createdAt: "desc" },
       take,
       skip,
@@ -167,7 +167,7 @@ export default async function StorePage({
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} storeSlug={storeSlug} />
               ))}
             </div>
 

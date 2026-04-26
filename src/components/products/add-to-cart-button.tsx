@@ -21,6 +21,7 @@ type Props = {
 export function AddToCartButton({ product }: Props) {
   const [qty, setQty] = useState(1)
   const addItem = useCartStore((s) => s.addItem)
+  const openCart = useCartStore((s) => s.openCart)
 
   function handleAdd() {
     for (let i = 0; i < qty; i++) {
@@ -34,7 +35,7 @@ export function AddToCartButton({ product }: Props) {
         storeName: product.store.name,
       })
     }
-    toast.success(`${qty} producto${qty > 1 ? "s" : ""} agregado${qty > 1 ? "s" : ""} al carrito`)
+    openCart()
   }
 
   return (

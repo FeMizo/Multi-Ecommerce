@@ -20,16 +20,23 @@ type ProductCardProps = {
     images: string[]
     store: {
       name: string
+      slug?: string
       city?: { name: string } | null
     }
   }
+  storeSlug?: string
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem)
+  const openCart = useCartStore((s) => s.openCart)
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : null
+
+  const href = storeSlug
+    ? `/${storeSlug}/${product.slug}`
+    : `/products/${product.slug}`
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault()
@@ -42,11 +49,11 @@ export function ProductCard({ product }: ProductCardProps) {
       image: product.images[0] ?? "",
       storeName: product.store.name,
     })
-    toast.success("Agregado al carrito")
+    openCart()
   }
 
   return (
-    <Link href={`/products/${product.slug}`} className="group">
+    <Link href={href} className="group">
       <div className="rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow">
         <div className="relative aspect-square bg-muted">
           {product.images[0] ? (
