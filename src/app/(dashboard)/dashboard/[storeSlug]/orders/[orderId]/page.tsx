@@ -68,7 +68,7 @@ export default async function OrderDetailPage({
           <div>
             <h1 className="text-xl font-bold font-mono">#{order.id.slice(-8).toUpperCase()}</h1>
             <p className="text-xs text-muted-foreground">
-              {new Date(order.createdAt).toLocaleString("es-PE", {
+              {new Date(order.createdAt).toLocaleString("es-MX", {
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
@@ -176,7 +176,7 @@ export default async function OrderDetailPage({
               {order.paidAt && (
                 <p className="text-xs text-muted-foreground">
                   Pagado el{" "}
-                  {new Date(order.paidAt).toLocaleDateString("es-PE", {
+                  {new Date(order.paidAt).toLocaleDateString("es-MX", {
                     day: "2-digit",
                     month: "long",
                     year: "numeric",

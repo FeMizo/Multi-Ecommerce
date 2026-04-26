@@ -132,7 +132,7 @@ export default async function OrdersPage({
                       <div className="text-xs text-muted-foreground">{order.customer.email}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell whitespace-nowrap">
-                      {new Date(order.createdAt).toLocaleDateString("es-PE", {
+                      {new Date(order.createdAt).toLocaleDateString("es-MX", {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",

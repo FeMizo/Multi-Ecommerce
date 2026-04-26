@@ -92,7 +92,7 @@ export default async function AdminDashboardPage() {
               <div key={order.id} className="flex items-center justify-between p-3 rounded-lg border text-sm">
                 <div>
                   <p className="font-medium">{order.customer.name} → {order.store.name}</p>
-                  <p className="text-muted-foreground text-xs">{new Date(order.createdAt).toLocaleDateString("es-PE")}</p>
+                  <p className="text-muted-foreground text-xs">{new Date(order.createdAt).toLocaleDateString("es-MX")}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold">{formatPrice(order.total)}</p>

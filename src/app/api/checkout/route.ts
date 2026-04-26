@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const product = products.find((p) => p.id === item.productId)!
     return {
       price_data: {
-        currency: "pen",
+        currency: "mxn",
         product_data: {
           name: item.name,
           images: product.images.slice(0, 1),
