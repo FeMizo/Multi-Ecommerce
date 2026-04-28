@@ -3,12 +3,11 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 
 function createPrismaClient() {
-  const connectionString = process.env.MULTI_POSTGRES_URL_NON_POOLING!
-    .replace(/[?&]sslmode=[^&]*/g, "")
-    .replace(/[?&]pgbouncer=[^&]*/g, "")
+  const connectionString = process.env.MULTI_POSTGRES_PRISMA_URL!
   const pool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
+    max: 1,
   })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ChevronLeft, Package } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
@@ -112,11 +113,11 @@ export default async function OrderDetailPage({
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{item.product.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.quantity} × S/ {item.unitPrice.toFixed(2)}
+                        {item.quantity} × {formatPrice(item.unitPrice)}
                       </p>
                     </div>
                     <p className="font-medium text-sm tabular-nums shrink-0">
-                      S/ {item.total.toFixed(2)}
+                      {formatPrice(item.total)}
                     </p>
                   </div>
                 ))}
@@ -125,17 +126,17 @@ export default async function OrderDetailPage({
               <div className="px-6 py-4 space-y-1.5 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal</span>
-                  <span>S/ {order.subtotal.toFixed(2)}</span>
+                  <span>{formatPrice(order.subtotal)}</span>
                 </div>
                 {order.platformFee > 0 && (
                   <div className="flex justify-between text-muted-foreground">
                     <span>Comisión plataforma</span>
-                    <span>S/ {order.platformFee.toFixed(2)}</span>
+                    <span>{formatPrice(order.platformFee)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold text-base pt-1 border-t">
                   <span>Total</span>
-                  <span>S/ {order.total.toFixed(2)}</span>
+                  <span>{formatPrice(order.total)}</span>
                 </div>
               </div>
             </CardContent>

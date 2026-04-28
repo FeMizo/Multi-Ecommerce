@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { formatPrice } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { OrderStatus } from "@prisma/client"
 
@@ -142,7 +143,7 @@ export default async function OrdersPage({
                       {order._count.items}
                     </td>
                     <td className="px-4 py-3 text-right font-medium tabular-nums">
-                      S/ {order.total.toFixed(2)}
+                      {formatPrice(order.total)}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cfg.className}`}>

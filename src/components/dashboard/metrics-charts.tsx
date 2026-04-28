@@ -17,6 +17,7 @@ import {
 } from "recharts"
 import { TrendingUp, ShoppingBag, Banknote, Receipt } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatPrice } from "@/lib/utils"
 
 type DayData = { date: string; revenue: number; orders: number }
 type StatusData = { status: string; label: string; count: number }
@@ -43,7 +44,7 @@ const STATUS_COLORS: Record<string, string> = {
 const CHART_COLORS = ["#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe"]
 
 function fmt(n: number) {
-  return `S/ ${n.toFixed(2)}`
+  return formatPrice(n)
 }
 
 export function MetricsCharts({ revenueByDay, ordersByStatus, topProducts, summary }: Props) {
