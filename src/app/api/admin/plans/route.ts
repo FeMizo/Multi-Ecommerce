@@ -12,7 +12,7 @@ const schema = z.object({
   maxProducts: z.number().int().positive().nullable().optional(),
   maxOrdersMonth: z.number().int().positive().nullable().optional(),
   stripePriceId: z.string().optional().or(z.literal("")),
-  features: z.record(z.unknown()).optional(),
+  features: z.record(z.string(), z.unknown()).optional(),
 })
 
 async function requireAdmin() {
