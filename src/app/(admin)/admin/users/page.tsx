@@ -4,13 +4,28 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { UserRoleToggle } from "@/components/admin/user-role-toggle"
+import { AdminSearch } from "@/components/admin/admin-search"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 
-export default async function AdminUsersPage() {
+type SearchParams = { q?: string }
+
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
   await requireAdmin()
 
+  const { q } = await searchParams
+
   const users = await db.user.findMany({
+    where: q ? {
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+      ],
+    } : {},
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { storeMembers: true, orders: true } },
@@ -19,9 +34,12 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        <p className="text-sm text-muted-foreground">{users.length} registrados</p>
+        <div className="flex items-center gap-3">
+          <AdminSearch placeholder="Buscar por nombre o email..." />
+          <p className="text-sm text-muted-foreground shrink-0">{users.length} encontrados</p>
+        </div>
       </div>
 
       <Card>
@@ -69,6 +87,9 @@ export default async function AdminUsersPage() {
                   </td>
                 </tr>
               ))}
+              {users.length === 0 && (
+                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Sin resultados</td></tr>
+              )}
             </tbody>
           </table>
         </CardContent>

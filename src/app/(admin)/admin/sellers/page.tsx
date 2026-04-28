@@ -6,28 +6,54 @@ import { formatPrice } from "@/lib/utils"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
 import { StoreToggles } from "@/components/admin/store-toggles"
+import { StorePlanSelector } from "@/components/admin/store-plan-selector"
+import { AdminSearch } from "@/components/admin/admin-search"
 
-export default async function AdminSellersPage() {
+type SearchParams = { q?: string }
+
+export default async function AdminSellersPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
   await requireAdmin()
 
-  const stores = await db.store.findMany({
-    where: { deletedAt: null },
-    orderBy: { createdAt: "desc" },
-    include: {
-      city: { select: { name: true } },
-      members: {
-        where: { role: "OWNER" },
-        include: { user: { select: { name: true, email: true } } },
-        take: 1,
+  const { q } = await searchParams
+
+  const [stores, plans] = await Promise.all([
+    db.store.findMany({
+      where: {
+        deletedAt: null,
+        ...(q ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { slug: { contains: q, mode: "insensitive" } },
+            { members: { some: { role: "OWNER", user: { OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { email: { contains: q, mode: "insensitive" } },
+            ] } } } },
+          ],
+        } : {}),
       },
-      _count: {
-        select: {
-          products: { where: { deletedAt: null } },
-          orders: true,
+      orderBy: { createdAt: "desc" },
+      include: {
+        city: { select: { name: true } },
+        subscription: { include: { plan: { select: { id: true, name: true } } } },
+        members: {
+          where: { role: "OWNER" },
+          include: { user: { select: { name: true, email: true } } },
+          take: 1,
+        },
+        _count: {
+          select: {
+            products: { where: { deletedAt: null } },
+            orders: true,
+          },
         },
       },
-    },
-  })
+    }),
+    db.plan.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { priceMonthly: "asc" } }),
+  ])
 
   const revenues = await db.order.groupBy({
     by: ["storeId"],
@@ -38,9 +64,12 @@ export default async function AdminSellersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">Tiendas</h1>
-        <p className="text-sm text-muted-foreground">{stores.length} registradas</p>
+        <div className="flex items-center gap-3">
+          <AdminSearch placeholder="Buscar tienda u owner..." />
+          <p className="text-sm text-muted-foreground shrink-0">{stores.length} encontradas</p>
+        </div>
       </div>
 
       <Card>
@@ -52,6 +81,7 @@ export default async function AdminSellersPage() {
                   <th className="text-left p-4 font-medium text-muted-foreground">Tienda</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Dueño</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Ciudad</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Plan</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Productos</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Pedidos</th>
                   <th className="text-right p-4 font-medium text-muted-foreground">Revenue</th>
@@ -88,6 +118,13 @@ export default async function AdminSellersPage() {
                         )}
                       </td>
                       <td className="p-4 text-muted-foreground">{store.city?.name ?? "—"}</td>
+                      <td className="p-4">
+                        <StorePlanSelector
+                          storeId={store.id}
+                          plans={plans}
+                          currentPlanId={store.subscription?.plan.id}
+                        />
+                      </td>
                       <td className="p-4 text-center">{store._count.products}</td>
                       <td className="p-4 text-center">{store._count.orders}</td>
                       <td className="p-4 text-right font-medium">
@@ -101,16 +138,16 @@ export default async function AdminSellersPage() {
                         />
                       </td>
                       <td className="p-4">
-                        <Link
-                          href={`/dashboard/${store.slug}`}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
+                        <Link href={`/dashboard/${store.slug}`} className="text-muted-foreground hover:text-foreground">
                           <ExternalLink className="h-4 w-4" />
                         </Link>
                       </td>
                     </tr>
                   )
                 })}
+                {stores.length === 0 && (
+                  <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin resultados</td></tr>
+                )}
               </tbody>
             </table>
           </div>

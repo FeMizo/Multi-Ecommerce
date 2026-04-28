@@ -35,7 +35,7 @@ export function CityManager({ cities }: { cities: City[] }) {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { country: "PE" },
+    defaultValues: { country: "MX" },
   })
 
   async function onAdd(data: FormData) {
