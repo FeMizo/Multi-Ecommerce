@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 
 const schema = z.object({
   name: z.string().min(2).max(60).optional(),
@@ -32,11 +33,12 @@ export async function PATCH(
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ message: "Datos inválidos" }, { status: 400 })
 
-  const { stripePriceId, ...rest } = parsed.data
+  const { stripePriceId, features, ...rest } = parsed.data
   const plan = await db.plan.update({
     where: { id: planId },
     data: {
       ...rest,
+      ...(features !== undefined ? { features: features as Prisma.InputJsonValue } : {}),
       ...(stripePriceId !== undefined ? { stripePriceId: stripePriceId || null } : {}),
     },
   })

@@ -17,11 +17,11 @@ import { formatPrice } from "@/lib/utils"
 const schema = z.object({
   name: z.string().min(2, "Requerido"),
   slug: z.string().min(2, "Requerido").regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
-  priceMonthly: z.coerce.number().min(0),
-  priceYearly: z.coerce.number().min(0),
-  commissionRate: z.coerce.number().min(0).max(1),
-  maxProducts: z.coerce.number().int().positive().optional().or(z.literal("")),
-  maxOrdersMonth: z.coerce.number().int().positive().optional().or(z.literal("")),
+  priceMonthly: z.number().min(0),
+  priceYearly: z.number().min(0),
+  commissionRate: z.number().min(0).max(1),
+  maxProducts: z.number().int().positive().optional(),
+  maxOrdersMonth: z.number().int().positive().optional(),
   stripePriceId: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
@@ -66,8 +66,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...data,
-        maxProducts: data.maxProducts === "" ? null : data.maxProducts || null,
-        maxOrdersMonth: data.maxOrdersMonth === "" ? null : data.maxOrdersMonth || null,
+        maxProducts: data.maxProducts ?? null,
+        maxOrdersMonth: data.maxOrdersMonth ?? null,
       }),
     })
     setLoading(false)
@@ -86,8 +86,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...data,
-        maxProducts: data.maxProducts === "" ? null : data.maxProducts || null,
-        maxOrdersMonth: data.maxOrdersMonth === "" ? null : data.maxOrdersMonth || null,
+        maxProducts: data.maxProducts ?? null,
+        maxOrdersMonth: data.maxOrdersMonth ?? null,
       }),
     })
     setLoading(false)
@@ -127,8 +127,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
       priceMonthly: plan.priceMonthly,
       priceYearly: plan.priceYearly,
       commissionRate: plan.commissionRate,
-      maxProducts: plan.maxProducts ?? "",
-      maxOrdersMonth: plan.maxOrdersMonth ?? "",
+      maxProducts: plan.maxProducts ?? undefined,
+      maxOrdersMonth: plan.maxOrdersMonth ?? undefined,
       stripePriceId: plan.stripePriceId ?? "",
     })
   }
@@ -159,23 +159,23 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
               </div>
               <div className="space-y-1">
                 <Label>Precio mensual (MXN)</Label>
-                <Input {...register("priceMonthly")} type="number" step="0.01" placeholder="299" />
+                <Input {...register("priceMonthly", { valueAsNumber: true })} type="number" step="0.01" placeholder="299" />
               </div>
               <div className="space-y-1">
                 <Label>Precio anual (MXN)</Label>
-                <Input {...register("priceYearly")} type="number" step="0.01" placeholder="2990" />
+                <Input {...register("priceYearly", { valueAsNumber: true })} type="number" step="0.01" placeholder="2990" />
               </div>
               <div className="space-y-1">
                 <Label>Comisión (0–1)</Label>
-                <Input {...register("commissionRate")} type="number" step="0.01" placeholder="0.05" />
+                <Input {...register("commissionRate", { valueAsNumber: true })} type="number" step="0.01" placeholder="0.05" />
               </div>
               <div className="space-y-1">
                 <Label>Máx. productos</Label>
-                <Input {...register("maxProducts")} type="number" placeholder="∞" />
+                <Input {...register("maxProducts", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })} type="number" placeholder="∞" />
               </div>
               <div className="space-y-1">
                 <Label>Máx. órdenes/mes</Label>
-                <Input {...register("maxOrdersMonth")} type="number" placeholder="∞" />
+                <Input {...register("maxOrdersMonth", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })} type="number" placeholder="∞" />
               </div>
               <div className="space-y-1 col-span-2">
                 <Label>Stripe Price ID</Label>
@@ -225,23 +225,23 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                           </div>
                           <div className="space-y-1">
                             <Label>Mensual</Label>
-                            <Input {...regEdit("priceMonthly")} type="number" step="0.01" />
+                            <Input {...regEdit("priceMonthly", { valueAsNumber: true })} type="number" step="0.01" />
                           </div>
                           <div className="space-y-1">
                             <Label>Anual</Label>
-                            <Input {...regEdit("priceYearly")} type="number" step="0.01" />
+                            <Input {...regEdit("priceYearly", { valueAsNumber: true })} type="number" step="0.01" />
                           </div>
                           <div className="space-y-1">
                             <Label>Comisión</Label>
-                            <Input {...regEdit("commissionRate")} type="number" step="0.01" />
+                            <Input {...regEdit("commissionRate", { valueAsNumber: true })} type="number" step="0.01" />
                           </div>
                           <div className="space-y-1">
                             <Label>Máx. productos</Label>
-                            <Input {...regEdit("maxProducts")} type="number" placeholder="∞" />
+                            <Input {...regEdit("maxProducts", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })} type="number" placeholder="∞" />
                           </div>
                           <div className="space-y-1">
                             <Label>Máx. órdenes/mes</Label>
-                            <Input {...regEdit("maxOrdersMonth")} type="number" placeholder="∞" />
+                            <Input {...regEdit("maxOrdersMonth", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })} type="number" placeholder="∞" />
                           </div>
                           <div className="space-y-1 col-span-2">
                             <Label>Stripe Price ID</Label>
