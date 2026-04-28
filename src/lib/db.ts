@@ -3,9 +3,12 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 
 function createPrismaClient() {
-  const connectionString = process.env.MULTI_POSTGRES_PRISMA_URL!
+  // pg v8 treats sslmode=require as verify-full, overriding Pool ssl options.
+  // Remove sslmode from URL so Pool's ssl config (rejectUnauthorized: false) takes effect.
+  const rawUrl = new URL(process.env.MULTI_POSTGRES_PRISMA_URL!)
+  rawUrl.searchParams.delete("sslmode")
   const pool = new Pool({
-    connectionString,
+    connectionString: rawUrl.toString(),
     ssl: { rejectUnauthorized: false },
     max: 1,
   })
