@@ -3,20 +3,11 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
 import { OrderStatus } from "@prisma/client"
 
-const statusConfig: Record<OrderStatus, { label: string; className: string }> = {
-  PENDING: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
-  PAID: { label: "Pagado", className: "bg-green-100 text-green-800" },
-  PROCESSING: { label: "Procesando", className: "bg-blue-100 text-blue-800" },
-  SHIPPED: { label: "Enviado", className: "bg-purple-100 text-purple-800" },
-  DELIVERED: { label: "Entregado", className: "bg-emerald-100 text-emerald-800" },
-  CANCELLED: { label: "Cancelado", className: "bg-red-100 text-red-800" },
-  REFUNDED: { label: "Reembolsado", className: "bg-gray-100 text-gray-800" },
-}
-
-const ALL_STATUSES = Object.keys(statusConfig) as OrderStatus[]
+const ALL_STATUSES = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]
 
 type Params = { storeSlug: string }
 type SearchParams = { status?: string; page?: string }
@@ -80,31 +71,20 @@ export default async function OrdersPage({
 
       {/* Status filter */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <Link
-          href={buildUrl({ status: undefined, page: undefined })}
-          className={`shrink-0 px-4 py-1.5 rounded-full text-sm border transition-colors ${
-            !statusFilter ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent border-input"
-          }`}
-        >
-          Todos
-        </Link>
+        <Button asChild variant={!statusFilter ? "default" : "outline"} size="sm" className="rounded-full shrink-0">
+          <Link href={buildUrl({ status: undefined, page: undefined })}>Todos</Link>
+        </Button>
         {ALL_STATUSES.map((s) => (
-          <Link
-            key={s}
-            href={buildUrl({ status: s, page: undefined })}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-sm border transition-colors ${
-              statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent border-input"
-            }`}
-          >
-            {statusConfig[s].label}
-          </Link>
+          <Button key={s} asChild variant={statusFilter === s ? "default" : "outline"} size="sm" className="rounded-full shrink-0">
+            <Link href={buildUrl({ status: s, page: undefined })}>{ORDER_STATUS_LABELS[s]}</Link>
+          </Button>
         ))}
       </div>
 
       {/* Table */}
       {orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground border rounded-lg">
-          <p className="font-medium">No hay pedidos{statusFilter ? ` con estado "${statusConfig[statusFilter].label}"` : ""}</p>
+          <p className="font-medium">No hay pedidos{statusFilter ? ` con estado "${ORDER_STATUS_LABELS[statusFilter]}"` : ""}</p>
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
@@ -121,46 +101,41 @@ export default async function OrdersPage({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {orders.map((order) => {
-                const cfg = statusConfig[order.status]
-                return (
-                  <tr key={order.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                      #{order.id.slice(-8).toUpperCase()}
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <div className="font-medium leading-tight">{order.customer.name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{order.customer.email}</div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell whitespace-nowrap">
-                      {new Date(order.createdAt).toLocaleDateString("es-MX", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
-                      {order._count.items}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium tabular-nums">
-                      {formatPrice(order.total)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cfg.className}`}>
-                        {cfg.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/dashboard/${storeSlug}/orders/${order.id}`}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Ver
-                      </Link>
-                    </td>
-                  </tr>
-                )
-              })}
+              {orders.map((order) => (
+                <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    #{order.id.slice(-8).toUpperCase()}
+                  </td>
+                  <td className="px-4 py-3 hidden sm:table-cell">
+                    <div className="font-medium leading-tight">{order.customer.name ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground">{order.customer.email}</div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell whitespace-nowrap">
+                    {new Date(order.createdAt).toLocaleDateString("es-MX", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
+                    {order._count.items}
+                  </td>
+                  <td className="px-4 py-3 text-right font-medium tabular-nums">
+                    {formatPrice(order.total)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <OrderStatusBadge status={order.status} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/dashboard/${storeSlug}/orders/${order.id}`}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Ver
+                    </Link>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -170,15 +145,9 @@ export default async function OrdersPage({
       {pages > 1 && (
         <div className="flex justify-center gap-2">
           {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={buildUrl({ page: p === 1 ? undefined : String(p) })}
-              className={`h-9 w-9 flex items-center justify-center rounded-md border text-sm ${
-                p === currentPage ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
-              }`}
-            >
-              {p}
-            </Link>
+            <Button key={p} asChild variant={p === currentPage ? "default" : "outline"} size="sm" className="h-9 w-9 p-0">
+              <Link href={buildUrl({ page: p === 1 ? undefined : String(p) })}>{p}</Link>
+            </Button>
           ))}
         </div>
       )}

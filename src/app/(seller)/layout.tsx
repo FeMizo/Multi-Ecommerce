@@ -2,7 +2,8 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { SessionProvider } from "next-auth/react"
 import Link from "next/link"
-import { LayoutDashboard, Package, ShoppingBag, BarChart3, Settings, Store } from "lucide-react"
+import Image from "next/image"
+import { LayoutDashboard, Package, ShoppingBag, BarChart3, Settings } from "lucide-react"
 
 const nav = [
   { href: "/seller/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -23,11 +24,10 @@ export default async function SellerLayout({ children }: { children: React.React
       <div className="flex min-h-screen">
         <aside className="w-60 border-r bg-card shrink-0 flex flex-col">
           <div className="p-4 border-b">
-            <Link href="/" className="flex items-center gap-2 font-bold text-primary">
-              <Store className="h-5 w-5" />
-              Mercado Local
+            <Link href="/" className="inline-block mb-1">
+              <Image src="/logo.png" alt="AionSite" width={110} height={32} className="h-7 w-auto object-contain" />
             </Link>
-            <p className="text-xs text-muted-foreground mt-1">Panel del vendedor</p>
+            <p className="text-xs text-muted-foreground">Panel del vendedor</p>
           </div>
           <nav className="flex-1 p-3 space-y-1">
             {nav.map(({ href, label, icon: Icon }) => (

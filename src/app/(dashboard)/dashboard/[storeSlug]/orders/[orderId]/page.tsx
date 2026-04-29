@@ -7,17 +7,7 @@ import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
-import { OrderStatus } from "@prisma/client"
-
-const statusConfig: Record<OrderStatus, { label: string; className: string }> = {
-  PENDING: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
-  PAID: { label: "Pagado", className: "bg-green-100 text-green-800" },
-  PROCESSING: { label: "Procesando", className: "bg-blue-100 text-blue-800" },
-  SHIPPED: { label: "Enviado", className: "bg-purple-100 text-purple-800" },
-  DELIVERED: { label: "Entregado", className: "bg-emerald-100 text-emerald-800" },
-  CANCELLED: { label: "Cancelado", className: "bg-red-100 text-red-800" },
-  REFUNDED: { label: "Reembolsado", className: "bg-gray-100 text-gray-800" },
-}
+import { OrderStatusBadge } from "@/components/shared/order-status-badge"
 
 type ShippingAddress = {
   name?: string
@@ -53,7 +43,6 @@ export default async function OrderDetailPage({
   if (!order) notFound()
 
   const shipping = order.shippingAddress as ShippingAddress
-  const cfg = statusConfig[order.status]
 
   return (
     <div className="space-y-6">
@@ -162,9 +151,7 @@ export default async function OrderDetailPage({
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${cfg.className}`}>
-                  {cfg.label}
-                </span>
+                <OrderStatusBadge status={order.status} />
               </div>
               {order.payment && (
                 <div className="text-xs text-muted-foreground">

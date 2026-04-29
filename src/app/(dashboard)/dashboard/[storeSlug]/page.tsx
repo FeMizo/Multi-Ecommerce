@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
 import { Package, ShoppingBag, DollarSign, Users, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { OrderStatusBadge } from "@/components/shared/order-status-badge"
 
 async function getStoreMetrics(storeId: string) {
   const now = new Date()
@@ -56,15 +57,6 @@ async function getStoreMetrics(storeId: string) {
   }
 }
 
-const statusLabels: Record<string, { label: string; className: string }> = {
-  PENDING: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
-  PAID: { label: "Pagado", className: "bg-green-100 text-green-800" },
-  PROCESSING: { label: "Procesando", className: "bg-blue-100 text-blue-800" },
-  SHIPPED: { label: "Enviado", className: "bg-purple-100 text-purple-800" },
-  DELIVERED: { label: "Entregado", className: "bg-emerald-100 text-emerald-800" },
-  CANCELLED: { label: "Cancelado", className: "bg-red-100 text-red-800" },
-  REFUNDED: { label: "Reembolsado", className: "bg-gray-100 text-gray-800" },
-}
 
 export default async function StoreDashboardPage({
   params,
@@ -175,13 +167,7 @@ export default async function StoreDashboardPage({
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        statusLabels[order.status]?.className ?? "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {statusLabels[order.status]?.label ?? order.status}
-                    </span>
+                    <OrderStatusBadge status={order.status} />
                     <span className="text-sm font-semibold">{formatPrice(order.total)}</span>
                   </div>
                 </div>

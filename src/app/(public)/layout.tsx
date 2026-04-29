@@ -2,7 +2,8 @@ import { Navbar } from "@/components/layout/navbar"
 import { SessionProvider } from "next-auth/react"
 import { auth } from "@/lib/auth"
 import Link from "next/link"
-import { Store, MapPin, Mail, Phone } from "lucide-react"
+import Image from "next/image"
+import { MapPin, Mail, Phone } from "lucide-react"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -17,11 +18,8 @@ export default async function PublicLayout({ children }: { children: React.React
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-4">
-                <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center">
-                  <Store className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="text-foreground">Mercado Local</span>
+              <Link href="/" className="inline-block mb-4">
+                <Image src="/logo.png" alt="AionSite" width={130} height={38} className="h-9 w-auto object-contain" />
               </Link>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs">
                 El marketplace de tu comunidad. Conectamos compradores y vendedores locales.
@@ -82,7 +80,7 @@ export default async function PublicLayout({ children }: { children: React.React
           {/* Bottom */}
           <div className="mt-12 pt-8 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Mercado Local. Todos los derechos reservados.
+              © {new Date().getFullYear()} AionSite. Todos los derechos reservados.
             </p>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link href="#" className="hover:text-foreground transition-colors">Términos</Link>

@@ -1,21 +1,14 @@
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils"
 import { AdminSearch } from "@/components/admin/admin-search"
+import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
 import { OrderStatus } from "@prisma/client"
 import Link from "next/link"
 
-const statusConfig: Record<OrderStatus, { label: string; className: string }> = {
-  PENDING: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
-  PAID: { label: "Pagado", className: "bg-green-100 text-green-800" },
-  PROCESSING: { label: "Procesando", className: "bg-blue-100 text-blue-800" },
-  SHIPPED: { label: "Enviado", className: "bg-purple-100 text-purple-800" },
-  DELIVERED: { label: "Entregado", className: "bg-emerald-100 text-emerald-800" },
-  CANCELLED: { label: "Cancelado", className: "bg-red-100 text-red-800" },
-  REFUNDED: { label: "Reembolsado", className: "bg-gray-100 text-gray-800" },
-}
+const ALL_STATUSES = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]
 
 type SearchParams = { q?: string; status?: string; page?: string }
 
@@ -57,7 +50,6 @@ export default async function AdminOrdersPage({
     db.order.count({ where }),
   ])
 
-  const statuses = Object.keys(statusConfig) as OrderStatus[]
   const buildHref = (s?: string) => {
     const params = new URLSearchParams()
     if (s) params.set("status", s)
@@ -76,24 +68,13 @@ export default async function AdminOrdersPage({
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        <Link
-          href={buildHref()}
-          className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-            !status ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent border-input"
-          }`}
-        >
-          Todos
-        </Link>
-        {statuses.map((s) => (
-          <Link
-            key={s}
-            href={buildHref(s)}
-            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-              status === s ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent border-input"
-            }`}
-          >
-            {statusConfig[s].label}
-          </Link>
+        <Button asChild variant={!status ? "default" : "outline"} size="sm" className="rounded-full">
+          <Link href={buildHref()}>Todos</Link>
+        </Button>
+        {ALL_STATUSES.map((s) => (
+          <Button key={s} asChild variant={status === s ? "default" : "outline"} size="sm" className="rounded-full">
+            <Link href={buildHref(s)}>{ORDER_STATUS_LABELS[s]}</Link>
+          </Button>
         ))}
       </div>
 
@@ -114,45 +95,40 @@ export default async function AdminOrdersPage({
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => {
-                  const cfg = statusConfig[order.status]
-                  return (
-                    <tr key={order.id} className="border-b last:border-0 hover:bg-muted/40">
-                      <td className="p-4">
-                        <Link
-                          href={`/dashboard/${order.store.slug}/orders/${order.id}`}
-                          className="font-mono text-xs hover:underline text-muted-foreground"
-                        >
-                          #{order.id.slice(-8).toUpperCase()}
-                        </Link>
-                      </td>
-                      <td className="p-4">
-                        <p className="font-medium">{order.customer.name ?? "—"}</p>
-                        <p className="text-xs text-muted-foreground">{order.customer.email}</p>
-                      </td>
-                      <td className="p-4">
-                        <Link href={`/${order.store.slug}`} className="hover:underline text-muted-foreground">
-                          {order.store.name}
-                        </Link>
-                      </td>
-                      <td className="p-4 text-center">{order._count.items}</td>
-                      <td className="p-4 text-right font-medium tabular-nums">{formatPrice(order.total)}</td>
-                      <td className="p-4 text-right text-muted-foreground tabular-nums">{formatPrice(order.platformFee)}</td>
-                      <td className="p-4 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cfg.className}`}>
-                          {cfg.label}
-                        </span>
-                      </td>
-                      <td className="p-4 text-muted-foreground text-xs">
-                        {new Date(order.createdAt).toLocaleDateString("es-MX", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                    </tr>
-                  )
-                })}
+                {orders.map((order) => (
+                  <tr key={order.id} className="border-b last:border-0 hover:bg-muted/40">
+                    <td className="p-4">
+                      <Link
+                        href={`/dashboard/${order.store.slug}/orders/${order.id}`}
+                        className="font-mono text-xs hover:underline text-muted-foreground"
+                      >
+                        #{order.id.slice(-8).toUpperCase()}
+                      </Link>
+                    </td>
+                    <td className="p-4">
+                      <p className="font-medium">{order.customer.name ?? "—"}</p>
+                      <p className="text-xs text-muted-foreground">{order.customer.email}</p>
+                    </td>
+                    <td className="p-4">
+                      <Link href={`/${order.store.slug}`} className="hover:underline text-muted-foreground">
+                        {order.store.name}
+                      </Link>
+                    </td>
+                    <td className="p-4 text-center">{order._count.items}</td>
+                    <td className="p-4 text-right font-medium tabular-nums">{formatPrice(order.total)}</td>
+                    <td className="p-4 text-right text-muted-foreground tabular-nums">{formatPrice(order.platformFee)}</td>
+                    <td className="p-4 text-center">
+                      <OrderStatusBadge status={order.status} />
+                    </td>
+                    <td className="p-4 text-muted-foreground text-xs">
+                      {new Date(order.createdAt).toLocaleDateString("es-MX", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                  </tr>
+                ))}
                 {orders.length === 0 && (
                   <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">Sin resultados</td></tr>
                 )}

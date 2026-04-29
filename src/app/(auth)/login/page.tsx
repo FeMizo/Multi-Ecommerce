@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Store, ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,10 +48,10 @@ export default function LoginPage() {
         </div>
         <div className="relative z-10 flex flex-col justify-center px-12 lg:px-16">
           <Link href="/" className="flex items-center gap-3 mb-8">
-            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Store className="h-6 w-6 text-primary-foreground" />
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden">
+              <Image src="/logo-icon.png" alt="AionSite" width={48} height={48} className="object-cover" />
             </div>
-            <span className="text-2xl font-bold text-primary-foreground">Mercado Local</span>
+            <span className="text-2xl font-bold text-primary-foreground">AionSite</span>
           </Link>
           <h1 className="text-4xl lg:text-5xl font-bold text-primary-foreground mb-4 max-w-md text-balance">
             Bienvenido de vuelta
@@ -77,11 +78,8 @@ export default function LoginPage() {
           <div className="w-full max-w-sm">
             {/* Mobile Logo */}
             <div className="lg:hidden text-center mb-8">
-              <Link href="/" className="inline-flex items-center gap-2">
-                <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-                  <Store className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold text-foreground">Mercado Local</span>
+              <Link href="/" className="inline-block">
+                <Image src="/logo.png" alt="AionSite" width={130} height={38} className="h-9 w-auto object-contain mx-auto" />
               </Link>
             </div>
 

@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { AdminSearch } from "@/components/admin/admin-search"
+import { ProductDeleteButton } from "@/components/admin/product-delete-button"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 const STATUS_LABELS: Record<string, string> = {
@@ -78,24 +80,13 @@ export default async function AdminProductsPage({
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        <Link
-          href={buildHref()}
-          className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-            !status ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent border-input"
-          }`}
-        >
-          Todos
-        </Link>
+        <Button asChild variant={!status ? "default" : "outline"} size="sm" className="rounded-full">
+          <Link href={buildHref()}>Todos</Link>
+        </Button>
         {statuses.map((s) => (
-          <Link
-            key={s}
-            href={buildHref(s)}
-            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-              status === s ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent border-input"
-            }`}
-          >
-            {STATUS_LABELS[s]}
-          </Link>
+          <Button key={s} asChild variant={status === s ? "default" : "outline"} size="sm" className="rounded-full">
+            <Link href={buildHref(s)}>{STATUS_LABELS[s]}</Link>
+          </Button>
         ))}
       </div>
 
@@ -110,6 +101,7 @@ export default async function AdminProductsPage({
                 <th className="text-right p-4 font-medium text-muted-foreground">Precio</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Stock</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Estado</th>
+                <th className="p-4" />
               </tr>
             </thead>
             <tbody>
@@ -132,10 +124,13 @@ export default async function AdminProductsPage({
                       {STATUS_LABELS[product.status] ?? product.status}
                     </Badge>
                   </td>
+                  <td className="p-4">
+                    <ProductDeleteButton productId={product.id} />
+                  </td>
                 </tr>
               ))}
               {products.length === 0 && (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Sin resultados</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Sin resultados</td></tr>
               )}
             </tbody>
           </table>

@@ -3,13 +3,13 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { SessionProvider } from "next-auth/react"
 import Link from "next/link"
+import Image from "next/image"
 import {
   LayoutDashboard,
   Package,
   ShoppingBag,
   BarChart3,
   Settings,
-  Store,
   ChevronDown,
 } from "lucide-react"
 
@@ -51,9 +51,8 @@ export default async function DashboardLayout({
       <div className="flex min-h-screen">
         <aside className="w-60 border-r bg-card shrink-0 flex flex-col">
           <div className="p-4 border-b">
-            <Link href="/" className="flex items-center gap-2 font-bold text-primary">
-              <Store className="h-5 w-5" />
-              Mercado Local
+            <Link href="/" className="inline-block">
+              <Image src="/logo.png" alt="AionSite" width={110} height={32} className="h-7 w-auto object-contain" />
             </Link>
             <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
               <span className="truncate">{membership.store.name}</span>
