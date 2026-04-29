@@ -29,3 +29,20 @@ export async function PATCH(
 
   return NextResponse.json(store)
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ storeId: string }> }
+) {
+  const session = await auth()
+  if (!session?.user || session.user.globalRole !== "PLATFORM_ADMIN") {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+  }
+
+  const { storeId } = await params
+  await db.store.update({
+    where: { id: storeId },
+    data: { deletedAt: new Date(), isActive: false },
+  })
+  return NextResponse.json({ ok: true })
+}

@@ -3,6 +3,11 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
 
+const RESERVED_SLUGS = new Set([
+  "admin", "dashboard", "api", "login", "register", "seller",
+  "cart", "checkout", "products", "search", "account", "stores",
+])
+
 const schema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres").max(60),
   slug: z
@@ -27,6 +32,10 @@ export async function POST(req: Request) {
   }
 
   const { name, slug, description, cityId } = parsed.data
+
+  if (RESERVED_SLUGS.has(slug)) {
+    return NextResponse.json({ message: "Ese slug está reservado por el sistema" }, { status: 409 })
+  }
 
   const existing = await db.store.findUnique({ where: { slug } })
   if (existing) {

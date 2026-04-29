@@ -25,3 +25,26 @@ export async function PATCH(
   const city = await db.city.update({ where: { id: cityId }, data: parsed.data })
   return NextResponse.json(city)
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ cityId: string }> }
+) {
+  const session = await auth()
+  if (!session?.user || session.user.globalRole !== "PLATFORM_ADMIN") {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+  }
+
+  const { cityId } = await params
+  const city = await db.city.findUnique({
+    where: { id: cityId },
+    include: { _count: { select: { stores: true } } },
+  })
+  if (!city) return NextResponse.json({ message: "No encontrada" }, { status: 404 })
+  if (city._count.stores > 0) {
+    return NextResponse.json({ message: "Tiene tiendas asociadas" }, { status: 400 })
+  }
+
+  await db.city.delete({ where: { id: cityId } })
+  return NextResponse.json({ ok: true })
+}

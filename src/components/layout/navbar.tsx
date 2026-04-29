@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useSession, signOut } from "next-auth/react"
 import { ShoppingCart, User, Package, LayoutDashboard, LogOut, Search, Store, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -33,13 +34,22 @@ export function Navbar() {
           <div className="h-16 flex items-center justify-between gap-4">
             {/* Logo & City */}
             <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-2 font-bold text-xl group">
-                <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center">
-                  <Store className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="hidden sm:block text-foreground group-hover:text-primary transition-colors">
-                  Mercado Local
-                </span>
+              <Link href="/" className="flex items-center gap-2 group">
+                <Image
+                  src="/logo-icon.png"
+                  alt="AionSite"
+                  width={36}
+                  height={36}
+                  className="rounded-xl sm:hidden"
+                />
+                <Image
+                  src="/logo.png"
+                  alt="AionSite"
+                  width={140}
+                  height={40}
+                  className="hidden sm:block h-9 w-auto object-contain"
+                  priority
+                />
               </Link>
               <div className="hidden md:block">
                 <CitySelector />

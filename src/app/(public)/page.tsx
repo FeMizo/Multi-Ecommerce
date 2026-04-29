@@ -200,7 +200,7 @@ export default async function HomePage() {
                 iconColor: "text-primary"
               },
             ].map(({ icon: Icon, title, desc, color, iconColor }, i) => (
-              <div key={title} className="group relative hover-lift">
+              <div key={title} className="group relative hover-lift rounded-3xl">
                 <div className={`absolute inset-0 bg-gradient-to-br ${color} rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative p-8 md:p-10 rounded-3xl bg-background border border-border/50 group-hover:border-primary/20 transition-all duration-300 h-full">
                   <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center mb-6`}>
@@ -325,7 +325,7 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
             {testimonials.map((testimonial, i) => (
-              <div key={i} className="group relative hover-lift">
+              <div key={i} className="group relative hover-lift rounded-3xl">
                 <div className="absolute inset-0 bg-primary/5 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative p-8 rounded-3xl bg-background border border-border/50 group-hover:border-primary/20 transition-all h-full flex flex-col">
                   <div className="flex gap-1 mb-4">

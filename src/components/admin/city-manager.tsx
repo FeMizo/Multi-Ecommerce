@@ -9,7 +9,8 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
+import { DeleteIconButton, ToggleStatusButton } from "@/components/admin/action-buttons"
 
 const schema = z.object({
   name: z.string().min(2, "Requerido"),
@@ -31,6 +32,8 @@ type City = {
 
 export function CityManager({ cities }: { cities: City[] }) {
   const [loading, setLoading] = useState(false)
+  const [toggleLoading, setToggleLoading] = useState<string | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const router = useRouter()
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
@@ -57,12 +60,28 @@ export function CityManager({ cities }: { cities: City[] }) {
   }
 
   async function toggleActive(cityId: string, active: boolean) {
+    setToggleLoading(cityId)
     const res = await fetch(`/api/admin/cities/${cityId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active }),
     })
+    setToggleLoading(null)
     if (!res.ok) { toast.error("Error al actualizar"); return }
+    router.refresh()
+  }
+
+  async function deleteCity(cityId: string, storeCount: number) {
+    if (storeCount > 0) {
+      toast.error("No se puede eliminar: tiene tiendas asociadas")
+      return
+    }
+    if (!window.confirm("¿Eliminar esta ciudad?")) return
+    setDeleteLoading(cityId)
+    const res = await fetch(`/api/admin/cities/${cityId}`, { method: "DELETE" })
+    setDeleteLoading(null)
+    if (!res.ok) { toast.error("Error al eliminar"); return }
+    toast.success("Ciudad eliminada")
     router.refresh()
   }
 
@@ -74,25 +93,25 @@ export function CityManager({ cities }: { cities: City[] }) {
           <form onSubmit={handleSubmit(onAdd)} className="flex flex-wrap gap-3 items-end">
             <div className="space-y-1">
               <label className="text-sm font-medium">Nombre</label>
-              <Input {...register("name")} placeholder="Lima" className="w-36" />
+              <Input {...register("name")} placeholder="Ciudad de México" className="w-40" />
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Slug</label>
-              <Input {...register("slug")} placeholder="lima" className="w-36" />
+              <Input {...register("slug")} placeholder="cdmx" className="w-36" />
               {errors.slug && <p className="text-xs text-destructive">{errors.slug.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Estado</label>
-              <Input {...register("state")} placeholder="Lima" className="w-36" />
+              <Input {...register("state")} placeholder="CDMX" className="w-36" />
               {errors.state && <p className="text-xs text-destructive">{errors.state.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">País</label>
-              <Input {...register("country")} placeholder="PE" className="w-20" />
+              <Input {...register("country")} placeholder="MX" className="w-20" />
             </div>
             <Button type="submit" disabled={loading}>
-              <Plus className="h-4 w-4 mr-1" />
+              {loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
               Agregar
             </Button>
           </form>
@@ -110,6 +129,7 @@ export function CityManager({ cities }: { cities: City[] }) {
                 <th className="text-left p-4 font-medium text-muted-foreground">País</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Tiendas</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Activa</th>
+                <th className="p-4" />
               </tr>
             </thead>
             <tbody>
@@ -121,14 +141,17 @@ export function CityManager({ cities }: { cities: City[] }) {
                   <td className="p-4 text-muted-foreground">{city.country}</td>
                   <td className="p-4 text-center">{city._count.stores}</td>
                   <td className="p-4 text-center">
-                    <Button
-                      variant={city.active ? "default" : "outline"}
-                      size="sm"
+                    <ToggleStatusButton
+                      active={city.active}
                       onClick={() => toggleActive(city.id, !city.active)}
-                      className="text-xs h-7 px-2"
-                    >
-                      {city.active ? "Activa" : "Inactiva"}
-                    </Button>
+                      loading={toggleLoading === city.id}
+                    />
+                  </td>
+                  <td className="p-4">
+                    <DeleteIconButton
+                      onClick={() => deleteCity(city.id, city._count.stores)}
+                      loading={deleteLoading === city.id}
+                    />
                   </td>
                 </tr>
               ))}

@@ -28,3 +28,21 @@ export async function PATCH(
 
   return NextResponse.json(user)
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  const session = await auth()
+  if (!session?.user || session.user.globalRole !== "PLATFORM_ADMIN") {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+  }
+
+  const { userId } = await params
+  if (userId === session.user.id) {
+    return NextResponse.json({ message: "No puedes eliminarte a ti mismo" }, { status: 400 })
+  }
+
+  await db.user.delete({ where: { id: userId } })
+  return NextResponse.json({ ok: true })
+}

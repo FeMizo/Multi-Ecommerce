@@ -228,7 +228,8 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: P
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Card para futuro de CNamesi */}
+          {/* <Card>
             <CardHeader>
               <CardTitle className="text-base">Dominio personalizado</CardTitle>
             </CardHeader>
@@ -241,7 +242,7 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: P
                 </p>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Sidebar */}
