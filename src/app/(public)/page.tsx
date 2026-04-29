@@ -280,7 +280,7 @@ export default async function HomePage() {
                   <div className="p-4 pt-0">
                     <div className="flex items-start gap-3 -mt-8 mb-3">
                       <div
-                        className="h-16 w-16 rounded-2xl border-4 border-card bg-card flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden shadow-lg group-hover:scale-105 transition-transform"
+                        className="z-20 h-16 w-16 rounded-2xl border-4 border-card bg-card flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden shadow-lg group-hover:scale-105 transition-transform"
                         style={{ color: store.primaryColor ?? undefined }}
                       >
                         {store.logoUrl ? (

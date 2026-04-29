@@ -83,7 +83,7 @@ export function CityManager({ cities }: { cities: City[] }) {
               {errors.slug && <p className="text-xs text-destructive">{errors.slug.message}</p>}
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Departamento</label>
+              <label className="text-sm font-medium">Estado</label>
               <Input {...register("state")} placeholder="Lima" className="w-36" />
               {errors.state && <p className="text-xs text-destructive">{errors.state.message}</p>}
             </div>
@@ -106,7 +106,7 @@ export function CityManager({ cities }: { cities: City[] }) {
               <tr className="border-b">
                 <th className="text-left p-4 font-medium text-muted-foreground">Ciudad</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Slug</th>
-                <th className="text-left p-4 font-medium text-muted-foreground">Departamento</th>
+                <th className="text-left p-4 font-medium text-muted-foreground">Estado</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">País</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Tiendas</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Activa</th>

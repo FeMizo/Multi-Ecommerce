@@ -137,7 +137,7 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
                   {/* Logo & Name */}
                   <div className="flex items-start gap-4 -mt-12 mb-4">
                     <div
-                      className="h-16 w-16 rounded-2xl border-[3px] border-card bg-card flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden shadow-lg"
+                      className="z-20 h-16 w-16 rounded-2xl border-[3px] border-card bg-card flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden shadow-lg"
                       style={{ color: store.primaryColor ?? undefined }}
                     >
                       {store.logoUrl ? (
