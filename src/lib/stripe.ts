@@ -1,9 +1,32 @@
 import Stripe from "stripe"
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-03-25.dahlia",
-  typescript: true,
-})
+let stripeInstance: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is not set")
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2026-03-25.dahlia",
+      typescript: true,
+    })
+  }
+  return stripeInstance
+}
+
+// For backward compatibility - lazy getter
+export const stripe = {
+  get checkout() { return getStripe().checkout },
+  get customers() { return getStripe().customers },
+  get paymentIntents() { return getStripe().paymentIntents },
+  get subscriptions() { return getStripe().subscriptions },
+  get accounts() { return getStripe().accounts },
+  get accountLinks() { return getStripe().accountLinks },
+  get webhooks() { return getStripe().webhooks },
+  get prices() { return getStripe().prices },
+  get products() { return getStripe().products },
+}
 
 export const COMMISSION_RATE = 0.10
 
