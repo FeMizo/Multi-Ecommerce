@@ -49,7 +49,7 @@ export default async function StoreProductPage({
     <div className="container mx-auto px-4 py-8">
       <Link
         href={`/${storeSlug}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-6"
       >
         <ChevronLeft className="h-4 w-4" />
         Volver a {product.store.name}
@@ -96,7 +96,9 @@ export default async function StoreProductPage({
         <div className="space-y-5">
           <div>
             <Badge variant="secondary">{product.category.name}</Badge>
-            <h1 className="text-2xl md:text-3xl font-bold mt-2">{product.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mt-2 text-primary">
+              {product.name}
+            </h1>
 
             {product._count.reviews > 0 && (
               <div className="flex items-center gap-2 mt-2">

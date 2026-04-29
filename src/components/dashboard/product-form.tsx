@@ -244,7 +244,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                   <Label>Precio *</Label>
                   <div className="flex items-center">
                     <span className="flex items-center px-3 h-9 text-sm text-muted-foreground bg-muted border border-r-0 rounded-l-md border-input">
-                      S/
+                      $
                     </span>
                     <Input
                       type="number"
@@ -262,7 +262,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                   <Label>Precio tachado</Label>
                   <div className="flex items-center">
                     <span className="flex items-center px-3 h-9 text-sm text-muted-foreground bg-muted border border-r-0 rounded-l-md border-input">
-                      S/
+                      $
                     </span>
                     <Input
                       type="number"

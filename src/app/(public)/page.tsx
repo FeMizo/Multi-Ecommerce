@@ -10,7 +10,7 @@ import { CategoryGrid } from "@/components/products/category-grid"
 async function getFeaturedProducts() {
   return db.product.findMany({
     where: { status: "ACTIVE", featured: true },
-    include: { store: { select: { name: true, city: true } }, category: true },
+    include: { store: { select: { name: true, city: true, primaryColor: true } }, category: true },
     take: 8,
     orderBy: { createdAt: "desc" },
   })

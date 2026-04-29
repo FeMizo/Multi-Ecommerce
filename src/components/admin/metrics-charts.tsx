@@ -47,7 +47,7 @@ export function AdminMetricsCharts({ dailyData, statusData }: Props) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v}`} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
               <Tooltip
                 formatter={(value, name) => [
                   formatPrice(Number(value ?? 0)),

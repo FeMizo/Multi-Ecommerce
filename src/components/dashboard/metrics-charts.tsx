@@ -134,7 +134,7 @@ export function MetricsCharts({ revenueByDay, ordersByStatus, topProducts, summa
                 tick={{ fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => `S/${v}`}
+                tickFormatter={(v) => `$${v}`}
                 width={56}
               />
               <Tooltip
@@ -250,7 +250,7 @@ export function MetricsCharts({ revenueByDay, ordersByStatus, topProducts, summa
                   tick={{ fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `S/${v}`}
+                  tickFormatter={(v) => `$${v}`}
                 />
                 <YAxis
                   type="category"

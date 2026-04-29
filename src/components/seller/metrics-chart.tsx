@@ -34,7 +34,7 @@ export function SellerMetricsChart({ data }: Props) {
         </defs>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `S/${v}`} />
+        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
         <Tooltip formatter={(v) => formatPrice(Number(v))} />
         <Area
           type="monotone"

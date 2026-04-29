@@ -24,7 +24,7 @@ export function AdminRevenueChart({ data }: Props) {
       <BarChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `S/${v}`} />
+        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
         <Tooltip formatter={(v) => formatPrice(Number(v))} />
         <Bar dataKey="commission" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
       </BarChart>

@@ -24,7 +24,7 @@ async function searchProducts(params: SearchParams) {
   const [products, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: { store: { select: { name: true, city: true } }, category: true },
+      include: { store: { select: { name: true, city: true, primaryColor: true } }, category: true },
       take,
       skip,
       orderBy: { createdAt: "desc" },

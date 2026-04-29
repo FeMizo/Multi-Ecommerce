@@ -14,10 +14,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="flex min-h-screen">
         <aside className="w-60 border-r bg-foreground text-background shrink-0 flex flex-col">
           <div className="p-4 border-b border-background/10">
-            <Link href="/admin" className="block mb-1">
-              <Image src="/logo-icon.png" alt="AionSite" width={32} height={32} className="rounded-lg" />
+            <Link href="/admin" className="block mb-3">
+              <Image src="/logo.png" alt="AionSite" width={110} height={32} className="h-7 w-auto object-contain brightness-0 invert" />
             </Link>
-            <p className="font-bold text-sm text-background">Admin Panel</p>
+            <p className="text-xs font-semibold text-background/50 uppercase tracking-widest">Admin Panel</p>
           </div>
           <AdminNav />
           <div className="p-3 border-t border-background/10">

@@ -22,6 +22,7 @@ type ProductCardProps = {
       name: string
       slug?: string
       city?: { name: string } | null
+      primaryColor?: string | null
     }
   }
   storeSlug?: string
@@ -64,9 +65,10 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   }
 
   return (
-    <Link 
-      href={href} 
+    <Link
+      href={href}
       className="group block"
+      style={product.store.primaryColor ? ({ "--primary": product.store.primaryColor, "--primary-foreground": "#ffffff" } as React.CSSProperties) : undefined}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -122,9 +124,9 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
           <div className={`absolute bottom-0 left-0 right-0 p-4 transition-all duration-300 ${
             isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}>
-            <Button 
+            <Button
               onClick={handleAddToCart}
-              className="w-full h-12 rounded-xl bg-card hover:bg-card/90 text-foreground shadow-xl btn-shine"
+              className="w-full h-12 rounded-xl bg-primary text-primary-foreground shadow-xl btn-shine"
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               Agregar al carrito
@@ -143,7 +145,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
           </p>
           
           {/* Product Name */}
-          <h3 className="font-semibold text-sm md:text-base line-clamp-2 mb-3 min-h-[2.5rem] group-hover:text-primary transition-colors leading-snug">
+          <h3 className={`font-semibold text-sm md:text-base line-clamp-2 mb-3 min-h-10 transition-colors leading-snug ${isHovered ? "text-primary" : ""}`}>
             {product.name}
           </h3>
           
@@ -159,10 +161,10 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
             </div>
             
             {/* Mobile Add Button */}
-            <Button 
-              size="icon" 
-              variant="outline" 
-              className="h-10 w-10 shrink-0 rounded-xl border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all lg:hidden" 
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-10 w-10 shrink-0 rounded-xl border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-all lg:hidden"
               onClick={handleAddToCart}
             >
               <ShoppingCart className="h-4 w-4" />

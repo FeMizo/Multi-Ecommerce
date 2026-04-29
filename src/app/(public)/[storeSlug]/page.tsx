@@ -33,7 +33,7 @@ async function getStoreProducts(storeId: string, categorySlug?: string, page = 1
   const [products, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: { store: { select: { name: true, slug: true, city: true } }, category: true },
+      include: { store: { select: { name: true, slug: true, city: true, primaryColor: true } }, category: true },
       orderBy: { createdAt: "desc" },
       take,
       skip,
