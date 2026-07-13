@@ -1,10 +1,19 @@
 import { Pool, type PoolConfig } from "pg"
 
-export function getPgSslConfig(): PoolConfig["ssl"] {
-  if (process.env.NODE_ENV !== "production") {
+export function getPgSslConfig(
+  allowSelfSigned = process.env.MULTI_POSTGRES_ALLOW_SELF_SIGNED === "true",
+  certificateAuthority = process.env.MULTI_POSTGRES_SSL_CA,
+): PoolConfig["ssl"] {
+  if (allowSelfSigned) {
     return { rejectUnauthorized: false }
   }
-  return { rejectUnauthorized: true }
+
+  return {
+    rejectUnauthorized: true,
+    ...(certificateAuthority
+      ? { ca: certificateAuthority.replace(/\\n/g, "\n") }
+      : {}),
+  }
 }
 
 export function sanitizePgUrl(url: string): string {
