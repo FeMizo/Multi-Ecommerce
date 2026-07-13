@@ -120,15 +120,22 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
   async function uploadAsset(field: "logoUrl" | "bannerUrl", file?: File) {
     if (!file) return
     setUploadingAsset(field)
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("storeSlug", storeSlug)
-    const res = await fetch("/api/upload", { method: "POST", body: formData })
-    const data = await res.json()
-    setUploadingAsset(null)
-    if (!res.ok) return toast.error(data.message ?? "No se pudo subir la imagen")
-    setValue(field, data.url, { shouldValidate: true, shouldDirty: true })
-    toast.success("Imagen subida; guarda los cambios para aplicarla")
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("storeSlug", storeSlug)
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      const data = await res.json().catch(() => ({})) as { message?: string; url?: string }
+      if (!res.ok || !data.url) {
+        return toast.error(data.message ?? "No se pudo subir la imagen")
+      }
+      setValue(field, data.url, { shouldValidate: true, shouldDirty: true })
+      toast.success("Imagen subida; guarda los cambios para aplicarla")
+    } catch {
+      toast.error("No se pudo subir la imagen")
+    } finally {
+      setUploadingAsset(null)
+    }
   }
 
   return (

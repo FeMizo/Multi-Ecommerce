@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { put } from "@vercel/blob"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { buildStoreUploadPath } from "@/lib/blob-path"
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
@@ -31,15 +32,14 @@ export async function POST(req: NextRequest) {
 
   const membership = await db.storeMember.findFirst({
     where: { userId: session.user.id, role: { in: ["OWNER", "STAFF"] }, store: { slug: storeSlug } },
-    select: { storeId: true },
+    select: { store: { select: { slug: true } } },
   })
   if (!membership) return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
   if (!IMAGE_TYPES.has(file.type) || file.size === 0 || file.size > MAX_IMAGE_BYTES || !await hasImageSignature(file)) {
     return NextResponse.json({ message: "Usa una imagen JPG, PNG, WebP o GIF de hasta 5 MB" }, { status: 422 })
   }
 
-  const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, "-")
-  const blob = await put(`uploads/${membership.storeId}/${crypto.randomUUID()}-${filename}`, file, {
+  const blob = await put(buildStoreUploadPath(membership.store.slug, file.name), file, {
     access: "public",
     contentType: file.type,
   })
