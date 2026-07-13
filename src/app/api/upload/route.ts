@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
   const blob = await put(buildStoreUploadPath(membership.store.slug, file.name), file, {
     access: "public",
     contentType: file.type,
+    token: process.env.BLOB_READ_WRITE_TOKEN,
   })
 
   return NextResponse.json({ url: blob.url })
