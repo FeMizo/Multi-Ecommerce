@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 import { slugify } from "@/lib/utils"
+import { checkProductLimit } from "@/lib/plan-limits"
 
 const schema = z.object({
   name: z.string().min(2).max(120),
@@ -54,30 +56,48 @@ export async function POST(
   const storeId = membership.store.id
   const data = parsed.data
 
-  const slugBase = data.slug || slugify(data.name)
-  let finalSlug = slugBase
-  let i = 1
-  while (await db.product.findFirst({ where: { storeId, slug: finalSlug } })) {
-    finalSlug = `${slugBase}-${i++}`
+  try {
+    const product = await db.$transaction(async (tx) => {
+      const limit = await checkProductLimit(storeId, tx)
+      if (!limit.ok) {
+        throw new Error(`PLAN_LIMIT:${limit.count}:${limit.max}`)
+      }
+
+      const slugBase = data.slug || slugify(data.name)
+      let finalSlug = slugBase
+      let i = 1
+      while (await tx.product.findFirst({ where: { storeId, slug: finalSlug } })) {
+        finalSlug = `${slugBase}-${i++}`
+      }
+
+      return tx.product.create({
+        data: {
+          storeId,
+          name: data.name,
+          slug: finalSlug,
+          description: data.description ?? null,
+          price: data.price,
+          comparePrice: data.comparePrice ?? null,
+          stock: data.stock,
+          sku: data.sku ?? null,
+          categoryId: data.categoryId,
+          status: data.status,
+          featured: data.featured,
+          images: data.images,
+          tags: data.tags,
+        },
+      })
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+
+    return NextResponse.json({ id: product.id, slug: product.slug }, { status: 201 })
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("PLAN_LIMIT:")) {
+      const [, count, max] = error.message.split(":")
+      return NextResponse.json({ message: `Límite de productos alcanzado (${count}/${max})` }, { status: 409 })
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return NextResponse.json({ message: "Otra solicitud modificó el catálogo; inténtalo de nuevo" }, { status: 409 })
+    }
+    throw error
   }
-
-  const product = await db.product.create({
-    data: {
-      storeId,
-      name: data.name,
-      slug: finalSlug,
-      description: data.description ?? null,
-      price: data.price,
-      comparePrice: data.comparePrice ?? null,
-      stock: data.stock,
-      sku: data.sku ?? null,
-      categoryId: data.categoryId,
-      status: data.status,
-      featured: data.featured,
-      images: data.images,
-      tags: data.tags,
-    },
-  })
-
-  return NextResponse.json({ id: product.id, slug: product.slug }, { status: 201 })
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -41,6 +41,7 @@ type Props = {
   initialData: FormData & { slug: string }
   cities: City[]
   isOwner: boolean
+  stripeOnboarded: boolean
 }
 
 const FONT_OPTIONS = [
@@ -52,15 +53,17 @@ const FONT_OPTIONS = [
   { value: "Merriweather", label: "Merriweather" },
 ]
 
-export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: Props) {
+export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, stripeOnboarded }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [connectingStripe, setConnectingStripe] = useState(false)
+  const [uploadingAsset, setUploadingAsset] = useState<"logoUrl" | "bannerUrl" | null>(null)
 
   const {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -77,8 +80,8 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: P
     },
   })
 
-  const primaryColor = watch("primaryColor")
-  const isActive = watch("isActive")
+  const primaryColor = useWatch({ control, name: "primaryColor" })
+  const isActive = useWatch({ control, name: "isActive" })
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -103,6 +106,29 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: P
     }
     toast.success("Cambios guardados")
     router.refresh()
+  }
+
+  async function startStripeOnboarding() {
+    setConnectingStripe(true)
+    const res = await fetch(`/api/stores/${storeSlug}/stripe/onboarding`, { method: "POST" })
+    const data = await res.json()
+    setConnectingStripe(false)
+    if (!res.ok || !data.url) return toast.error(data.message ?? "No se pudo iniciar Stripe Connect")
+    window.location.assign(data.url)
+  }
+
+  async function uploadAsset(field: "logoUrl" | "bannerUrl", file?: File) {
+    if (!file) return
+    setUploadingAsset(field)
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("storeSlug", storeSlug)
+    const res = await fetch("/api/upload", { method: "POST", body: formData })
+    const data = await res.json()
+    setUploadingAsset(null)
+    if (!res.ok) return toast.error(data.message ?? "No se pudo subir la imagen")
+    setValue(field, data.url, { shouldValidate: true, shouldDirty: true })
+    toast.success("Imagen subida; guarda los cambios para aplicarla")
   }
 
   return (
@@ -167,6 +193,18 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: P
           </Card>
 
           <Card>
+            <CardHeader><CardTitle className="text-base">Cobros con Stripe</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {stripeOnboarded ? "Tu cuenta puede recibir pagos." : "Conecta tu cuenta para recibir pagos en MXN."}
+              </p>
+              <Button type="button" variant={stripeOnboarded ? "outline" : "default"} disabled={!isOwner || connectingStripe} onClick={startStripeOnboarding}>
+                {connectingStripe ? "Abriendo Stripe..." : stripeOnboarded ? "Actualizar Stripe Connect" : "Conectar Stripe"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle className="text-base">Apariencia</CardTitle>
             </CardHeader>
@@ -174,6 +212,8 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: P
               <div className="space-y-1">
                 <Label>URL del logo</Label>
                 <Input placeholder="https://ejemplo.com/logo.png" {...register("logoUrl")} />
+                <Input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingAsset !== null} onChange={(event) => uploadAsset("logoUrl", event.target.files?.[0])} />
+                {uploadingAsset === "logoUrl" && <p className="text-xs text-muted-foreground">Subiendo logo...</p>}
                 {errors.logoUrl && (
                   <p className="text-xs text-destructive">{errors.logoUrl.message}</p>
                 )}
@@ -182,6 +222,8 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner }: P
               <div className="space-y-1">
                 <Label>URL del banner</Label>
                 <Input placeholder="https://ejemplo.com/banner.jpg" {...register("bannerUrl")} />
+                <Input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingAsset !== null} onChange={(event) => uploadAsset("bannerUrl", event.target.files?.[0])} />
+                {uploadingAsset === "bannerUrl" && <p className="text-xs text-muted-foreground">Subiendo banner...</p>}
                 {errors.bannerUrl && (
                   <p className="text-xs text-destructive">{errors.bannerUrl.message}</p>
                 )}

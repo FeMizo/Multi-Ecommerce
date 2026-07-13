@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { StoreSettingsForm } from "@/components/dashboard/store-settings-form"
+import { SubscriptionManager } from "@/components/dashboard/subscription-manager"
 
 export default async function SettingsPage({
   params,
@@ -12,7 +13,7 @@ export default async function SettingsPage({
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  const [membership, cities] = await Promise.all([
+  const [membership, cities, plans] = await Promise.all([
     db.storeMember.findFirst({
       where: {
         userId: session.user.id,
@@ -33,6 +34,16 @@ export default async function SettingsPage({
             cityId: true,
             customDomain: true,
             isActive: true,
+            stripeOnboarded: true,
+            subscription: {
+              select: {
+                planId: true,
+                status: true,
+                currentPeriodEnd: true,
+                cancelAtPeriodEnd: true,
+                stripeSubscriptionId: true,
+              },
+            },
           },
         },
       },
@@ -42,6 +53,11 @@ export default async function SettingsPage({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    db.plan.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, priceMonthly: true, maxProducts: true, maxOrdersMonth: true, stripePriceId: true },
+      orderBy: { priceMonthly: "asc" },
+    }),
   ])
 
   if (!membership) redirect("/dashboard")
@@ -49,10 +65,12 @@ export default async function SettingsPage({
   const store = membership.store
 
   return (
-    <StoreSettingsForm
+    <div className="space-y-6">
+      <StoreSettingsForm
       storeSlug={storeSlug}
       cities={cities}
       isOwner={membership.role === "OWNER"}
+      stripeOnboarded={store.stripeOnboarded}
       initialData={{
         slug: store.slug,
         name: store.name,
@@ -65,6 +83,16 @@ export default async function SettingsPage({
         customDomain: store.customDomain ?? undefined,
         isActive: store.isActive,
       }}
-    />
+      />
+      <SubscriptionManager
+        storeSlug={storeSlug}
+        isOwner={membership.role === "OWNER"}
+        plans={plans.map(({ stripePriceId, ...plan }) => ({ ...plan, availableInStripe: Boolean(stripePriceId) }))}
+        subscription={store.subscription ? {
+          ...store.subscription,
+          currentPeriodEnd: store.subscription.currentPeriodEnd?.toISOString() ?? null,
+        } : null}
+      />
+    </div>
   )
 }
