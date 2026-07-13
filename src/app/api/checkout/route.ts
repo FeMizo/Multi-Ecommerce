@@ -5,7 +5,14 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { stripe } from "@/lib/stripe"
 import { checkOrderLimit, getEffectivePlan } from "@/lib/plan-limits"
-import { releaseOrderReservation } from "@/lib/payment-lifecycle"
+import {
+  releaseExpiredOrderReservations,
+  releaseOrderReservation,
+  RESERVATION_TTL_MS,
+  STRIPE_CHECKOUT_TTL_SECONDS,
+} from "@/lib/payment-lifecycle"
+import { fromMinorUnits, toMinorUnits } from "@/lib/money"
+import { checkoutRecoveryAction } from "@/lib/checkout-recovery"
 
 const checkoutSchema = z.object({
   checkoutToken: z.string().uuid(),
@@ -24,9 +31,16 @@ export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 
+  try {
+    await releaseExpiredOrderReservations(5)
+  } catch (error) {
+    console.error("No se pudieron liberar reservaciones vencidas", error)
+  }
+
   const parsed = checkoutSchema.safeParse(await req.json())
   if (!parsed.success) return NextResponse.json({ message: "Carrito o dirección inválidos" }, { status: 422 })
   const { checkoutToken, items, storeId, shippingAddress } = parsed.data
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   if (new Set(items.map((item) => item.productId)).size !== items.length) {
     return NextResponse.json({ message: "No repitas productos en el carrito" }, { status: 422 })
   }
@@ -63,12 +77,14 @@ export async function POST(req: Request) {
           if (changed.count !== 1) throw new Error("STOCK_UNAVAILABLE")
         }
 
-        const subtotal = items.reduce((sum, item) => {
+        const subtotalCents = items.reduce((sum, item) => {
           const product = products.find((candidate) => candidate.id === item.productId)!
-          return sum + product.price * item.quantity
+          return sum + toMinorUnits(product.price) * item.quantity
         }, 0)
         const commissionRate = plan?.commissionRate ?? 0.05
-        const platformFee = Math.round(subtotal * commissionRate * 100) / 100
+        const platformFeeCents = Math.round(subtotalCents * commissionRate)
+        const subtotal = fromMinorUnits(subtotalCents)
+        const platformFee = fromMinorUnits(platformFeeCents)
 
         return tx.order.create({
           data: {
@@ -76,6 +92,7 @@ export async function POST(req: Request) {
             storeId,
             customerId: session.user.id,
             status: "PENDING",
+            reservationExpiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
             subtotal,
             platformFee,
             total: subtotal,
@@ -84,12 +101,13 @@ export async function POST(req: Request) {
             items: {
               create: items.map((item) => {
                 const product = products.find((candidate) => candidate.id === item.productId)!
+                const unitPrice = fromMinorUnits(toMinorUnits(product.price))
                 return {
                   productId: product.id,
                   quantity: item.quantity,
-                  unitPrice: product.price,
-                  total: product.price * item.quantity,
-                  productSnapshot: { name: product.name, price: product.price, images: product.images, sku: product.sku },
+                  unitPrice,
+                  total: fromMinorUnits(toMinorUnits(unitPrice) * item.quantity),
+                  productSnapshot: { name: product.name, price: unitPrice, images: product.images, sku: product.sku },
                 }
               }),
             },
@@ -123,6 +141,9 @@ export async function POST(req: Request) {
     if (existingSession.url && existingSession.status === "open") {
       return NextResponse.json({ url: existingSession.url })
     }
+    if (existingSession.status === "complete") {
+      return NextResponse.json({ url: `${origin}/checkout/success?session_id=${existingSession.id}` })
+    }
     await releaseOrderReservation(order.id)
     return NextResponse.json({ message: "La sesión de pago expiró; inicia un checkout nuevo" }, { status: 409 })
   }
@@ -144,33 +165,68 @@ export async function POST(req: Request) {
       price_data: {
         currency: "mxn" as const,
         product_data: { name, images: images.slice(0, 1) },
-        unit_amount: Math.round(item.unitPrice * 100),
+        unit_amount: toMinorUnits(item.unitPrice),
       },
       quantity: item.quantity,
     }
   })
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
-  try {
-    const checkoutSession = await stripe.checkout.sessions.create({
+  const checkoutParams = {
       mode: "payment",
       client_reference_id: order.id,
       line_items: lineItems,
-      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      expires_at: Math.floor(Date.now() / 1000) + STRIPE_CHECKOUT_TTL_SECONDS,
       payment_intent_data: {
-        application_fee_amount: Math.round(order.platformFee * 100),
+        application_fee_amount: toMinorUnits(order.platformFee),
         transfer_data: { destination: store.stripeAccountId },
         metadata: { orderId: order.id, storeId },
       },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
       metadata: { orderId: order.id, storeId },
-    }, { idempotencyKey: `checkout:${session.user.id}:${checkoutToken}` })
+    } as const
+  const idempotencyKey = `checkout:${session.user.id}:${checkoutToken}`
 
-    await db.order.update({ where: { id: order.id }, data: { stripeSessionId: checkoutSession.id } })
-    return NextResponse.json({ url: checkoutSession.url })
-  } catch (error) {
-    await releaseOrderReservation(order.id)
-    throw error
+  let checkoutSession
+  try {
+    checkoutSession = await stripe.checkout.sessions.create(checkoutParams, { idempotencyKey })
+  } catch (firstError) {
+    try {
+      checkoutSession = await stripe.checkout.sessions.create(checkoutParams, { idempotencyKey })
+    } catch {
+      // A network failure can happen after Stripe accepted the request. Keep the
+      // reservation until its safety window expires instead of risking oversell.
+      throw firstError
+    }
   }
+
+  try {
+    await db.order.update({ where: { id: order.id }, data: { stripeSessionId: checkoutSession.id } })
+  } catch (persistError) {
+    const recovered = await stripe.checkout.sessions.retrieve(checkoutSession.id)
+    try {
+      await db.order.update({ where: { id: order.id }, data: { stripeSessionId: recovered.id } })
+    } catch {
+      const action = checkoutRecoveryAction(recovered.status)
+      if (action === "expire_then_release") {
+        await stripe.checkout.sessions.expire(recovered.id)
+        await releaseOrderReservation(order.id)
+      } else if (action === "release") {
+        await releaseOrderReservation(order.id)
+      }
+      // A completed session is intentionally left reserved for webhook fulfillment.
+      throw persistError
+    }
+    checkoutSession = recovered
+  }
+
+  if (!checkoutSession.url) {
+    if (checkoutSession.status === "open") {
+      await stripe.checkout.sessions.expire(checkoutSession.id)
+    }
+    await releaseOrderReservation(order.id)
+    return NextResponse.json({ message: "Stripe no devolvió una sesión de pago utilizable" }, { status: 502 })
+  }
+
+  return NextResponse.json({ url: checkoutSession.url })
 }

@@ -7,9 +7,13 @@ export function getStripe(): Stripe {
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error("STRIPE_SECRET_KEY is not set")
     }
+    if (process.env.NODE_ENV === "production" && !process.env.STRIPE_SECRET_KEY.startsWith("sk_live_")) {
+      throw new Error("Producción requiere una STRIPE_SECRET_KEY live")
+    }
     stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2026-03-25.dahlia",
       typescript: true,
+      maxNetworkRetries: 2,
     })
   }
   return stripeInstance

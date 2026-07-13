@@ -43,7 +43,17 @@ async function main() {
   // ─── Plans ────────────────────────────────────────────────────────────────
   await db.plan.upsert({
     where: { slug: "free" },
-    update: {},
+    update: {
+      name: "Free",
+      priceMonthly: 0,
+      priceYearly: 0,
+      maxProducts: 10,
+      maxOrdersMonth: 20,
+      commissionRate: 0.05,
+      features: { analytics: false, customDomain: false, staffInvites: false, prioritySupport: false },
+      stripePriceId: null,
+      isActive: true,
+    },
     create: {
       name: "Free",
       slug: "free",
@@ -52,37 +62,85 @@ async function main() {
       maxProducts: 10,
       maxOrdersMonth: 20,
       commissionRate: 0.05,
-      features: { analytics: false, customDomain: false, staffInvites: false },
+      features: { analytics: false, customDomain: false, staffInvites: false, prioritySupport: false },
     },
   })
 
   await db.plan.upsert({
     where: { slug: "starter" },
-    update: {},
+    update: {
+      name: "Starter",
+      priceMonthly: 50,
+      priceYearly: 500,
+      maxProducts: 50,
+      maxOrdersMonth: 100,
+      commissionRate: 0.03,
+      features: { analytics: true, customDomain: false, staffInvites: false, prioritySupport: false },
+      stripePriceId: "price_1Tsr4UIecXF2Xs1S0YmYEALi",
+      isActive: true,
+    },
     create: {
       name: "Starter",
       slug: "starter",
-      priceMonthly: 15,
-      priceYearly: 144,
-      maxProducts: 100,
-      maxOrdersMonth: null,
-      commissionRate: 0.02,
-      features: { analytics: true, customDomain: false, staffInvites: false },
+      priceMonthly: 50,
+      priceYearly: 500,
+      maxProducts: 50,
+      maxOrdersMonth: 100,
+      commissionRate: 0.03,
+      features: { analytics: true, customDomain: false, staffInvites: false, prioritySupport: false },
+      stripePriceId: "price_1Tsr4UIecXF2Xs1S0YmYEALi",
     },
   })
 
   await db.plan.upsert({
     where: { slug: "pro" },
-    update: {},
+    update: {
+      name: "Pro",
+      priceMonthly: 100,
+      priceYearly: 1000,
+      maxProducts: 200,
+      maxOrdersMonth: 500,
+      commissionRate: 0.02,
+      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: false },
+      stripePriceId: "price_1Tsr4VIecXF2Xs1SDwRMFQIt",
+      isActive: true,
+    },
     create: {
       name: "Pro",
       slug: "pro",
-      priceMonthly: 39,
-      priceYearly: 374,
+      priceMonthly: 100,
+      priceYearly: 1000,
+      maxProducts: 200,
+      maxOrdersMonth: 500,
+      commissionRate: 0.02,
+      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: false },
+      stripePriceId: "price_1Tsr4VIecXF2Xs1SDwRMFQIt",
+    },
+  })
+
+  await db.plan.upsert({
+    where: { slug: "business" },
+    update: {
+      name: "Business",
+      priceMonthly: 400,
+      priceYearly: 4000,
       maxProducts: null,
       maxOrdersMonth: null,
       commissionRate: 0,
-      features: { analytics: true, customDomain: true, staffInvites: true },
+      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: true },
+      stripePriceId: "price_1Tsr4WIecXF2Xs1S67pkNhdz",
+      isActive: true,
+    },
+    create: {
+      name: "Business",
+      slug: "business",
+      priceMonthly: 400,
+      priceYearly: 4000,
+      maxProducts: null,
+      maxOrdersMonth: null,
+      commissionRate: 0,
+      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: true },
+      stripePriceId: "price_1Tsr4WIecXF2Xs1S67pkNhdz",
     },
   })
 

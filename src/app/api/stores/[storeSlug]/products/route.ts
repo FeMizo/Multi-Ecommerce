@@ -5,6 +5,7 @@ import { z } from "zod"
 import { Prisma } from "@prisma/client"
 import { slugify } from "@/lib/utils"
 import { checkProductLimit } from "@/lib/plan-limits"
+import { positiveMxnSchema } from "@/lib/money"
 
 const schema = z.object({
   name: z.string().min(2).max(120),
@@ -14,8 +15,8 @@ const schema = z.object({
     .max(80)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   description: z.string().max(2000).optional().nullable(),
-  price: z.number().positive(),
-  comparePrice: z.number().positive().optional().nullable(),
+  price: positiveMxnSchema,
+  comparePrice: positiveMxnSchema.optional().nullable(),
   stock: z.number().int().min(0).default(0),
   sku: z.string().max(60).optional().nullable(),
   categoryId: z.string().min(1),

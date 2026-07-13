@@ -13,12 +13,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
+import { nonnegativeMxnSchema } from "@/lib/money"
 
 const schema = z.object({
   name: z.string().min(2, "Requerido"),
   slug: z.string().min(2, "Requerido").regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
-  priceMonthly: z.number().min(0),
-  priceYearly: z.number().min(0),
+  priceMonthly: nonnegativeMxnSchema,
+  priceYearly: nonnegativeMxnSchema,
   commissionRate: z.number().min(0).max(1),
   maxProducts: z.number().int().positive().optional(),
   maxOrdersMonth: z.number().int().positive().optional(),

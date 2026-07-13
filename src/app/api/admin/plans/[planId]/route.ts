@@ -3,11 +3,13 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
+import { nonnegativeMxnSchema } from "@/lib/money"
+import { isMatchingMonthlyMxnPrice } from "@/lib/stripe-billing"
 
 const schema = z.object({
   name: z.string().min(2).max(60).optional(),
-  priceMonthly: z.number().min(0).optional(),
-  priceYearly: z.number().min(0).optional(),
+  priceMonthly: nonnegativeMxnSchema.optional(),
+  priceYearly: nonnegativeMxnSchema.optional(),
   commissionRate: z.number().min(0).max(1).optional(),
   maxProducts: z.number().int().positive().nullable().optional(),
   maxOrdersMonth: z.number().int().positive().nullable().optional(),
@@ -34,6 +36,16 @@ export async function PATCH(
   if (!parsed.success) return NextResponse.json({ message: "Datos inválidos" }, { status: 400 })
 
   const { stripePriceId, features, ...rest } = parsed.data
+  const current = await db.plan.findUniqueOrThrow({ where: { id: planId } })
+  const nextMonthly = rest.priceMonthly ?? current.priceMonthly
+  const nextPriceId = stripePriceId === undefined ? current.stripePriceId : stripePriceId || null
+  const nextActive = rest.isActive ?? current.isActive
+  if (nextActive && nextMonthly > 0 && !nextPriceId) {
+    return NextResponse.json({ message: "Un plan pagado activo requiere Stripe Price ID" }, { status: 409 })
+  }
+  if (nextPriceId && !await isMatchingMonthlyMxnPrice(nextPriceId, nextMonthly)) {
+    return NextResponse.json({ message: "El Price debe ser mensual, recurrente, MXN y coincidir con el importe" }, { status: 409 })
+  }
   const plan = await db.plan.update({
     where: { id: planId },
     data: {

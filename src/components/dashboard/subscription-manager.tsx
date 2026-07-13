@@ -42,7 +42,9 @@ export function SubscriptionManager({
     const res = await fetch(`/api/stores/${storeSlug}/subscription`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, planId }),
+      body: JSON.stringify(action === "checkout"
+        ? { action, planId, checkoutToken: crypto.randomUUID() }
+        : { action }),
     })
     const data = await res.json()
     setLoading(null)
@@ -69,9 +71,12 @@ export function SubscriptionManager({
           </Button>
         )}
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-3">
+      <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
-          const current = subscription?.planId === plan.id && ["ACTIVE", "TRIALING"].includes(subscription.status)
+          const hasPaidEntitlements = subscription && ["ACTIVE", "TRIALING"].includes(subscription.status)
+          const current = hasPaidEntitlements
+            ? subscription.planId === plan.id
+            : plan.priceMonthly === 0
           return (
             <div key={plan.id} className={`rounded-lg border p-4 ${current ? "border-primary" : ""}`}>
               <div className="flex items-center justify-between gap-2">

@@ -1,6 +1,6 @@
 # AionSite (mercado-local)
 
-Marketplace multi-tenant para México (MXN). Vendedores crean tiendas, publican productos y reciben pagos vía Stripe Connect. La plataforma cobra comisión según el plan (Free / Starter / Pro).
+Marketplace multi-tenant para México (MXN). Vendedores crean tiendas, publican productos y reciben pagos vía Stripe Connect. La plataforma cobra comisión según el plan (Free / Starter / Pro / Business).
 
 ## Stack
 
@@ -15,7 +15,7 @@ Marketplace multi-tenant para México (MXN). Vendedores crean tiendas, publican 
 
 - Node.js 20+
 - PostgreSQL 14+ (local, Neon o Vercel Postgres)
-- Cuenta Stripe (modo test para desarrollo)
+- Cuenta Stripe con claves test para desarrollo y claves live obligatorias en producción
 - Cuenta Resend y Vercel Blob (opcional en local)
 
 ## Setup local
@@ -62,7 +62,7 @@ stripe listen --forward-to localhost:1500/api/webhooks/stripe
 # Copia el whsec_... a STRIPE_WEBHOOK_SECRET en .env
 ```
 
-Eventos requeridos: `checkout.session.completed`, `account.updated`, `customer.subscription.updated`, `customer.subscription.deleted`, `charge.refunded`.
+Eventos requeridos: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `account.updated`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `charge.refunded` y `refund.updated`.
 
 ## Flujos de prueba manual
 
@@ -116,6 +116,8 @@ Eventos requeridos: `checkout.session.completed`, `account.updated`, `customer.s
 4. Build: `prisma generate && prisma migrate deploy && next build --webpack`
 5. Webhook Stripe apuntando a `https://tudominio.com/api/webhooks/stripe`
 6. Google OAuth redirect: `https://tudominio.com/api/auth/callback/google`
+7. Usar exclusivamente `sk_live_...` y `pk_live_...`; el runtime rechaza claves test bajo `NODE_ENV=production`
+8. Programar `GET /api/internal/checkout-reservations` cada 10 minutos con `Authorization: Bearer $CRON_SECRET`
 
 ## Limitaciones conocidas
 

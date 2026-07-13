@@ -143,7 +143,7 @@ model Plan {
   maxOrdersMonth Int?
   commissionRate Float    @default(0.05)
   features       Json     @default("{}")
-  stripePriceId  String?
+  stripePriceId  String?  @unique
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
 
@@ -158,7 +158,7 @@ model StoreSubscription {
   store                Store              @relation(fields: [storeId], references: [id])
   planId               String
   plan                 Plan               @relation(fields: [planId], references: [id])
-  stripeSubscriptionId String?
+  stripeSubscriptionId String?            @unique
   status               SubscriptionStatus @default(ACTIVE)
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean            @default(false)
@@ -255,6 +255,7 @@ model Order {
   checkoutToken         String?     @unique
   stripePaymentIntentId String?
   stripeSessionId       String?     @unique
+  reservationExpiresAt  DateTime?
   paidAt                DateTime?
   deletedAt             DateTime?
   createdAt             DateTime    @default(now())
@@ -305,12 +306,13 @@ model Payment {
 }
 
 model StripeWebhookEvent {
-  id            String   @id @default(cuid())
-  stripeEventId String   @unique
-  type          String
-  processedAt   DateTime?
-  error         String?  @db.Text
-  createdAt     DateTime @default(now())
+  id                  String    @id @default(cuid())
+  stripeEventId       String    @unique
+  type                String
+  processedAt         DateTime?
+  processingStartedAt DateTime?
+  error               String?   @db.Text
+  createdAt           DateTime  @default(now())
 
   @@index([type])
   @@map("stripe_webhook_events")
