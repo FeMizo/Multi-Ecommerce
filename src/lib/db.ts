@@ -1,17 +1,11 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
-import { Pool } from "pg"
+import { createPgPool } from "@/lib/pg-pool"
 
 function createPrismaClient() {
-  // pg v8 treats sslmode=require as verify-full, overriding Pool ssl options.
-  // Remove sslmode from URL so Pool's ssl config (rejectUnauthorized: false) takes effect.
   const rawUrl = new URL(process.env.MULTI_POSTGRES_PRISMA_URL!)
   rawUrl.searchParams.delete("sslmode")
-  const pool = new Pool({
-    connectionString: rawUrl.toString(),
-    ssl: { rejectUnauthorized: false },
-    max: 1,
-  })
+  const pool = createPgPool(rawUrl.toString(), 1)
   const adapter = new PrismaPg(pool)
   return new PrismaClient({
     adapter,
@@ -25,9 +19,6 @@ export const db = globalForPrisma.prisma || createPrismaClient()
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db
 
-// Tenant-scoped client — todas las queries a modelos con storeId
-// quedan automáticamente filtradas. Usar en lugar de `db` dentro de
-// server actions y route handlers que operen en contexto de una tienda.
 const TENANT_MODELS = ["Product", "Order", "OrderItem", "Payment", "CartItem", "StoreMember"]
 
 export function dbForStore(storeId: string) {

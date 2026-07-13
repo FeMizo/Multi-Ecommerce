@@ -20,7 +20,7 @@ async function main() {
   console.log("Seeding database...")
 
   // ─── Cities ───────────────────────────────────────────────────────────────
-  const cities = await Promise.all([
+  await Promise.all([
     db.city.upsert({ where: { slug: "cdmx" }, update: {}, create: { name: "Ciudad de México", slug: "cdmx", state: "CDMX", country: "MX" } }),
     db.city.upsert({ where: { slug: "guadalajara" }, update: {}, create: { name: "Guadalajara", slug: "guadalajara", state: "Jalisco", country: "MX" } }),
     db.city.upsert({ where: { slug: "monterrey" }, update: {}, create: { name: "Monterrey", slug: "monterrey", state: "Nuevo León", country: "MX" } }),
@@ -29,7 +29,7 @@ async function main() {
   ])
 
   // ─── Categories ───────────────────────────────────────────────────────────
-  const categories = await Promise.all([
+  await Promise.all([
     db.category.upsert({ where: { slug: "alimentos" }, update: {}, create: { name: "Alimentos", slug: "alimentos", icon: "🍎" } }),
     db.category.upsert({ where: { slug: "ropa" }, update: {}, create: { name: "Ropa y Moda", slug: "ropa", icon: "👗" } }),
     db.category.upsert({ where: { slug: "electronica" }, update: {}, create: { name: "Electrónica", slug: "electronica", icon: "📱" } }),
@@ -41,7 +41,7 @@ async function main() {
   ])
 
   // ─── Plans ────────────────────────────────────────────────────────────────
-  const freePlan = await db.plan.upsert({
+  await db.plan.upsert({
     where: { slug: "free" },
     update: {},
     create: {

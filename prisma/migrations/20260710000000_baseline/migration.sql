@@ -1,0 +1,71 @@
+-- Baseline generated from the existing production schema. This migration is
+-- marked as applied on the existing database; it provisions fresh databases.
+CREATE SCHEMA IF NOT EXISTS "public";
+
+CREATE TYPE "public"."GlobalRole" AS ENUM ('USER', 'PLATFORM_ADMIN');
+CREATE TYPE "public"."OrderStatus" AS ENUM ('PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED');
+CREATE TYPE "public"."PaymentStatus" AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED', 'REFUNDED');
+CREATE TYPE "public"."ProductStatus" AS ENUM ('DRAFT', 'ACTIVE', 'PAUSED', 'DELETED');
+CREATE TYPE "public"."StoreRole" AS ENUM ('OWNER', 'STAFF', 'CUSTOMER');
+CREATE TYPE "public"."SubscriptionStatus" AS ENUM ('TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'UNPAID');
+
+CREATE TABLE "public"."users" ("id" TEXT NOT NULL, "name" TEXT, "email" TEXT NOT NULL, "emailVerified" TIMESTAMP(3), "image" TEXT, "password" TEXT, "globalRole" "public"."GlobalRole" NOT NULL DEFAULT 'USER', "phone" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "users_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."accounts" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "type" TEXT NOT NULL, "provider" TEXT NOT NULL, "providerAccountId" TEXT NOT NULL, "refresh_token" TEXT, "access_token" TEXT, "expires_at" INTEGER, "token_type" TEXT, "scope" TEXT, "id_token" TEXT, "session_state" TEXT, CONSTRAINT "accounts_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."sessions" ("id" TEXT NOT NULL, "sessionToken" TEXT NOT NULL, "userId" TEXT NOT NULL, "expires" TIMESTAMP(3) NOT NULL, CONSTRAINT "sessions_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."verification_tokens" ("identifier" TEXT NOT NULL, "token" TEXT NOT NULL, "expires" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "public"."cities" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "state" TEXT NOT NULL, "country" TEXT NOT NULL DEFAULT 'PE', "active" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "cities_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."stores" ("id" TEXT NOT NULL, "slug" TEXT NOT NULL, "name" TEXT NOT NULL, "description" TEXT, "logoUrl" TEXT, "bannerUrl" TEXT, "primaryColor" TEXT DEFAULT '#000000', "fontFamily" TEXT DEFAULT 'Inter', "cityId" TEXT, "stripeAccountId" TEXT, "stripeOnboarded" BOOLEAN NOT NULL DEFAULT false, "customDomain" TEXT, "isActive" BOOLEAN NOT NULL DEFAULT true, "isVerified" BOOLEAN NOT NULL DEFAULT false, "deletedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "stores_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."store_members" ("id" TEXT NOT NULL, "storeId" TEXT NOT NULL, "userId" TEXT NOT NULL, "role" "public"."StoreRole" NOT NULL DEFAULT 'CUSTOMER', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "store_members_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."plans" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "priceMonthly" DOUBLE PRECISION NOT NULL DEFAULT 0, "priceYearly" DOUBLE PRECISION NOT NULL DEFAULT 0, "maxProducts" INTEGER, "maxOrdersMonth" INTEGER, "commissionRate" DOUBLE PRECISION NOT NULL DEFAULT 0.05, "features" JSONB NOT NULL DEFAULT '{}', "stripePriceId" TEXT, "isActive" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "plans_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."store_subscriptions" ("id" TEXT NOT NULL, "storeId" TEXT NOT NULL, "planId" TEXT NOT NULL, "stripeSubscriptionId" TEXT, "status" "public"."SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE', "currentPeriodEnd" TIMESTAMP(3), "cancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "store_subscriptions_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."categories" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "icon" TEXT, "image" TEXT, "parentId" TEXT, "active" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "categories_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."products" ("id" TEXT NOT NULL, "storeId" TEXT NOT NULL, "categoryId" TEXT NOT NULL, "name" TEXT NOT NULL, "slug" TEXT NOT NULL, "description" TEXT, "price" DOUBLE PRECISION NOT NULL, "comparePrice" DOUBLE PRECISION, "stock" INTEGER NOT NULL DEFAULT 0, "sku" TEXT, "images" TEXT[], "tags" TEXT[], "status" "public"."ProductStatus" NOT NULL DEFAULT 'DRAFT', "featured" BOOLEAN NOT NULL DEFAULT false, "views" INTEGER NOT NULL DEFAULT 0, "deletedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "products_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."cart_items" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "storeId" TEXT NOT NULL, "productId" TEXT NOT NULL, "quantity" INTEGER NOT NULL DEFAULT 1, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "cart_items_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."orders" ("id" TEXT NOT NULL, "storeId" TEXT NOT NULL, "customerId" TEXT NOT NULL, "status" "public"."OrderStatus" NOT NULL DEFAULT 'PENDING', "subtotal" DOUBLE PRECISION NOT NULL, "platformFee" DOUBLE PRECISION NOT NULL DEFAULT 0, "total" DOUBLE PRECISION NOT NULL, "shippingAddress" JSONB NOT NULL, "notes" TEXT, "stripePaymentIntentId" TEXT, "stripeSessionId" TEXT, "paidAt" TIMESTAMP(3), "deletedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "orders_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."order_items" ("id" TEXT NOT NULL, "orderId" TEXT NOT NULL, "productId" TEXT NOT NULL, "quantity" INTEGER NOT NULL, "unitPrice" DOUBLE PRECISION NOT NULL, "total" DOUBLE PRECISION NOT NULL, "productSnapshot" JSONB NOT NULL, CONSTRAINT "order_items_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."payments" ("id" TEXT NOT NULL, "storeId" TEXT NOT NULL, "orderId" TEXT NOT NULL, "stripePaymentIntentId" TEXT, "amount" DOUBLE PRECISION NOT NULL, "currency" TEXT NOT NULL DEFAULT 'pen', "platformFee" DOUBLE PRECISION NOT NULL DEFAULT 0, "status" "public"."PaymentStatus" NOT NULL DEFAULT 'PENDING', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "payments_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "public"."reviews" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "productId" TEXT NOT NULL, "rating" INTEGER NOT NULL, "comment" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "reviews_pkey" PRIMARY KEY ("id"));
+
+CREATE UNIQUE INDEX "users_email_key" ON "public"."users"("email");
+CREATE UNIQUE INDEX "accounts_provider_providerAccountId_key" ON "public"."accounts"("provider", "providerAccountId");
+CREATE UNIQUE INDEX "sessions_sessionToken_key" ON "public"."sessions"("sessionToken");
+CREATE UNIQUE INDEX "verification_tokens_identifier_token_key" ON "public"."verification_tokens"("identifier", "token");
+CREATE UNIQUE INDEX "cities_slug_key" ON "public"."cities"("slug");
+CREATE UNIQUE INDEX "stores_slug_key" ON "public"."stores"("slug");
+CREATE UNIQUE INDEX "stores_customDomain_key" ON "public"."stores"("customDomain");
+CREATE UNIQUE INDEX "plans_slug_key" ON "public"."plans"("slug");
+CREATE UNIQUE INDEX "store_subscriptions_storeId_key" ON "public"."store_subscriptions"("storeId");
+CREATE UNIQUE INDEX "categories_slug_key" ON "public"."categories"("slug");
+CREATE UNIQUE INDEX "products_storeId_slug_key" ON "public"."products"("storeId", "slug");
+CREATE INDEX "products_storeId_idx" ON "public"."products"("storeId");
+CREATE INDEX "products_storeId_status_idx" ON "public"."products"("storeId", "status");
+CREATE UNIQUE INDEX "cart_items_userId_storeId_productId_key" ON "public"."cart_items"("userId", "storeId", "productId");
+CREATE INDEX "orders_storeId_idx" ON "public"."orders"("storeId");
+CREATE INDEX "orders_storeId_customerId_idx" ON "public"."orders"("storeId", "customerId");
+CREATE INDEX "orders_storeId_status_idx" ON "public"."orders"("storeId", "status");
+CREATE UNIQUE INDEX "payments_orderId_key" ON "public"."payments"("orderId");
+CREATE INDEX "payments_storeId_idx" ON "public"."payments"("storeId");
+CREATE UNIQUE INDEX "reviews_userId_productId_key" ON "public"."reviews"("userId", "productId");
+CREATE UNIQUE INDEX "store_members_storeId_userId_key" ON "public"."store_members"("storeId", "userId");
+CREATE INDEX "store_members_userId_idx" ON "public"."store_members"("userId");
+
+ALTER TABLE "public"."accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."stores" ADD CONSTRAINT "stores_cityId_fkey" FOREIGN KEY ("cityId") REFERENCES "public"."cities"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."store_subscriptions" ADD CONSTRAINT "store_subscriptions_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "public"."stores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."store_subscriptions" ADD CONSTRAINT "store_subscriptions_planId_fkey" FOREIGN KEY ("planId") REFERENCES "public"."plans"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."categories" ADD CONSTRAINT "categories_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "public"."categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."products" ADD CONSTRAINT "products_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "public"."stores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."products" ADD CONSTRAINT "products_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "public"."categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."cart_items" ADD CONSTRAINT "cart_items_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."cart_items" ADD CONSTRAINT "cart_items_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "public"."stores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."cart_items" ADD CONSTRAINT "cart_items_productId_fkey" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."orders" ADD CONSTRAINT "orders_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "public"."stores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."orders" ADD CONSTRAINT "orders_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "public"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."order_items" ADD CONSTRAINT "order_items_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "public"."orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."order_items" ADD CONSTRAINT "order_items_productId_fkey" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."payments" ADD CONSTRAINT "payments_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "public"."orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."reviews" ADD CONSTRAINT "reviews_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."reviews" ADD CONSTRAINT "reviews_productId_fkey" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."store_members" ADD CONSTRAINT "store_members_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "public"."stores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."store_members" ADD CONSTRAINT "store_members_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

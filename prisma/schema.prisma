@@ -76,7 +76,7 @@ model City {
   name      String
   slug      String   @unique
   state     String
-  country   String   @default("PE")
+  country   String   @default("MX")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -99,6 +99,7 @@ model Store {
   cityId           String?
   city             City?     @relation(fields: [cityId], references: [id])
   stripeAccountId  String?
+  stripeCustomerId String?
   stripeOnboarded  Boolean   @default(false)
   customDomain     String?   @unique
   isActive         Boolean   @default(true)
@@ -251,8 +252,9 @@ model Order {
   total                 Float
   shippingAddress       Json
   notes                 String?     @db.Text
+  checkoutToken         String?     @unique
   stripePaymentIntentId String?
-  stripeSessionId       String?
+  stripeSessionId       String?     @unique
   paidAt                DateTime?
   deletedAt             DateTime?
   createdAt             DateTime    @default(now())
@@ -288,16 +290,30 @@ model Payment {
   storeId               String
   orderId               String        @unique
   order                 Order         @relation(fields: [orderId], references: [id])
-  stripePaymentIntentId String?
+  stripePaymentIntentId String?       @unique
+  stripeRefundId        String?       @unique
   amount                Float
-  currency              String        @default("pen")
+  currency              String        @default("mxn")
   platformFee           Float         @default(0)
   status                PaymentStatus @default(PENDING)
+  refundedAt            DateTime?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
   @@index([storeId])
   @@map("payments")
+}
+
+model StripeWebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  processedAt   DateTime?
+  error         String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([type])
+  @@map("stripe_webhook_events")
 }
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────
