@@ -150,7 +150,7 @@ export default async function HomePage() {
               { value: "500+", label: "Tiendas activas", icon: Package },
               { value: "10K+", label: "Productos unicos", icon: Heart },
               { value: "50+", label: "Ciudades", icon: MapPin },
-            ].map((stat, i) => (
+            ].map((stat) => (
               <div key={stat.label} className="relative group">
                 <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl group-hover:bg-primary/10 transition-colors" />
                 <div className="relative p-6 md:p-8 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 text-center hover-lift">
@@ -199,7 +199,7 @@ export default async function HomePage() {
                 color: "from-primary/20 to-primary/5",
                 iconColor: "text-primary"
               },
-            ].map(({ icon: Icon, title, desc, color, iconColor }, i) => (
+            ].map(({ icon: Icon, title, desc, color, iconColor }) => (
               <div key={title} className="group relative hover-lift rounded-3xl">
                 <div className={`absolute inset-0 bg-gradient-to-br ${color} rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative p-8 md:p-10 rounded-3xl bg-background border border-border/50 group-hover:border-primary/20 transition-all duration-300 h-full">

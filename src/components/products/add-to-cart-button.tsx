@@ -4,7 +4,6 @@ import { useState } from "react"
 import { ShoppingCart, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCartStore } from "@/stores/cart"
-import { toast } from "sonner"
 
 type Props = {
   product: {

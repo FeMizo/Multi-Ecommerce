@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { MapPin, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {

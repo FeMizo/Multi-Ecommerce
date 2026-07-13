@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, CheckCircle2, Package, Clock, Star, ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react"
+import { MapPin, CheckCircle2, Package, Clock, ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { ProductCard } from "@/components/products/product-card"
 
 type Params = { storeSlug: string }

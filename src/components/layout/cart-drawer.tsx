@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Minus, Plus, ShoppingBag, X, ArrowRight, Sparkles } from "lucide-react"
+import { Minus, Plus, ShoppingBag, X, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,

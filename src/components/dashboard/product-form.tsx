@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -66,6 +66,8 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   const [loading, setLoading] = useState(false)
   const [images, setImages] = useState<string[]>(initialData?.images ?? [])
   const [imageInput, setImageInput] = useState("")
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? [])
   const [tagInput, setTagInput] = useState("")
 
@@ -73,7 +75,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -115,6 +117,25 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     if (!tag || tags.includes(tag) || tags.length >= 10) return
     setTags((prev) => [...prev, tag])
     setTagInput("")
+  }
+
+  async function handleUpload(file: File) {
+    if (!file || images.length >= 8) return
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("storeSlug", storeSlug)
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) throw new Error("No se pudo subir la imagen")
+      const data = await res.json()
+      setImages((prev) => [...prev, data.url])
+      toast.success("Imagen subida")
+    } catch {
+      toast.error("No se pudo subir la imagen")
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function onSubmit(data: FormData) {
@@ -163,7 +184,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     router.refresh()
   }
 
-  const slug = watch("slug") ?? ""
+  const slug = useWatch({ control, name: "slug" }) ?? ""
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -315,18 +336,34 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                   ))}
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   placeholder="https://ejemplo.com/imagen.jpg"
                   value={imageInput}
                   onChange={(e) => setImageInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImage())}
                 />
-                <Button type="button" variant="outline" onClick={addImage} disabled={images.length >= 8}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={addImage} disabled={images.length >= 8}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={images.length >= 8 || uploading}>
+                    {uploading ? "Subiendo..." : "Subir archivo"}
+                  </Button>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">{images.length}/8 imágenes. Presiona Enter para agregar.</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleUpload(file)
+                  e.target.value = ""
+                }}
+              />
+              <p className="text-xs text-muted-foreground">{images.length}/8 imágenes. Puedes agregar URLs o subir archivos.</p>
             </CardContent>
           </Card>
 

@@ -7,6 +7,8 @@ import { formatPrice } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { AddToCartButton } from "@/components/products/add-to-cart-button"
+import { ReviewForm } from "@/components/products/review-form"
+import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
@@ -24,12 +26,18 @@ async function getProduct(slug: string) {
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const session = await auth()
   const product = await getProduct(slug)
   if (!product) notFound()
 
-  const avgRating = product.reviews.length
-    ? product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length
-    : 0
+  const [ratingAggregate, deliveredPurchase] = await Promise.all([
+    db.review.aggregate({ where: { productId: product.id }, _avg: { rating: true } }),
+    session?.user.id ? db.orderItem.findFirst({
+      where: { productId: product.id, order: { customerId: session.user.id, status: "DELIVERED", deletedAt: null } },
+      select: { id: true },
+    }) : null,
+  ])
+  const avgRating = ratingAggregate._avg.rating ?? 0
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : null
@@ -130,31 +138,45 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </div>
 
       {/* Reviews */}
-      {product.reviews.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-xl font-bold mb-6">Reseñas ({product._count.reviews})</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {product.reviews.map((review) => (
-              <div key={review.id} className="rounded-xl border p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
-                    {review.user.name?.[0]}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{review.user.name}</p>
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} className={`h-3 w-3 ${s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`} />
-                      ))}
+      <div className="mt-12 space-y-6">
+        {session?.user && deliveredPurchase ? (
+          <ReviewForm productId={product.id} />
+        ) : session?.user ? (
+          <div className="rounded-xl border p-4 text-sm text-muted-foreground">
+            Podrás dejar una reseña cuando tu pedido haya sido entregado.
+          </div>
+        ) : (
+          <div className="rounded-xl border p-4 text-sm text-muted-foreground">
+            Inicia sesión para dejar una reseña.
+          </div>
+        )}
+
+        {product.reviews.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold mb-6">Reseñas ({product._count.reviews})</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {product.reviews.map((review) => (
+                <div key={review.id} className="rounded-xl border p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                      {review.user.name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{review.user.name}</p>
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`h-3 w-3 ${s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`} />
+                        ))}
+                      </div>
                     </div>
                   </div>
+                  {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
                 </div>
-                {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

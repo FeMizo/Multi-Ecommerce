@@ -5,7 +5,6 @@ import Image from "next/image"
 import { useSession, signOut } from "next-auth/react"
 import { ShoppingCart, User, Package, LayoutDashboard, LogOut, Search, Store, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,

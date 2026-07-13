@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
-import { Package, ShoppingBag, DollarSign, Users, TrendingUp } from "lucide-react"
+import { Package, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { OrderStatusBadge } from "@/components/shared/order-status-badge"
 
