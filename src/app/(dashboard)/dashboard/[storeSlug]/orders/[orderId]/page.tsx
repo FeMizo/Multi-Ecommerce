@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
 import { OrderStatusBadge } from "@/components/shared/order-status-badge"
+import { RefundButton } from "@/components/dashboard/refund-button"
 
 type ShippingAddress = {
   name?: string
@@ -160,6 +161,9 @@ export default async function OrderDetailPage({
                     <p className="font-mono truncate">{order.payment.stripePaymentIntentId}</p>
                   )}
                 </div>
+              )}
+              {order.payment?.status === "SUCCEEDED" && (
+                <RefundButton storeSlug={storeSlug} orderId={order.id} />
               )}
               {order.paidAt && (
                 <p className="text-xs text-muted-foreground">

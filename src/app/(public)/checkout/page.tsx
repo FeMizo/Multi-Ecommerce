@@ -25,8 +25,9 @@ type FormData = z.infer<typeof schema>
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { items, total, clearCart } = useCartStore()
+  const { items, total } = useCartStore()
   const [loading, setLoading] = useState(false)
+  const [checkoutToken] = useState(() => crypto.randomUUID())
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -40,7 +41,7 @@ export default function CheckoutPage() {
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items, storeId, shippingAddress: data }),
+      body: JSON.stringify({ checkoutToken, items, storeId, shippingAddress: data }),
     })
 
     setLoading(false)
@@ -53,7 +54,7 @@ export default function CheckoutPage() {
 
     const { url } = await res.json()
     if (url) {
-      window.location.href = url
+      window.location.assign(url)
     }
   }
 

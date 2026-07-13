@@ -5,16 +5,14 @@ import { z } from "zod"
 import { OrderStatus } from "@prisma/client"
 
 const schema = z.object({
-  status: z.enum([
-    "PENDING",
-    "PAID",
-    "PROCESSING",
-    "SHIPPED",
-    "DELIVERED",
-    "CANCELLED",
-    "REFUNDED",
-  ] as [OrderStatus, ...OrderStatus[]]),
+  status: z.enum(["PROCESSING", "SHIPPED", "DELIVERED"] as [OrderStatus, ...OrderStatus[]]),
 })
+
+const allowedTransitions: Partial<Record<OrderStatus, OrderStatus>> = {
+  PAID: "PROCESSING",
+  PROCESSING: "SHIPPED",
+  SHIPPED: "DELIVERED",
+}
 
 async function getMembership(userId: string, storeSlug: string) {
   return db.storeMember.findFirst({
@@ -46,6 +44,9 @@ export async function PATCH(
   const parsed = schema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })
+  }
+  if (allowedTransitions[order.status] !== parsed.data.status) {
+    return NextResponse.json({ message: "Transición de estado no permitida" }, { status: 409 })
   }
 
   const updated = await db.order.update({

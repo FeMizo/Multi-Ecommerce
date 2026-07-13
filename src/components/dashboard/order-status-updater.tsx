@@ -24,6 +24,12 @@ const statusLabels: Record<OrderStatus, string> = {
   REFUNDED: "Reembolsado",
 }
 
+const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
+  PAID: "PROCESSING",
+  PROCESSING: "SHIPPED",
+  SHIPPED: "DELIVERED",
+}
+
 export function OrderStatusUpdater({
   storeSlug,
   orderId,
@@ -36,6 +42,7 @@ export function OrderStatusUpdater({
   const router = useRouter()
   const [status, setStatus] = useState<OrderStatus>(currentStatus)
   const [loading, setLoading] = useState(false)
+  const allowedNext = nextStatus[currentStatus]
 
   async function handleSave() {
     if (status === currentStatus) return
@@ -62,14 +69,14 @@ export function OrderStatusUpdater({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {(Object.keys(statusLabels) as OrderStatus[]).map((s) => (
+          {[currentStatus, ...(allowedNext ? [allowedNext] : [])].map((s) => (
             <SelectItem key={s} value={s}>
               {statusLabels[s]}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <Button size="sm" onClick={handleSave} disabled={loading || status === currentStatus}>
+      <Button size="sm" onClick={handleSave} disabled={loading || status === currentStatus || !allowedNext}>
         {loading ? "Guardando..." : "Guardar"}
       </Button>
     </div>

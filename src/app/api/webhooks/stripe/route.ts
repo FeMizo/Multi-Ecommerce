@@ -1,68 +1,250 @@
 import { NextResponse } from "next/server"
-import { stripe } from "@/lib/stripe"
+import { Prisma } from "@prisma/client"
+import Stripe from "stripe"
 import { db } from "@/lib/db"
+import { stripe } from "@/lib/stripe"
+import { completeFullRefund, releaseOrderReservation } from "@/lib/payment-lifecycle"
+import { sendOrderConfirmationEmail } from "@/lib/email"
+import { getCurrentPeriodEnd } from "@/lib/billing-rules"
 
 type OrderItemInput = { productId: string; quantity: number }
 
-export async function POST(req: Request) {
-  const body = await req.text()
-  const sig = req.headers.get("stripe-signature")!
+function webhookError(error: unknown) {
+  return error instanceof Error ? error.message.slice(0, 1_000) : "Error desconocido"
+}
 
-  let event: ReturnType<typeof stripe.webhooks.constructEvent>
+async function recordReservedCheckout(session: Stripe.Checkout.Session) {
+  const orderId = session.metadata?.orderId ?? session.client_reference_id
+  if (!orderId) return false
+  if (session.payment_status !== "paid") return true
+
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id
+  if (!paymentIntentId) throw new Error("Checkout sin PaymentIntent")
+
+  await db.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { id: orderId }, include: { payment: true } })
+    if (!order) throw new Error("Orden reservada no encontrada")
+    if (order.status === "PAID") return
+    if (order.status !== "PENDING" || !order.payment) throw new Error("La reserva de checkout ya no está disponible")
+    if (Math.round(order.total * 100) !== session.amount_total) throw new Error("El total cobrado no coincide con la orden")
+
+    const paid = await tx.order.updateMany({
+      where: { id: order.id, status: "PENDING" },
+      data: {
+        status: "PAID",
+        stripeSessionId: session.id,
+        stripePaymentIntentId: paymentIntentId,
+        paidAt: new Date(),
+      },
+    })
+    if (paid.count !== 1) return
+    await tx.payment.update({
+      where: { id: order.payment.id },
+      data: { stripePaymentIntentId: paymentIntentId, status: "SUCCEEDED" },
+    })
+  })
+  return true
+}
+
+async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
+  if (session.payment_status !== "paid") return
+  const metadata = session.metadata
+  if (!metadata?.userId || !metadata.storeId || !metadata.items || !metadata.shippingAddress) {
+    throw new Error("Checkout sin metadatos requeridos")
+  }
+
+  let items: OrderItemInput[]
+  let shippingAddress: unknown
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    items = JSON.parse(metadata.items) as OrderItemInput[]
+    shippingAddress = JSON.parse(metadata.shippingAddress)
+  } catch {
+    throw new Error("Metadatos de checkout inválidos")
+  }
+  if (!items.length || items.some((item) => !item.productId || !Number.isInteger(item.quantity) || item.quantity < 1)) {
+    throw new Error("Artículos de checkout inválidos")
+  }
+
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id
+  if (!paymentIntentId) throw new Error("Checkout sin PaymentIntent")
+
+  const products = await db.product.findMany({
+    where: { id: { in: items.map((item) => item.productId) }, storeId: metadata.storeId, deletedAt: null },
+  })
+  if (products.length !== items.length) throw new Error("Productos de checkout no encontrados")
+
+  const total = (session.amount_total ?? 0) / 100
+  const subtotal = items.reduce((sum, item) => sum + products.find((product) => product.id === item.productId)!.price * item.quantity, 0)
+  const commissionRate = Number(metadata.commissionRate ?? "0.05")
+  if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) throw new Error("Comisión inválida")
+
+  try {
+    await db.$transaction(async (tx) => {
+      for (const item of items) {
+        const changed = await tx.product.updateMany({
+          where: { id: item.productId, storeId: metadata.storeId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        })
+        if (changed.count !== 1) throw new Error("Stock insuficiente al confirmar el pago")
+      }
+
+      await tx.order.create({
+        data: {
+          storeId: metadata.storeId,
+          customerId: metadata.userId,
+          status: "PAID",
+          subtotal,
+          platformFee: Math.round(total * commissionRate * 100) / 100,
+          total,
+          shippingAddress: shippingAddress as Prisma.InputJsonValue,
+          stripeSessionId: session.id,
+          stripePaymentIntentId: paymentIntentId,
+          paidAt: new Date(),
+          items: {
+            create: items.map((item) => {
+              const product = products.find((candidate) => candidate.id === item.productId)!
+              return {
+                productId: product.id,
+                quantity: item.quantity,
+                unitPrice: product.price,
+                total: product.price * item.quantity,
+                productSnapshot: { name: product.name, price: product.price, images: product.images, sku: product.sku },
+              }
+            }),
+          },
+          payment: { create: { storeId: metadata.storeId, stripePaymentIntentId: paymentIntentId, amount: total, currency: "mxn", platformFee: Math.round(total * commissionRate * 100) / 100, status: "SUCCEEDED" } },
+        },
+      })
+    })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return
+    throw error
+  }
+}
+
+async function recordPaidCheckout(session: Stripe.Checkout.Session) {
+  if (!await recordReservedCheckout(session)) await recordLegacyPaidCheckout(session)
+  if (session.payment_status !== "paid") return
+
+  const orderId = session.metadata?.orderId ?? session.client_reference_id
+  const order = await db.order.findFirst({
+    where: orderId ? { id: orderId } : { stripeSessionId: session.id },
+    select: { id: true, total: true, customer: { select: { email: true } }, store: { select: { name: true } } },
+  })
+  if (order) {
+    try {
+      await sendOrderConfirmationEmail({ email: order.customer.email, orderId: order.id, storeName: order.store.name, total: order.total })
+    } catch (error) {
+      console.error("No se pudo enviar la confirmación del pedido", webhookError(error))
+    }
+  }
+}
+
+async function releaseCheckout(session: Stripe.Checkout.Session) {
+  const orderId = session.metadata?.orderId ?? session.client_reference_id
+  if (orderId) await releaseOrderReservation(orderId)
+}
+
+async function recordExternalRefund(charge: Stripe.Charge) {
+  if (!charge.refunded) return
+  const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id
+  if (!paymentIntentId) return
+  await completeFullRefund({ paymentIntentId, amountCents: charge.amount_refunded })
+}
+
+async function recordRefund(refund: Stripe.Refund) {
+  if (refund.status !== "succeeded") return
+  const paymentIntentId = typeof refund.payment_intent === "string" ? refund.payment_intent : refund.payment_intent?.id
+  if (!paymentIntentId) return
+  await completeFullRefund({ paymentIntentId, refundId: refund.id, amountCents: refund.amount })
+}
+
+function toSubscriptionStatus(status: Stripe.Subscription.Status) {
+  if (status === "active") return "ACTIVE" as const
+  if (status === "trialing") return "TRIALING" as const
+  if (status === "unpaid") return "UNPAID" as const
+  if (status === "canceled") return "CANCELLED" as const
+  return "PAST_DUE" as const
+}
+
+async function syncSubscription(subscription: Stripe.Subscription) {
+  const { storeId, planId } = subscription.metadata
+  if (!storeId) throw new Error("Suscripción sin metadatos requeridos")
+  const stripePriceIds = subscription.items.data.map((item) => item.price.id)
+  const plan = await db.plan.findFirst({
+    where: {
+      OR: [
+        { stripePriceId: { in: stripePriceIds } },
+        ...(planId ? [{ id: planId }] : []),
+      ],
+    },
+    select: { id: true },
+  })
+  if (!plan) throw new Error("Plan de suscripción no encontrado")
+  const currentPeriodEnd = getCurrentPeriodEnd(subscription.items.data.map((item) => item.current_period_end))
+  await db.storeSubscription.upsert({
+    where: { storeId },
+    update: { planId: plan.id, stripeSubscriptionId: subscription.id, status: toSubscriptionStatus(subscription.status), currentPeriodEnd, cancelAtPeriodEnd: subscription.cancel_at_period_end },
+    create: { storeId, planId: plan.id, stripeSubscriptionId: subscription.id, status: toSubscriptionStatus(subscription.status), currentPeriodEnd, cancelAtPeriodEnd: subscription.cancel_at_period_end },
+  })
+}
+
+export async function POST(req: Request) {
+  const signature = req.headers.get("stripe-signature")
+  const secret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!signature || !secret) return NextResponse.json({ error: "Webhook no configurado" }, { status: 400 })
+
+  let event: Stripe.Event
+  try {
+    event = stripe.webhooks.constructEvent(await req.text(), signature, secret)
   } catch {
     return NextResponse.json({ error: "Webhook inválido" }, { status: 400 })
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object
-    const { userId, storeId, commissionRate, shippingAddress, items } = session.metadata!
-
-    const parsedItems: OrderItemInput[] = JSON.parse(items)
-    const products = await db.product.findMany({
-      where: { id: { in: parsedItems.map((i) => i.productId) } },
-    })
-
-    const subtotal = parsedItems.reduce((acc, item) => {
-      const product = products.find((p) => p.id === item.productId)!
-      return acc + product.price * item.quantity
-    }, 0)
-
-    const platformFee = subtotal * parseFloat(commissionRate ?? "0.05")
-
-    await db.order.create({
-      data: {
-        storeId,
-        customerId: userId,
-        status: "PAID",
-        subtotal,
-        platformFee,
-        total: subtotal,
-        shippingAddress: JSON.parse(shippingAddress),
-        stripeSessionId: session.id,
-        stripePaymentIntentId: session.payment_intent as string,
-        paidAt: new Date(),
-        items: {
-          create: parsedItems.map((item) => {
-            const product = products.find((p) => p.id === item.productId)!
-            return {
-              productId: item.productId,
-              quantity: item.quantity,
-              unitPrice: product.price,
-              total: product.price * item.quantity,
-              productSnapshot: {
-                name: product.name,
-                price: product.price,
-                images: product.images,
-                sku: product.sku,
-              },
-            }
-          }),
-        },
-      },
-    })
+  try {
+    await db.stripeWebhookEvent.create({ data: { stripeEventId: event.id, type: event.type } })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const stored = await db.stripeWebhookEvent.findUnique({ where: { stripeEventId: event.id }, select: { processedAt: true } })
+      if (stored?.processedAt) return NextResponse.json({ received: true })
+      await db.stripeWebhookEvent.update({ where: { stripeEventId: event.id }, data: { error: null } })
+    } else throw error
   }
 
-  return NextResponse.json({ received: true })
+  try {
+    switch (event.type) {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded":
+        if ((event.data.object as Stripe.Checkout.Session).mode === "payment") await recordPaidCheckout(event.data.object as Stripe.Checkout.Session)
+        break
+      case "checkout.session.expired":
+      case "checkout.session.async_payment_failed":
+        if ((event.data.object as Stripe.Checkout.Session).mode === "payment") await releaseCheckout(event.data.object as Stripe.Checkout.Session)
+        break
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await syncSubscription(event.data.object as Stripe.Subscription)
+        break
+      case "charge.refunded":
+        await recordExternalRefund(event.data.object as Stripe.Charge)
+        break
+      case "refund.updated":
+        await recordRefund(event.data.object as Stripe.Refund)
+        break
+      case "account.updated": {
+        const account = event.data.object as Stripe.Account
+        await db.store.updateMany({
+          where: { stripeAccountId: account.id },
+          data: { stripeOnboarded: account.details_submitted && account.charges_enabled && account.payouts_enabled },
+        })
+        break
+      }
+    }
+    await db.stripeWebhookEvent.update({ where: { stripeEventId: event.id }, data: { processedAt: new Date(), error: null } })
+    return NextResponse.json({ received: true })
+  } catch (error) {
+    await db.stripeWebhookEvent.update({ where: { stripeEventId: event.id }, data: { error: webhookError(error) } })
+    return NextResponse.json({ error: "No se pudo procesar el evento" }, { status: 500 })
+  }
 }
