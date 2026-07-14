@@ -3,6 +3,33 @@ import { db } from "@/lib/db"
 import { hasPlanEntitlements } from "@/lib/billing-rules"
 
 type DbClient = Prisma.TransactionClient | typeof db
+const PLAN_TIME_ZONE = "America/Mexico_City"
+
+function getTimeZoneOffsetMinutes(date: Date, timeZone: string) {
+  const offset = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "longOffset",
+  }).formatToParts(date).find((part) => part.type === "timeZoneName")?.value
+  const match = offset?.match(/^GMT([+-])(\d{2}):(\d{2})$/)
+  if (!match) throw new Error(`No se pudo calcular la zona horaria ${timeZone}`)
+
+  const minutes = Number(match[2]) * 60 + Number(match[3])
+  return match[1] === "+" ? minutes : -minutes
+}
+
+export function getMexicoCityMonthStart(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: PLAN_TIME_ZONE,
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(now)
+  const year = Number(parts.find((part) => part.type === "year")?.value)
+  const month = Number(parts.find((part) => part.type === "month")?.value)
+  const utcMidnight = Date.UTC(year, month - 1, 1)
+  const offsetMinutes = getTimeZoneOffsetMinutes(new Date(utcMidnight + 12 * 60 * 60 * 1000), PLAN_TIME_ZONE)
+
+  return new Date(utcMidnight - offsetMinutes * 60 * 1000)
+}
 
 export async function getStorePlan(storeId: string) {
   return db.storeSubscription.findUnique({
@@ -43,7 +70,7 @@ export async function checkProductLimit(storeId: string, client: DbClient = db) 
   return { ok: count < maxProducts, count, max: maxProducts }
 }
 
-export async function checkOrderLimit(storeId: string, client: DbClient = db) {
+export async function checkOrderLimit(storeId: string, client: DbClient = db, now = new Date()) {
   const plan = await getEffectivePlan(storeId, client)
   const maxOrdersMonth = plan ? plan.maxOrdersMonth : 0
 
@@ -51,9 +78,7 @@ export async function checkOrderLimit(storeId: string, client: DbClient = db) {
     return { ok: true as const, count: 0, max: null as number | null }
   }
 
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
+  const startOfMonth = getMexicoCityMonthStart(now)
 
   const count = await client.order.count({
     where: {

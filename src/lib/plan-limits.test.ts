@@ -6,10 +6,15 @@ config({ path: ".env.local", quiet: true })
 
 type PlanLimitsModule = typeof import("./plan-limits")
 type PlanLimitClient = NonNullable<Parameters<PlanLimitsModule["checkProductLimit"]>[1]>
+type OrderLimitClient = NonNullable<Parameters<PlanLimitsModule["checkOrderLimit"]>[1]>
 
 async function checkProductLimit(storeId: string, client: PlanLimitClient) {
   const planLimits = await import("./plan-limits")
   return planLimits.checkProductLimit(storeId, client)
+}
+
+async function planLimits() {
+  return import("./plan-limits")
 }
 
 function productLimitClient({
@@ -89,4 +94,47 @@ test("un máximo nulo es ilimitado y evita contar productos", async () => {
     max: null,
   })
   assert.equal(getCountQueries(), 0)
+})
+
+test("el mes de órdenes inicia a medianoche de Ciudad de México", async () => {
+  const { getMexicoCityMonthStart } = await planLimits()
+
+  assert.equal(
+    getMexicoCityMonthStart(new Date("2026-08-01T05:59:59.999Z")).toISOString(),
+    "2026-07-01T06:00:00.000Z",
+  )
+  assert.equal(
+    getMexicoCityMonthStart(new Date("2026-08-01T06:00:00.000Z")).toISOString(),
+    "2026-08-01T06:00:00.000Z",
+  )
+})
+
+test("bloquea checkouts al alcanzar el máximo mensual de órdenes", async () => {
+  let orderWhere: unknown
+  const client = {
+    storeSubscription: {
+      findUnique: async () => ({ status: "ACTIVE", plan: { maxOrdersMonth: 20 } }),
+    },
+    plan: {
+      findFirst: async () => ({ maxOrdersMonth: 10 }),
+    },
+    order: {
+      count: async ({ where }: { where: unknown }) => {
+        orderWhere = where
+        return 20
+      },
+    },
+  } as unknown as OrderLimitClient
+  const { checkOrderLimit } = await planLimits()
+
+  assert.deepEqual(
+    await checkOrderLimit("store_1", client, new Date("2026-07-13T18:00:00.000Z")),
+    { ok: false, count: 20, max: 20 },
+  )
+  assert.deepEqual(orderWhere, {
+    storeId: "store_1",
+    createdAt: { gte: new Date("2026-07-01T06:00:00.000Z") },
+    status: { notIn: ["CANCELLED", "REFUNDED"] },
+    deletedAt: null,
+  })
 })
