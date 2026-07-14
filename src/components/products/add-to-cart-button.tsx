@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ShoppingCart, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCartStore } from "@/stores/cart"
+import { withProductPlaceholder } from "@/lib/placeholders"
 
 type Props = {
   product: {
@@ -30,7 +31,7 @@ export function AddToCartButton({ product }: Props) {
         storeId: product.storeId,
         name: product.name,
         price: product.price,
-        image: product.images[0] ?? "",
+        image: withProductPlaceholder(product.images),
         storeName: product.store.name,
       })
     }

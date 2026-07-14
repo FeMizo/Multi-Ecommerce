@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, Store } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { db } from "@/lib/db"
+import { DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 
 async function getStore(slug: string) {
   return db.store.findFirst({
@@ -35,11 +36,13 @@ export default async function StoreLayout({
                 className="h-7 w-7 rounded-lg overflow-hidden flex items-center justify-center shrink-0 font-bold text-sm"
                 style={{ backgroundColor: color ? `${color}18` : undefined, color }}
               >
-                {store.logoUrl ? (
-                  <Image src={store.logoUrl} alt={store.name} width={28} height={28} className="object-cover w-full h-full" />
-                ) : (
-                  <Store className="h-4 w-4" style={{ color }} />
-                )}
+                <Image
+                  src={store.logoUrl || DEFAULT_SHOP_ICON}
+                  alt={store.logoUrl ? store.name : `Icono genérico de ${store.name}`}
+                  width={28}
+                  height={28}
+                  className="h-full w-full object-cover"
+                />
               </div>
               <span className="text-sm font-semibold group-hover:text-primary transition-colors">{store.name}</span>
             </Link>
@@ -64,11 +67,13 @@ export default async function StoreLayout({
               className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center shrink-0 font-bold"
               style={{ backgroundColor: color ? `${color}18` : undefined, color }}
             >
-              {store.logoUrl ? (
-                <Image src={store.logoUrl} alt={store.name} width={36} height={36} className="object-cover w-full h-full" />
-              ) : (
-                store.name[0].toUpperCase()
-              )}
+              <Image
+                src={store.logoUrl || DEFAULT_SHOP_ICON}
+                alt={store.logoUrl ? store.name : `Icono genérico de ${store.name}`}
+                width={36}
+                height={36}
+                className="h-full w-full object-cover"
+              />
             </div>
             <span className="font-semibold group-hover:text-primary transition-colors">{store.name}</span>
           </Link>

@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { AddToCartButton } from "@/components/products/add-to-cart-button"
 import { ReviewForm } from "@/components/products/review-form"
 import { auth } from "@/lib/auth"
+import { DEFAULT_PRODUCT_IMAGE, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 
 export const dynamic = "force-dynamic"
 
@@ -48,11 +49,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         {/* Images */}
         <div className="space-y-3">
           <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-            {product.images[0] ? (
-              <Image src={product.images[0]} alt={product.name} fill className="object-cover" priority />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">Sin imagen</div>
-            )}
+            <Image
+              src={product.images[0] || DEFAULT_PRODUCT_IMAGE}
+              alt={product.images[0] ? product.name : `Imagen genérica de ${product.name}`}
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
           {product.images.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
@@ -108,8 +111,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="rounded-xl border p-4 space-y-2">
             <p className="font-semibold">Vendedor</p>
             <Link href={`/${product.store.slug}`} className="flex items-center gap-3 hover:opacity-80">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                {product.store.name[0]}
+              <div className="relative h-10 w-10 rounded-full bg-primary/10 overflow-hidden shrink-0">
+                <Image
+                  src={product.store.logoUrl || DEFAULT_SHOP_ICON}
+                  alt={product.store.logoUrl ? product.store.name : `Icono genérico de ${product.store.name}`}
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div>
                 <p className="font-medium">{product.store.name}</p>

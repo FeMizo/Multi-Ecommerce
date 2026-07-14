@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { db } from "@/lib/db"
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 
 export const revalidate = 3600
 
@@ -43,7 +44,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: product.updatedAt,
         changeFrequency: "weekly" as const,
         priority: 0.7,
-        ...(product.images.length > 0 ? { images: product.images } : {}),
+        images: product.images.length > 0
+          ? product.images
+          : [`${siteUrl}${DEFAULT_PRODUCT_IMAGE}`],
       })),
     ]),
   ]

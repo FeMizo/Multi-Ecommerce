@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet"
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, total } = useCartStore()
@@ -57,18 +58,12 @@ export function CartDrawer() {
               {items.map((item) => (
                 <div key={item.productId} className="flex gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
                   <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-muted shrink-0">
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ShoppingBag className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                    )}
+                    <Image
+                      src={item.image || DEFAULT_PRODUCT_IMAGE}
+                      alt={item.image ? item.name : `Imagen genérica de ${item.name}`}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">

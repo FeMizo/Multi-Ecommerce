@@ -2,12 +2,13 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, ShoppingCart, Heart, Eye } from "lucide-react"
+import { MapPin, ShoppingCart, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart"
 import { useState } from "react"
+import { withProductPlaceholder } from "@/lib/placeholders"
 
 type ProductCardProps = {
   product: {
@@ -34,6 +35,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const imageSrc = withProductPlaceholder(product.images)
   
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -52,7 +54,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
       storeId: product.storeId,
       name: product.name,
       price: product.price,
-      image: product.images[0] ?? "",
+      image: imageSrc,
       storeName: product.store.name,
     })
     openCart()
@@ -76,25 +78,19 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
         {/* Image Container */}
         <div className="relative aspect-square bg-muted/30 overflow-hidden">
           {/* Placeholder shimmer */}
-          {!imageLoaded && product.images[0] && (
+          {!imageLoaded && (
             <div className="absolute inset-0 shimmer" />
           )}
           
-          {product.images[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              className={`object-cover transition-all duration-700 ${
-                isHovered ? 'scale-110' : 'scale-100'
-              } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              onLoad={() => setImageLoaded(true)}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
-              <Eye className="h-12 w-12" />
-            </div>
-          )}
+          <Image
+            src={imageSrc}
+            alt={product.images[0] ? product.name : `Imagen genérica de ${product.name}`}
+            fill
+            className={`object-cover transition-all duration-700 ${
+              isHovered ? 'scale-110' : 'scale-100'
+            } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setImageLoaded(true)}
+          />
 
           {/* Overlay gradient */}
           <div className={`absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent transition-opacity duration-300 ${

@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
 import { OrderStatus } from "@prisma/client"
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 
 const statusConfig: Record<OrderStatus, { label: string; className: string }> = {
   PENDING: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
@@ -71,16 +73,13 @@ export default async function AccountOrdersPage() {
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {order.items.map((item) => (
                     <div key={item.id} className="shrink-0 h-12 w-12 rounded-md bg-muted overflow-hidden">
-                      {item.product.images[0] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted" />
-                      )}
+                      <Image
+                        src={item.product.images[0] || DEFAULT_PRODUCT_IMAGE}
+                        alt={item.product.images[0] ? item.product.name : `Imagen genérica de ${item.product.name}`}
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                   ))}
                 </div>

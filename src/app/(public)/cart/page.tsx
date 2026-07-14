@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, total } = useCartStore()
@@ -32,7 +33,12 @@ export default function CartPage() {
           {items.map((item) => (
             <div key={item.productId} className="flex gap-4 p-4 rounded-xl border bg-card">
               <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-muted shrink-0">
-                {item.image && <Image src={item.image} alt={item.name} fill className="object-cover" />}
+                <Image
+                  src={item.image || DEFAULT_PRODUCT_IMAGE}
+                  alt={item.image ? item.name : `Imagen genérica de ${item.name}`}
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{item.name}</p>

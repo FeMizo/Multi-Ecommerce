@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { CategoryGrid } from "@/components/products/category-grid"
+import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 
 async function getFeaturedProducts() {
   return db.product.findMany({
@@ -270,11 +271,12 @@ export default async function HomePage() {
                   style={{ animationDelay: `${i * 50}ms` }}
                 >
                   <div className="relative h-28 md:h-32 bg-muted overflow-hidden">
-                    {store.bannerUrl ? (
-                      <Image src={store.bannerUrl} alt="" fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary/10 to-transparent" />
-                    )}
+                    <Image
+                      src={store.bannerUrl || DEFAULT_SHOP_BANNER}
+                      alt={store.bannerUrl ? "" : `Banner genérico de ${store.name}`}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
                   </div>
                   <div className="p-4 pt-0">
@@ -283,9 +285,13 @@ export default async function HomePage() {
                         className="z-20 h-16 w-16 rounded-2xl border-4 border-card bg-card flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden shadow-lg group-hover:scale-105 transition-transform"
                         style={{ color: store.primaryColor ?? undefined }}
                       >
-                        {store.logoUrl ? (
-                          <Image src={store.logoUrl} alt={store.name} width={64} height={64} className="object-cover" />
-                        ) : store.name[0].toUpperCase()}
+                        <Image
+                          src={store.logoUrl || DEFAULT_SHOP_ICON}
+                          alt={store.logoUrl ? store.name : `Icono genérico de ${store.name}`}
+                          width={64}
+                          height={64}
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mb-1.5">

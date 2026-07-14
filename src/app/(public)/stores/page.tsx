@@ -3,6 +3,7 @@ import Image from "next/image"
 import { MapPin, Package, CheckCircle2, Store, ArrowRight, Sparkles } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
+import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 
 type SearchParams = { city?: string }
 
@@ -113,16 +114,12 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
               >
                 {/* Banner */}
                 <div className="relative h-32 md:h-36 bg-muted/50 overflow-hidden">
-                  {store.bannerUrl ? (
-                    <Image 
-                      src={store.bannerUrl} 
-                      alt="" 
-                      fill 
-                      className="object-cover group-hover:scale-105 transition-transform duration-500" 
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/15 to-primary/5" />
-                  )}
+                  <Image
+                    src={store.bannerUrl || DEFAULT_SHOP_BANNER}
+                    alt={store.bannerUrl ? "" : `Banner genérico de ${store.name}`}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                   
                   {/* Featured Badge */}
                   {index < 3 && store.isVerified && (
@@ -140,11 +137,13 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
                       className="z-20 h-16 w-16 rounded-2xl border-[3px] border-card bg-card flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden shadow-lg"
                       style={{ color: store.primaryColor ?? undefined }}
                     >
-                      {store.logoUrl ? (
-                        <Image src={store.logoUrl} alt={store.name} width={64} height={64} className="object-cover" />
-                      ) : (
-                        store.name[0].toUpperCase()
-                      )}
+                      <Image
+                        src={store.logoUrl || DEFAULT_SHOP_ICON}
+                        alt={store.logoUrl ? store.name : `Icono genérico de ${store.name}`}
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                   </div>
                   

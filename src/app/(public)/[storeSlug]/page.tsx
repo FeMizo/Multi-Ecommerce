@@ -6,6 +6,7 @@ import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/products/product-card"
+import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 
 type Params = { storeSlug: string }
 type SearchParams = { category?: string; page?: string }
@@ -75,19 +76,13 @@ export default async function StorePage({
     <div className="min-h-screen">
       {/* Hero Banner */}
       <div className="relative h-48 md:h-64 lg:h-80 bg-muted overflow-hidden">
-        {store.bannerUrl ? (
-          <Image 
-            src={store.bannerUrl} 
-            alt="" 
-            fill 
-            className="object-cover" 
-            priority 
-          />
-        ) : (
-          <div 
-            className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5"
-          />
-        )}
+        <Image
+          src={store.bannerUrl || DEFAULT_SHOP_BANNER}
+          alt={store.bannerUrl ? "" : `Banner genérico de ${store.name}`}
+          fill
+          className="object-cover"
+          priority
+        />
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
       </div>
@@ -102,11 +97,13 @@ export default async function StorePage({
                 className="h-24 w-24 md:h-28 md:w-28 rounded-2xl border-4 border-card bg-card flex items-center justify-center text-3xl font-bold shrink-0 overflow-hidden shadow-lg -mt-16 md:-mt-20"
                 style={{ color: store.primaryColor ?? undefined }}
               >
-                {store.logoUrl ? (
-                  <Image src={store.logoUrl} alt={store.name} width={112} height={112} className="object-cover" />
-                ) : (
-                  store.name[0].toUpperCase()
-                )}
+                <Image
+                  src={store.logoUrl || DEFAULT_SHOP_ICON}
+                  alt={store.logoUrl ? store.name : `Icono genérico de ${store.name}`}
+                  width={112}
+                  height={112}
+                  className="h-full w-full object-cover"
+                />
               </div>
               
               {/* Info */}

@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { ChevronLeft, Package } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -9,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
 import { OrderStatusBadge } from "@/components/shared/order-status-badge"
 import { RefundButton } from "@/components/dashboard/refund-button"
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 
 type ShippingAddress = {
   name?: string
@@ -87,18 +89,13 @@ export default async function OrderDetailPage({
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center gap-3 px-6 py-3">
                     <div className="h-12 w-12 rounded-md bg-muted shrink-0 overflow-hidden">
-                      {item.product.images[0] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <Package className="h-5 w-5" />
-                        </div>
-                      )}
+                      <Image
+                        src={item.product.images[0] || DEFAULT_PRODUCT_IMAGE}
+                        alt={item.product.images[0] ? item.product.name : `Imagen genérica de ${item.product.name}`}
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{item.product.name}</p>
