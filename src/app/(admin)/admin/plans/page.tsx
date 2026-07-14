@@ -7,7 +7,16 @@ export default async function AdminPlansPage() {
 
   const plans = await db.plan.findMany({
     orderBy: { priceMonthly: "asc" },
-    include: { _count: { select: { subscriptions: true } } },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      priceMonthly: true,
+      maxProducts: true,
+      maxOrdersMonth: true,
+      stripePriceId: true,
+      isActive: true,
+    },
   })
 
   return (

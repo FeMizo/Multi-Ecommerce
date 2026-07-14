@@ -19,8 +19,6 @@ const schema = z.object({
   name: z.string().min(2, "Requerido"),
   slug: z.string().min(2, "Requerido").regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
   priceMonthly: nonnegativeMxnSchema,
-  priceYearly: nonnegativeMxnSchema,
-  commissionRate: z.number().min(0).max(1),
   maxProducts: z.number().int().positive().optional(),
   maxOrdersMonth: z.number().int().positive().optional(),
   stripePriceId: z.string().optional(),
@@ -32,13 +30,10 @@ type Plan = {
   name: string
   slug: string
   priceMonthly: number
-  priceYearly: number
-  commissionRate: number
   maxProducts: number | null
   maxOrdersMonth: number | null
   stripePriceId: string | null
   isActive: boolean
-  _count?: { subscriptions: number }
 }
 
 export function PlanManager({ plans: initial }: { plans: Plan[] }) {
@@ -50,7 +45,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { commissionRate: 0.05, priceMonthly: 0, priceYearly: 0 },
+    defaultValues: { priceMonthly: 0 },
   })
 
   const {
@@ -126,8 +121,6 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
       name: plan.name,
       slug: plan.slug,
       priceMonthly: plan.priceMonthly,
-      priceYearly: plan.priceYearly,
-      commissionRate: plan.commissionRate,
       maxProducts: plan.maxProducts ?? undefined,
       maxOrdersMonth: plan.maxOrdersMonth ?? undefined,
       stripePriceId: plan.stripePriceId ?? "",
@@ -147,7 +140,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
         <Card>
           <CardHeader><CardTitle className="text-base">Nuevo plan</CardTitle></CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onCreate)} className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <form onSubmit={handleSubmit(onCreate)} className="grid grid-cols-2 gap-3 md:grid-cols-3">
               <div className="space-y-1 col-span-2 md:col-span-1">
                 <Label>Nombre</Label>
                 <Input {...register("name")} placeholder="Pro" />
@@ -163,14 +156,6 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                 <Input {...register("priceMonthly", { valueAsNumber: true })} type="number" step="0.01" placeholder="299" />
               </div>
               <div className="space-y-1">
-                <Label>Precio anual (MXN)</Label>
-                <Input {...register("priceYearly", { valueAsNumber: true })} type="number" step="0.01" placeholder="2990" />
-              </div>
-              <div className="space-y-1">
-                <Label>Comisión (0–1)</Label>
-                <Input {...register("commissionRate", { valueAsNumber: true })} type="number" step="0.01" placeholder="0.05" />
-              </div>
-              <div className="space-y-1">
                 <Label>Máx. productos</Label>
                 <Input {...register("maxProducts", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })} type="number" placeholder="∞" />
               </div>
@@ -182,7 +167,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                 <Label>Stripe Price ID</Label>
                 <Input {...register("stripePriceId")} placeholder="price_xxx" />
               </div>
-              <div className="col-span-2 md:col-span-4 flex gap-2 pt-1">
+              <div className="col-span-2 md:col-span-3 flex gap-2 pt-1">
                 <Button type="submit" disabled={loading} size="sm">Crear</Button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => { setCreating(false); reset() }}>
                   Cancelar
@@ -201,10 +186,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                 <tr className="border-b">
                   <th className="text-left p-4 font-medium text-muted-foreground">Plan</th>
                   <th className="text-right p-4 font-medium text-muted-foreground">Mensual</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Anual</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Comisión</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Productos</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">Suscriptores</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">Pedidos/mes</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Estado</th>
                   <th className="p-4" />
                 </tr>
@@ -213,8 +196,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                 {plans.map((plan) => (
                   <tr key={plan.id} className="border-b last:border-0 hover:bg-muted/40">
                     {editingId === plan.id ? (
-                      <td colSpan={8} className="p-4">
-                        <form onSubmit={handleEdit(onEdit)} className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <td colSpan={6} className="p-4">
+                        <form onSubmit={handleEdit(onEdit)} className="grid grid-cols-2 gap-3 md:grid-cols-3">
                           <div className="space-y-1 col-span-2 md:col-span-1">
                             <Label>Nombre</Label>
                             <Input {...regEdit("name")} />
@@ -229,14 +212,6 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                             <Input {...regEdit("priceMonthly", { valueAsNumber: true })} type="number" step="0.01" />
                           </div>
                           <div className="space-y-1">
-                            <Label>Anual</Label>
-                            <Input {...regEdit("priceYearly", { valueAsNumber: true })} type="number" step="0.01" />
-                          </div>
-                          <div className="space-y-1">
-                            <Label>Comisión</Label>
-                            <Input {...regEdit("commissionRate", { valueAsNumber: true })} type="number" step="0.01" />
-                          </div>
-                          <div className="space-y-1">
                             <Label>Máx. productos</Label>
                             <Input {...regEdit("maxProducts", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })} type="number" placeholder="∞" />
                           </div>
@@ -248,7 +223,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                             <Label>Stripe Price ID</Label>
                             <Input {...regEdit("stripePriceId")} placeholder="price_xxx" />
                           </div>
-                          <div className="col-span-2 md:col-span-4 flex gap-2 pt-1">
+                          <div className="col-span-2 md:col-span-3 flex gap-2 pt-1">
                             <Button type="submit" size="sm" disabled={loading}><Check className="h-3 w-3 mr-1" />Guardar</Button>
                             <Button type="button" variant="ghost" size="sm" onClick={() => setEditingId(null)}><X className="h-3 w-3 mr-1" />Cancelar</Button>
                           </div>
@@ -261,10 +236,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                           <p className="text-xs text-muted-foreground">{plan.slug}</p>
                         </td>
                         <td className="p-4 text-right tabular-nums">{formatPrice(plan.priceMonthly)}</td>
-                        <td className="p-4 text-right tabular-nums">{formatPrice(plan.priceYearly)}</td>
-                        <td className="p-4 text-right">{(plan.commissionRate * 100).toFixed(1)}%</td>
                         <td className="p-4 text-center">{plan.maxProducts ?? "∞"}</td>
-                        <td className="p-4 text-center">{plan._count?.subscriptions ?? 0}</td>
+                        <td className="p-4 text-center">{plan.maxOrdersMonth ?? "∞"}</td>
                         <td className="p-4 text-center">
                           <Badge variant={plan.isActive ? "default" : "secondary"}>
                             {plan.isActive ? "Activo" : "Inactivo"}
@@ -288,7 +261,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                   </tr>
                 ))}
                 {plans.length === 0 && (
-                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No hay planes creados</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No hay planes creados</td></tr>
                 )}
               </tbody>
             </table>

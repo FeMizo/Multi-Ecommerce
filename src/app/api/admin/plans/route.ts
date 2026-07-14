@@ -10,8 +10,6 @@ const schema = z.object({
   name: z.string().min(2).max(60),
   slug: z.string().min(2).max(40).regex(/^[a-z0-9-]+$/),
   priceMonthly: nonnegativeMxnSchema,
-  priceYearly: nonnegativeMxnSchema,
-  commissionRate: z.number().min(0).max(1),
   maxProducts: z.number().int().positive().nullable().optional(),
   maxOrdersMonth: z.number().int().positive().nullable().optional(),
   stripePriceId: z.string().optional().or(z.literal("")),
@@ -26,7 +24,19 @@ async function requireAdmin() {
 
 export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ message: "Forbidden" }, { status: 403 })
-  const plans = await db.plan.findMany({ orderBy: { priceMonthly: "asc" } })
+  const plans = await db.plan.findMany({
+    orderBy: { priceMonthly: "asc" },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      priceMonthly: true,
+      maxProducts: true,
+      maxOrdersMonth: true,
+      stripePriceId: true,
+      isActive: true,
+    },
+  })
   return NextResponse.json(plans)
 }
 
