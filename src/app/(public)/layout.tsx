@@ -63,11 +63,15 @@ export default async function PublicLayout({ children }: { children: React.React
               <ul className="space-y-3">
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="h-4 w-4 shrink-0" />
-                  <span>hola@mercadolocal.com</span>
+                  <a href="mailto:ayuda@aionsite.com.mx" className="hover:text-foreground transition-colors">
+                    ayuda@aionsite.com.mx
+                  </a>
                 </li>
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Phone className="h-4 w-4 shrink-0" />
-                  <span>+1 234 567 890</span>
+                  <a href="tel:+5219381573988" className="hover:text-foreground transition-colors">
+                    +52 1 938 157 3988
+                  </a>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
