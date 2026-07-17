@@ -19,7 +19,7 @@ export function AdminNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex-1 p-3 space-y-1">
+    <nav className="flex-1 p-3 pb-20 space-y-1 overflow-y-auto">
       {nav.map(({ href, label, icon: Icon }) => {
         const active = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href)
         return (

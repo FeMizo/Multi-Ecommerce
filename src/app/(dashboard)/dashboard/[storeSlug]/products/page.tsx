@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
+import type { ReactNode } from "react"
+import { Plus, Package } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { checkProductLimit } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
-import Link from "next/link"
-import { Plus, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -12,6 +14,40 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   DRAFT: { label: "Borrador", variant: "secondary" },
   PAUSED: { label: "Pausado", variant: "outline" },
   DELETED: { label: "Eliminado", variant: "destructive" },
+}
+
+function NewProductButton({
+  storeSlug,
+  productLimitReached,
+  count,
+  max,
+  children,
+}: {
+  storeSlug: string
+  productLimitReached: boolean
+  count: number
+  max: number | null
+  children: ReactNode
+}) {
+  const title = productLimitReached ? `Limite de productos alcanzado (${count}/${max})` : undefined
+
+  if (productLimitReached) {
+    return (
+      <Button disabled title={title}>
+        <Plus className="h-4 w-4 mr-2" />
+        {children}
+      </Button>
+    )
+  }
+
+  return (
+    <Button asChild>
+      <Link href={`/dashboard/${storeSlug}/products/new`}>
+        <Plus className="h-4 w-4 mr-2" />
+        {children}
+      </Link>
+    </Button>
+  )
 }
 
 export default async function StoreProductsPage({
@@ -29,26 +65,38 @@ export default async function StoreProductsPage({
   })
   if (!store) redirect("/dashboard")
 
-  const products = await db.product.findMany({
-    where: { storeId: store.id, deletedAt: null },
-    include: { category: { select: { name: true } } },
-    orderBy: { createdAt: "desc" },
-  })
+  const [products, productLimit] = await Promise.all([
+    db.product.findMany({
+      where: { storeId: store.id, deletedAt: null },
+      include: { category: { select: { name: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    checkProductLimit(store.id),
+  ])
+  const productLimitReached = !productLimit.ok
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Productos</h1>
           <p className="text-sm text-muted-foreground">{products.length} productos en total</p>
         </div>
-        <Button asChild>
-          <Link href={`/dashboard/${storeSlug}/products/new`}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo producto
-          </Link>
-        </Button>
+        <NewProductButton
+          storeSlug={storeSlug}
+          productLimitReached={productLimitReached}
+          count={productLimit.count}
+          max={productLimit.max}
+        >
+          Nuevo producto
+        </NewProductButton>
       </div>
+
+      {productLimitReached && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Limite de productos alcanzado ({productLimit.count}/{productLimit.max}). Actualiza tu plan o elimina productos para agregar mas.
+        </div>
+      )}
 
       {products.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center border rounded-xl">
@@ -57,12 +105,14 @@ export default async function StoreProductsPage({
           <p className="text-sm text-muted-foreground mb-4">
             Agrega tu primer producto para empezar a vender
           </p>
-          <Button asChild>
-            <Link href={`/dashboard/${storeSlug}/products/new`}>
-              <Plus className="h-4 w-4 mr-2" />
-              Crear producto
-            </Link>
-          </Button>
+          <NewProductButton
+            storeSlug={storeSlug}
+            productLimitReached={productLimitReached}
+            count={productLimit.count}
+            max={productLimit.max}
+          >
+            Crear producto
+          </NewProductButton>
         </div>
       ) : (
         <div className="rounded-xl border overflow-hidden">
@@ -70,7 +120,7 @@ export default async function StoreProductsPage({
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Producto</th>
-                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Categoría</th>
+                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Categoria</th>
                 <th className="text-right px-4 py-3 font-medium">Precio</th>
                 <th className="text-right px-4 py-3 font-medium hidden sm:table-cell">Stock</th>
                 <th className="text-center px-4 py-3 font-medium">Estado</th>

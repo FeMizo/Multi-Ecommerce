@@ -66,3 +66,59 @@ export async function sendOrderConfirmationEmail({
   if (error) throw new Error(error.message)
   return { ok: true, id: data?.id }
 }
+
+export async function sendSellerNewOrderEmail({
+  emails,
+  orderId,
+  storeName,
+  total,
+}: {
+  emails: string[]
+  orderId: string
+  storeName: string
+  total: number
+}) {
+  const recipients = [...new Set(emails.filter(Boolean))]
+  if (!recipients.length) return { ok: true, id: null }
+
+  const { data, error } = await emailClient().emails.send({
+    from: emailFrom,
+    to: recipients,
+    subject: `Nuevo pedido #${orderId.slice(-8).toUpperCase()}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <h2>Nuevo pedido recibido</h2>
+        <p><strong>${escapeHtml(storeName)}</strong> tiene un nuevo pedido pagado.</p>
+        <p><strong>Total:</strong> ${formatPrice(total)}</p>
+        <p><a href="${appUrl}/dashboard">Ver pedido en el dashboard</a></p>
+      </div>
+    `,
+  }, { idempotencyKey: `seller-new-order/${orderId}` })
+  if (error) throw new Error(error.message)
+  return { ok: true, id: data?.id }
+}
+
+export async function sendOrderDeliveredEmail({
+  email,
+  orderId,
+  storeName,
+}: {
+  email: string
+  orderId: string
+  storeName: string
+}) {
+  const { data, error } = await emailClient().emails.send({
+    from: emailFrom,
+    to: [email],
+    subject: `Pedido entregado #${orderId.slice(-8).toUpperCase()}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <h2>Tu pedido fue entregado</h2>
+        <p>Marcamos como entregado tu pedido en <strong>${escapeHtml(storeName)}</strong>.</p>
+        <p><a href="${appUrl}/account/orders">Ver mis pedidos</a></p>
+      </div>
+    `,
+  }, { idempotencyKey: `order-delivered/${orderId}` })
+  if (error) throw new Error(error.message)
+  return { ok: true, id: data?.id }
+}

@@ -54,7 +54,7 @@ export default async function DashboardLayout({
         className="flex min-h-screen"
         style={storeColor ? ({ "--primary": storeColor, "--primary-foreground": "#ffffff" } as React.CSSProperties) : undefined}
       >
-        <aside className="w-60 border-r bg-card shrink-0 flex flex-col">
+        <aside className="fixed left-0 top-0 h-screen w-60 border-r bg-card flex flex-col">
           <div className="p-4 border-b" style={storeColor ? { borderTopColor: storeColor, borderTopWidth: 3 } : undefined}>
             <Link href="/" className="inline-block">
               <Image src="/logo.png" alt="AionSite" width={110} height={32} className="h-7 w-auto object-contain" />
@@ -64,7 +64,7 @@ export default async function DashboardLayout({
               <ChevronDown className="h-3 w-3 shrink-0" />
             </div>
           </div>
-          <nav className="flex-1 p-3 space-y-1">
+          <nav className="flex-1 p-3 pb-20 space-y-1 overflow-y-auto">
             {navItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
@@ -76,17 +76,17 @@ export default async function DashboardLayout({
               </Link>
             ))}
           </nav>
-          <div className="p-4 border-t">
+          <div className="absolute bottom-0 left-0 w-full bg-card p-4 border-t">
             <Link
               href={`/${storeSlug}`}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              className="block text-xs text-muted-foreground hover:text-primary transition-colors"
               target="_blank"
             >
               Ver tienda →
             </Link>
           </div>
         </aside>
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        <main className="ml-60 flex-1 p-6 overflow-auto">{children}</main>
       </div>
     </SessionProvider>
   )

@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <SessionProvider session={session}>
       <div className="flex min-h-screen">
-        <aside className="w-60 border-r bg-foreground text-background shrink-0 flex flex-col">
+        <aside className="fixed left-0 top-0 h-screen w-60 border-r bg-foreground text-background flex flex-col">
           <div className="p-4 border-b border-background/10">
             <Link href="/admin" className="block mb-3">
               <Image src="/logo.png" alt="AionSite" width={110} height={32} className="h-7 w-auto object-contain brightness-0 invert" />
@@ -20,13 +20,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <p className="text-xs font-semibold text-background/50 uppercase tracking-widest">Admin Panel</p>
           </div>
           <AdminNav />
-          <div className="p-3 border-t border-background/10">
+          <div className="absolute bottom-0 left-0 w-full bg-foreground p-3 border-t border-background/10">
             <Link href="/" className="text-xs text-background/50 hover:text-background/80">
               ← Volver al marketplace
             </Link>
           </div>
         </aside>
-        <main className="flex-1 p-6 bg-muted/30 overflow-auto">{children}</main>
+        <main className="ml-60 flex-1 p-6 bg-muted/30 overflow-auto">{children}</main>
       </div>
     </SessionProvider>
   )

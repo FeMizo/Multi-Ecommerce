@@ -4,7 +4,8 @@ import Stripe from "stripe"
 import { db } from "@/lib/db"
 import { stripe } from "@/lib/stripe"
 import { completeFullRefund, releaseOrderReservation } from "@/lib/payment-lifecycle"
-import { sendOrderConfirmationEmail } from "@/lib/email"
+import { sendOrderConfirmationEmail, sendSellerNewOrderEmail } from "@/lib/email"
+import { sendWhatsAppText } from "@/lib/whatsapp"
 import { getCurrentPeriodEnd } from "@/lib/billing-rules"
 import { toMinorUnits } from "@/lib/money"
 
@@ -131,13 +132,41 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
   const orderId = session.metadata?.orderId ?? session.client_reference_id
   const order = await db.order.findFirst({
     where: orderId ? { id: orderId } : { stripeSessionId: session.id },
-    select: { id: true, total: true, customer: { select: { email: true } }, store: { select: { name: true } } },
+    select: {
+      id: true,
+      total: true,
+      shippingAddress: true,
+      customer: { select: { email: true, phone: true } },
+      store: {
+        select: {
+          name: true,
+          members: {
+            where: { role: { in: ["OWNER", "STAFF"] } },
+            select: { user: { select: { email: true, phone: true } } },
+          },
+        },
+      },
+    },
   })
   if (order) {
+    const shipping = order.shippingAddress as { phone?: string }
+    const sellerEmails = order.store.members.map((member) => member.user.email)
+    const sellerPhones = order.store.members.map((member) => member.user.phone).filter(Boolean)
     try {
-      await sendOrderConfirmationEmail({ email: order.customer.email, orderId: order.id, storeName: order.store.name, total: order.total })
+      await Promise.allSettled([
+        sendOrderConfirmationEmail({ email: order.customer.email, orderId: order.id, storeName: order.store.name, total: order.total }),
+        sendSellerNewOrderEmail({ emails: sellerEmails, orderId: order.id, storeName: order.store.name, total: order.total }),
+        sendWhatsAppText({
+          phone: order.customer.phone ?? shipping.phone,
+          message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${order.store.name} fue confirmado.`,
+        }),
+        ...sellerPhones.map((phone) => sendWhatsAppText({
+          phone,
+          message: `Nuevo pedido pagado #${order.id.slice(-8).toUpperCase()} en ${order.store.name} por ${order.total} MXN.`,
+        })),
+      ])
     } catch (error) {
-      console.error("No se pudo enviar la confirmación del pedido", webhookError(error))
+      console.error("No se pudieron enviar notificaciones del pedido", webhookError(error))
     }
   }
 }

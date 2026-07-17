@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className={`${geist.variable} h-full antialiased bg-background`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
-        <Toaster richColors position="top-right" />
+        <Toaster richColors position="bottom-left" />
       </body>
     </html>
   )

@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
 import { OrderStatus } from "@prisma/client"
+import { sendOrderDeliveredEmail } from "@/lib/email"
+import { sendWhatsAppText } from "@/lib/whatsapp"
 
 const schema = z.object({
   status: z.enum(["PROCESSING", "SHIPPED", "DELIVERED"] as [OrderStatus, ...OrderStatus[]]),
@@ -52,8 +54,25 @@ export async function PATCH(
   const updated = await db.order.update({
     where: { id: orderId },
     data: { status: parsed.data.status },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      shippingAddress: true,
+      customer: { select: { email: true, phone: true } },
+      store: { select: { name: true } },
+    },
   })
+
+  if (updated.status === "DELIVERED") {
+    const shipping = updated.shippingAddress as { phone?: string }
+    await Promise.allSettled([
+      sendOrderDeliveredEmail({ email: updated.customer.email, orderId: updated.id, storeName: updated.store.name }),
+      sendWhatsAppText({
+        phone: updated.customer.phone ?? shipping.phone,
+        message: `Tu pedido #${updated.id.slice(-8).toUpperCase()} de ${updated.store.name} fue entregado.`,
+      }),
+    ])
+  }
 
   return NextResponse.json(updated)
 }
