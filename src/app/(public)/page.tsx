@@ -7,6 +7,13 @@ import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { CategoryGrid } from "@/components/products/category-grid"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Marketplace local",
+  description: "Descubre productos unicos de tu comunidad y compra a vendedores locales en AionSite Shop.",
+  alternates: { canonical: "/" },
+}
 
 async function getFeaturedProducts() {
   return db.product.findMany({
@@ -60,6 +67,8 @@ const testimonials = [
     rating: 5,
   },
 ]
+
+const SHOW_TESTIMONIALS = false
 
 const promoItems = [
   "Envio gratis en tu primera compra",
@@ -229,13 +238,13 @@ export default async function HomePage() {
                 <h2 className="text-3xl md:text-4xl font-bold mb-2">Explora por categoria</h2>
                 <p className="text-muted-foreground text-lg">Encuentra exactamente lo que buscas</p>
               </div>
-              <Link href="/search" className="hidden sm:flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors group">
+              <Link href="/categories" className="hidden sm:flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors group">
                 Ver todas
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
             <CategoryGrid categories={categories} />
-            <Link href="/search" className="flex sm:hidden items-center justify-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors mt-8">
+            <Link href="/categories" className="flex sm:hidden items-center justify-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors mt-8">
               Ver todas las categorias
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -318,6 +327,7 @@ export default async function HomePage() {
       )}
 
       {/* Testimonials */}
+      {SHOW_TESTIMONIALS && (
       <section className="py-20 md:py-24 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center mb-14">
@@ -355,6 +365,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Featured Products */}
       {products.length > 0 && (
@@ -416,9 +427,9 @@ export default async function HomePage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="h-14 px-10 text-base rounded-full border-2 border-background/20 text-background hover:bg-background/10 hover:border-background/30" asChild>
+                <Button size="lg" className="h-14 px-10 text-base rounded-full border-2 border-background/20 bg-transparent text-background hover:bg-background/10 hover:border-background/30" asChild>
                   <Link href="/stores">
-                    Ver ejemplos
+                    Ver tiendas activas
                   </Link>
                 </Button>
               </div>

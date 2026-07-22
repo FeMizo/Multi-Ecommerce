@@ -144,9 +144,9 @@ export default function RegisterPage() {
               
               <p className="text-xs text-muted-foreground">
                 Al crear una cuenta, aceptas nuestros{" "}
-                <Link href="#" className="text-primary hover:underline">términos de servicio</Link>
+                <Link href="/terms" className="text-primary hover:underline">términos de servicio</Link>
                 {" "}y{" "}
-                <Link href="#" className="text-primary hover:underline">política de privacidad</Link>.
+                <Link href="/privacy" className="text-primary hover:underline">política de privacidad</Link>.
               </p>
               
               <Button 

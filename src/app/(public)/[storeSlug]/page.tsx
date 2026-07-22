@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/products/product-card"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import type { Metadata } from "next"
 
 type Params = { storeSlug: string }
 type SearchParams = { category?: string; page?: string }
@@ -19,6 +20,28 @@ async function getStore(slug: string) {
       _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
     },
   })
+}
+
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const { storeSlug } = await params
+  const store = await getStore(storeSlug)
+  if (!store) return { title: "Tienda no encontrada" }
+
+  const description = store.description
+    ?? `${store.name} en AionSite Shop${store.city ? `, ${store.city.name}` : ""}. Explora sus productos disponibles.`
+
+  return {
+    title: store.name,
+    description,
+    alternates: { canonical: `/${store.slug}` },
+    openGraph: {
+      title: store.name,
+      description,
+      url: `/${store.slug}`,
+      type: "website",
+      images: [store.bannerUrl || DEFAULT_SHOP_BANNER],
+    },
+  }
 }
 
 async function getStoreProducts(storeId: string, categorySlug?: string, page = 1) {

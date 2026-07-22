@@ -10,6 +10,7 @@ import { AddToCartButton } from "@/components/products/add-to-cart-button"
 import { ReviewForm } from "@/components/products/review-form"
 import { auth } from "@/lib/auth"
 import { DEFAULT_PRODUCT_IMAGE, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import type { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
 
@@ -23,6 +24,29 @@ async function getProduct(slug: string) {
       _count: { select: { reviews: true } },
     },
   })
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const product = await getProduct(slug)
+  if (!product) return { title: "Producto no encontrado" }
+
+  const canonical = `/${product.store.slug}/${product.slug}`
+  const description = product.description
+    ?? `${product.name} de ${product.store.name}, disponible en AionSite Shop.`
+
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: product.name,
+      description,
+      url: canonical,
+      type: "website",
+      images: [product.images[0] || DEFAULT_PRODUCT_IMAGE],
+    },
+  }
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
