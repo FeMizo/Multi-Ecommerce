@@ -9,6 +9,7 @@ import { isMatchingMonthlyMxnPrice } from "@/lib/stripe-billing"
 const schema = z.object({
   name: z.string().min(2).max(60).optional(),
   priceMonthly: nonnegativeMxnSchema.optional(),
+  commissionRate: z.number().finite().min(0).max(1).optional(),
   maxProducts: z.number().int().positive().nullable().optional(),
   maxOrdersMonth: z.number().int().positive().nullable().optional(),
   stripePriceId: z.string().optional().or(z.literal("")),

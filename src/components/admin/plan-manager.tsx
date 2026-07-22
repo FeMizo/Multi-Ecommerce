@@ -19,6 +19,7 @@ const schema = z.object({
   name: z.string().min(2, "Requerido"),
   slug: z.string().min(2, "Requerido").regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
   priceMonthly: nonnegativeMxnSchema,
+  commissionPercent: z.number().finite().min(0).max(100),
   maxProducts: z.number().int().positive().optional(),
   maxOrdersMonth: z.number().int().positive().optional(),
   stripePriceId: z.string().optional(),
@@ -30,6 +31,7 @@ type Plan = {
   name: string
   slug: string
   priceMonthly: number
+  commissionRate: number
   maxProducts: number | null
   maxOrdersMonth: number | null
   stripePriceId: string | null
@@ -45,7 +47,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { priceMonthly: 0 },
+    defaultValues: { priceMonthly: 0, commissionPercent: 5 },
   })
 
   const {
@@ -62,6 +64,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...data,
+        commissionRate: data.commissionPercent / 100,
+        commissionPercent: undefined,
         maxProducts: data.maxProducts ?? null,
         maxOrdersMonth: data.maxOrdersMonth ?? null,
       }),
@@ -82,6 +86,8 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...data,
+        commissionRate: data.commissionPercent / 100,
+        commissionPercent: undefined,
         maxProducts: data.maxProducts ?? null,
         maxOrdersMonth: data.maxOrdersMonth ?? null,
       }),
@@ -121,6 +127,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
       name: plan.name,
       slug: plan.slug,
       priceMonthly: plan.priceMonthly,
+      commissionPercent: plan.commissionRate * 100,
       maxProducts: plan.maxProducts ?? undefined,
       maxOrdersMonth: plan.maxOrdersMonth ?? undefined,
       stripePriceId: plan.stripePriceId ?? "",
@@ -156,6 +163,10 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                 <Input {...register("priceMonthly", { valueAsNumber: true })} type="number" step="0.01" placeholder="299" />
               </div>
               <div className="space-y-1">
+                <Label>Comision venta directa (%)</Label>
+                <Input {...register("commissionPercent", { valueAsNumber: true })} type="number" step="0.01" min="0" max="100" placeholder="5" />
+              </div>
+              <div className="space-y-1">
                 <Label>Máx. productos</Label>
                 <Input {...register("maxProducts", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })} type="number" placeholder="∞" />
               </div>
@@ -186,6 +197,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                 <tr className="border-b">
                   <th className="text-left p-4 font-medium text-muted-foreground">Plan</th>
                   <th className="text-right p-4 font-medium text-muted-foreground">Mensual</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">Comision directa</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Productos</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Pedidos/mes</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Estado</th>
@@ -196,7 +208,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                 {plans.map((plan) => (
                   <tr key={plan.id} className="border-b last:border-0 hover:bg-muted/40">
                     {editingId === plan.id ? (
-                      <td colSpan={6} className="p-4">
+                      <td colSpan={7} className="p-4">
                         <form onSubmit={handleEdit(onEdit)} className="grid grid-cols-2 gap-3 md:grid-cols-3">
                           <div className="space-y-1 col-span-2 md:col-span-1">
                             <Label>Nombre</Label>
@@ -210,6 +222,10 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                           <div className="space-y-1">
                             <Label>Mensual</Label>
                             <Input {...regEdit("priceMonthly", { valueAsNumber: true })} type="number" step="0.01" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label>Comision venta directa (%)</Label>
+                            <Input {...regEdit("commissionPercent", { valueAsNumber: true })} type="number" step="0.01" min="0" max="100" />
                           </div>
                           <div className="space-y-1">
                             <Label>Máx. productos</Label>
@@ -236,6 +252,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                           <p className="text-xs text-muted-foreground">{plan.slug}</p>
                         </td>
                         <td className="p-4 text-right tabular-nums">{formatPrice(plan.priceMonthly)}</td>
+                        <td className="p-4 text-center tabular-nums">{(plan.commissionRate * 100).toFixed(2)}%</td>
                         <td className="p-4 text-center">{plan.maxProducts ?? "∞"}</td>
                         <td className="p-4 text-center">{plan.maxOrdersMonth ?? "∞"}</td>
                         <td className="p-4 text-center">
@@ -261,7 +278,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
                   </tr>
                 ))}
                 {plans.length === 0 && (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No hay planes creados</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No hay planes creados</td></tr>
                 )}
               </tbody>
             </table>

@@ -12,6 +12,7 @@ export default async function AdminPlansPage() {
       name: true,
       slug: true,
       priceMonthly: true,
+      commissionRate: true,
       maxProducts: true,
       maxOrdersMonth: true,
       stripePriceId: true,

@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-type Plan = { id: string; name: string }
+type Plan = { id: string; name: string; commissionRate: number }
 
 type Props = {
   storeId: string
@@ -47,7 +47,9 @@ export function StorePlanSelector({ storeId, plans, currentPlanId }: Props) {
         </SelectTrigger>
         <SelectContent>
           {plans.map((p) => (
-            <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+            <SelectItem key={p.id} value={p.id} className="text-xs">
+              {p.name} - directa {(p.commissionRate * 100).toFixed(2)}%
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

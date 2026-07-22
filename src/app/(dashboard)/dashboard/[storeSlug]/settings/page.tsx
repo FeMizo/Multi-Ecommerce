@@ -55,7 +55,7 @@ export default async function SettingsPage({
     }),
     db.plan.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, priceMonthly: true, maxProducts: true, maxOrdersMonth: true, stripePriceId: true },
+      select: { id: true, name: true, priceMonthly: true, commissionRate: true, maxProducts: true, maxOrdersMonth: true, stripePriceId: true },
       orderBy: { priceMonthly: "asc" },
     }),
   ])

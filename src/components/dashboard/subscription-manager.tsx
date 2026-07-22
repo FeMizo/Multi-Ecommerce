@@ -11,6 +11,7 @@ type Plan = {
   id: string
   name: string
   priceMonthly: number
+  commissionRate: number
   maxProducts: number | null
   maxOrdersMonth: number | null
   availableInStripe: boolean
@@ -86,7 +87,8 @@ export function SubscriptionManager({
               <p className="mt-2 text-2xl font-bold">{formatPrice(plan.priceMonthly)}<span className="text-xs font-normal text-muted-foreground">/mes</span></p>
               <p className="mt-3 text-xs text-muted-foreground">
                 {plan.maxProducts ?? "Productos ilimitados"} {plan.maxProducts !== null ? "productos" : ""}<br />
-                {plan.maxOrdersMonth ?? "Pedidos ilimitados"} {plan.maxOrdersMonth !== null ? "pedidos/mes" : ""}
+                {plan.maxOrdersMonth ?? "Pedidos ilimitados"} {plan.maxOrdersMonth !== null ? "pedidos/mes" : ""}<br />
+                Comision solo en ventas directas por la pagina: {(plan.commissionRate * 100).toFixed(2)}%
               </p>
               {!current && plan.availableInStripe && (
                 <Button

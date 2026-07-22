@@ -52,7 +52,7 @@ export default async function AdminSellersPage({
         },
       },
     }),
-    db.plan.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { priceMonthly: "asc" } }),
+    db.plan.findMany({ where: { isActive: true }, select: { id: true, name: true, commissionRate: true }, orderBy: { priceMonthly: "asc" } }),
   ])
 
   const revenues = await db.order.groupBy({
