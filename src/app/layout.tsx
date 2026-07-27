@@ -8,16 +8,16 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: "AionSite", template: "%s | AionSite" },
-  description: "Multi Store. One Ecosystem. Compra y vende productos locales.",
+  title: { default: "AionSite Shop", template: "%s | AionSite Shop" },
+  description: "AionSite Shop es un marketplace local para comprar y vender productos en México.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "AionSite",
-    description: "Multi Store. One Ecosystem. Compra y vende productos locales.",
+    title: "AionSite Shop",
+    description: "AionSite Shop es un marketplace local para comprar y vender productos en México.",
     url: "/",
-    siteName: "AionSite",
+    siteName: "AionSite Shop",
     locale: "es_MX",
     type: "website",
   },

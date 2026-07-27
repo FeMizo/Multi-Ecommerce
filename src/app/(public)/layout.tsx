@@ -30,10 +30,10 @@ export default async function PublicLayout({ children }: { children: React.React
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <Link href="/" className="inline-block mb-4">
-                <Image src="/logo.png" alt="AionSite" width={130} height={38} className="h-9 w-auto object-contain" />
+                <Image src="/logo.png" alt="AionSite Shop" width={130} height={38} className="h-9 w-auto object-contain" />
               </Link>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                El marketplace de tu comunidad. Conectamos compradores y vendedores locales.
+                AionSite Shop es el marketplace de tu comunidad. Conectamos compradores y vendedores locales.
               </p>
               <div className="flex items-center gap-3">
                 <a href="https://www.facebook.com/aionsite" target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors" aria-label="Facebook">

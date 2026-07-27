@@ -10,8 +10,8 @@ import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Marketplace local",
-  description: "Descubre productos unicos de tu comunidad y compra a vendedores locales en AionSite Shop.",
+  title: "AionSite Shop",
+  description: "AionSite Shop es un marketplace local para descubrir productos unicos de tu comunidad y comprar a vendedores locales en Mexico.",
   alternates: { canonical: "/" },
 }
 
@@ -109,18 +109,20 @@ export default async function HomePage() {
             <div className="animate-fade-in-up">
               <Badge variant="secondary" className="mb-6 px-5 py-2.5 text-sm font-medium bg-primary/10 text-primary border-0 hover:bg-primary/15 transition-colors">
                 <Sparkles className="w-4 h-4 mr-2" />
-                Tu marketplace local favorito
+                AionSite Shop
               </Badge>
             </div>
             
             <h1 className="animate-fade-in-up delay-100 text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-6 text-balance leading-[1.1]">
+              AionSite Shop
+              <br />
               Descubre productos{" "}
               <span className="gradient-text">unicos</span>{" "}
               de tu comunidad
             </h1>
             
             <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 text-balance leading-relaxed">
-              Conectamos compradores y vendedores locales. Encuentra productos artesanales, entregas el mismo dia y apoya a emprendedores de tu ciudad.
+              Marketplace local para comprar y vender en Mexico. Encuentra productos artesanales, tiendas cercanas y apoyo directo a emprendedores de tu ciudad.
             </p>
             
             <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row gap-4 justify-center">
