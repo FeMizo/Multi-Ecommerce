@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useSession, signOut } from "next-auth/react"
-import { ShoppingCart, User, Package, LayoutDashboard, LogOut, Search, Store, Menu, X } from "lucide-react"
+import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -49,7 +49,7 @@ export function Navbar() {
                   className="hidden sm:block h-9 w-auto object-contain"
                   priority
                 />
-                <span className="hidden xl:inline-block text-sm font-semibold tracking-wide text-foreground">
+                <span className="hidden md:inline-block text-sm font-semibold tracking-wide text-foreground">
                   AionSite Shop
                 </span>
               </Link>
@@ -142,20 +142,6 @@ export function Navbar() {
                         Mi perfil
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                      <Link href="/dashboard" className="flex items-center gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Mi tienda
-                      </Link>
-                    </DropdownMenuItem>
-                    {session.user.globalRole === "PLATFORM_ADMIN" && (
-                      <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                        <Link href="/admin" className="flex items-center gap-2">
-                          <LayoutDashboard className="h-4 w-4" />
-                          Admin panel
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuSeparator className="my-2" />
                     <DropdownMenuItem
                       onClick={() => signOut({ callbackUrl: "/" })}

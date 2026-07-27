@@ -127,6 +127,16 @@ export default async function HomePage() {
             <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 text-balance leading-relaxed">
               AionSite Shop conecta compradores con tiendas locales de Mexico. Encuentra productos artesanales, tiendas cercanas y apoyo directo a emprendedores de tu ciudad.
             </p>
+
+            <div className="animate-fade-in-up delay-250 mx-auto mb-10 max-w-3xl rounded-3xl border border-border/60 bg-background/80 p-6 text-left shadow-sm backdrop-blur-sm">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary mb-3">
+                Que hace esta app
+              </p>
+              <p className="text-base md:text-lg text-foreground leading-relaxed">
+                AionSite Shop es una aplicacion web de marketplace local en Mexico. Permite a los compradores descubrir tiendas cercanas,
+                comprar productos y seguir sus pedidos, y permite a los vendedores abrir su tienda y administrar su catalogo y ventas.
+              </p>
+            </div>
             
             <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="h-14 px-10 text-base rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all btn-shine" asChild>
