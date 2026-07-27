@@ -112,17 +112,20 @@ export default async function HomePage() {
                 AionSite Shop
               </Badge>
             </div>
+            <p className="animate-fade-in-up delay-50 mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+              Marketplace local en Mexico
+            </p>
             
             <h1 className="animate-fade-in-up delay-100 text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-6 text-balance leading-[1.1]">
               AionSite Shop
               <br />
-              Descubre productos{" "}
-              <span className="gradient-text">unicos</span>{" "}
-              de tu comunidad
+              Marketplace local para comprar y vender
+              <br />
+              <span className="gradient-text">productos de tu comunidad</span>
             </h1>
             
             <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 text-balance leading-relaxed">
-              Marketplace local para comprar y vender en Mexico. Encuentra productos artesanales, tiendas cercanas y apoyo directo a emprendedores de tu ciudad.
+              AionSite Shop conecta compradores con tiendas locales de Mexico. Encuentra productos artesanales, tiendas cercanas y apoyo directo a emprendedores de tu ciudad.
             </p>
             
             <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row gap-4 justify-center">

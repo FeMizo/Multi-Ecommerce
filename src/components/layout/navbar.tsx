@@ -36,19 +36,22 @@ export function Navbar() {
               <Link href="/" className="flex items-center gap-2 group">
                 <Image
                   src="/logo-icon.png"
-                  alt="AionSite"
+                  alt="AionSite Shop"
                   width={36}
                   height={36}
                   className="rounded-xl sm:hidden"
                 />
                 <Image
                   src="/logo.png"
-                  alt="AionSite"
+                  alt="AionSite Shop"
                   width={140}
                   height={40}
                   className="hidden sm:block h-9 w-auto object-contain"
                   priority
                 />
+                <span className="hidden xl:inline-block text-sm font-semibold tracking-wide text-foreground">
+                  AionSite Shop
+                </span>
               </Link>
               <div className="hidden md:block">
                 <CitySelector />
