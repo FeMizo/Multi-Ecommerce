@@ -51,7 +51,7 @@ export default async function PublicLayout({ children }: { children: React.React
               <ul className="space-y-3">
                 <li><Link href="/stores" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Tiendas</Link></li>
                 <li><Link href="/search" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Productos</Link></li>
-                <li><Link href="/categories" className="text-sm text-muted-foreground hover:text-foreground transition-colors">CategorÃ­as</Link></li>
+                <li><Link href="/categories" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Categorías</Link></li>
                 <li><Link href="/offers" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Ofertas</Link></li>
               </ul>
             </div>
@@ -83,7 +83,7 @@ export default async function PublicLayout({ children }: { children: React.React
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Tu ciudad, tu paÃ­s</span>
+                  <span>Tu ciudad, tu país</span>
                 </li>
               </ul>
             </div>

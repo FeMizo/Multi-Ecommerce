@@ -3,11 +3,10 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
-import Link from "next/link"
-import { ExternalLink } from "lucide-react"
 import { StoreToggles } from "@/components/admin/store-toggles"
 import { StorePlanSelector } from "@/components/admin/store-plan-selector"
 import { AdminSearch } from "@/components/admin/admin-search"
+import { SellerDetailsSheet } from "@/components/admin/seller-details-sheet"
 
 type SearchParams = { q?: string }
 
@@ -24,21 +23,32 @@ export default async function AdminSellersPage({
     db.store.findMany({
       where: {
         deletedAt: null,
-        ...(q ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { slug: { contains: q, mode: "insensitive" } },
-            { members: { some: { role: "OWNER", user: { OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { email: { contains: q, mode: "insensitive" } },
-            ] } } } },
-          ],
-        } : {}),
+        ...(q
+          ? {
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { slug: { contains: q, mode: "insensitive" } },
+                {
+                  members: {
+                    some: {
+                      role: "OWNER",
+                      user: {
+                        OR: [
+                          { name: { contains: q, mode: "insensitive" } },
+                          { email: { contains: q, mode: "insensitive" } },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
       },
       orderBy: { createdAt: "desc" },
       include: {
         city: { select: { name: true } },
-        subscription: { include: { plan: { select: { id: true, name: true } } } },
+        subscription: { include: { plan: { select: { id: true, name: true, commissionRate: true } } } },
         members: {
           where: { role: "OWNER" },
           include: { user: { select: { name: true, email: true, phone: true } } },
@@ -52,7 +62,11 @@ export default async function AdminSellersPage({
         },
       },
     }),
-    db.plan.findMany({ where: { isActive: true }, select: { id: true, name: true, commissionRate: true }, orderBy: { priceMonthly: "asc" } }),
+    db.plan.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, commissionRate: true },
+      orderBy: { priceMonthly: "asc" },
+    }),
   ])
 
   const revenues = await db.order.groupBy({
@@ -92,6 +106,8 @@ export default async function AdminSellersPage({
               <tbody>
                 {stores.map((store) => {
                   const owner = store.members[0]?.user
+                  const revenue = revenueMap.get(store.id) ?? 0
+
                   return (
                     <tr key={store.id} className="border-b last:border-0 hover:bg-muted/40">
                       <td className="p-4">
@@ -128,9 +144,7 @@ export default async function AdminSellersPage({
                       </td>
                       <td className="p-4 text-center">{store._count.products}</td>
                       <td className="p-4 text-center">{store._count.orders}</td>
-                      <td className="p-4 text-right font-medium">
-                        {formatPrice(revenueMap.get(store.id) ?? 0)}
-                      </td>
+                      <td className="p-4 text-right font-medium">{formatPrice(revenue)}</td>
                       <td className="p-4">
                         <StoreToggles
                           storeId={store.id}
@@ -139,15 +153,45 @@ export default async function AdminSellersPage({
                         />
                       </td>
                       <td className="p-4">
-                        <Link href={`/admin/sellers/${store.id}`} className="text-muted-foreground hover:text-foreground">
-                          <ExternalLink className="h-4 w-4" />
-                        </Link>
+                        <SellerDetailsSheet
+                          storeName={store.name}
+                          slug={store.slug}
+                          description={store.description}
+                          cityName={store.city?.name ?? null}
+                          isActive={store.isActive}
+                          isVerified={store.isVerified}
+                          stripeOnboarded={store.stripeOnboarded}
+                          stripeAccountId={store.stripeAccountId}
+                          cashOnDeliveryEnabled={store.cashOnDeliveryEnabled}
+                          transferEnabled={store.transferEnabled}
+                          transferInstructions={store.transferInstructions}
+                          planName={store.subscription?.plan.name ?? null}
+                          commissionRate={store.subscription?.plan.commissionRate ?? null}
+                          productsCount={store._count.products}
+                          ordersCount={store._count.orders}
+                          revenueLabel={formatPrice(revenue)}
+                          createdAtLabel={store.createdAt.toLocaleDateString("es-MX")}
+                          ownerName={owner?.name ?? null}
+                          ownerEmail={owner?.email ?? null}
+                          ownerPhone={owner?.phone ?? null}
+                          members={store.members.map((member) => ({
+                            id: member.id,
+                            role: member.role,
+                            name: member.user.name,
+                            email: member.user.email,
+                            phone: member.user.phone,
+                          }))}
+                        />
                       </td>
                     </tr>
                   )
                 })}
                 {stores.length === 0 && (
-                  <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin resultados</td></tr>
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-muted-foreground">
+                      Sin resultados
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
