@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import { Minus, Plus, ShoppingBag, X, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,16 +14,41 @@ import {
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
-import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, buildWhatsAppShareUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
+import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, total } = useCartStore()
+  const [whatsappPhone, setWhatsappPhone] = useState<string | null>(null)
+  const [whatsappLoading, setWhatsappLoading] = useState(false)
+
+  useEffect(() => {
+    let active = true
+
+    async function loadRecipient() {
+      if (items.length === 0) {
+        setWhatsappPhone(null)
+        return
+      }
+
+      setWhatsappLoading(true)
+      const recipient = await resolveCartWhatsAppRecipient(items.map((item) => item.storeId))
+      if (!active) return
+      setWhatsappPhone(recipient?.phone ?? null)
+      setWhatsappLoading(false)
+    }
+
+    loadRecipient()
+
+    return () => {
+      active = false
+    }
+  }, [items])
 
   async function shareCartByWhatsApp() {
+    if (!whatsappPhone) return
     const message = buildCartWhatsAppMessage(items, total(), formatPrice)
     const popup = window.open("about:blank", "_blank")
-    const recipient = await resolveCartWhatsAppRecipient(items.map((item) => item.storeId))
-    const url = recipient?.phone ? buildWhatsAppChatUrl(recipient.phone, message) : buildWhatsAppShareUrl(message)
+    const url = buildWhatsAppChatUrl(whatsappPhone, message)
     if (popup) {
       popup.location.href = url
       popup.opener = null
@@ -148,9 +174,19 @@ export function CartDrawer() {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={shareCartByWhatsApp}>
-                  Enviar por WhatsApp
-                </Button>
+                {whatsappLoading || whatsappPhone ? (
+                  <div className="space-y-2">
+                    {whatsappLoading ? (
+                      <Button type="button" variant="outline" className="w-full h-11 rounded-xl" disabled>
+                        Verificando WhatsApp...
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={shareCartByWhatsApp}>
+                        Enviar por WhatsApp
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
                 <Button variant="outline" className="w-full h-11 rounded-xl" onClick={closeCart} asChild>
                   <Link href="/cart">Ver carrito completo</Link>
                 </Button>

@@ -2,22 +2,48 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
-import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, buildWhatsAppShareUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
+import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, total } = useCartStore()
+  const [whatsappPhone, setWhatsappPhone] = useState<string | null>(null)
+  const [whatsappLoading, setWhatsappLoading] = useState(false)
+
+  useEffect(() => {
+    let active = true
+
+    async function loadRecipient() {
+      if (items.length === 0) {
+        setWhatsappPhone(null)
+        return
+      }
+
+      setWhatsappLoading(true)
+      const recipient = await resolveCartWhatsAppRecipient(items.map((item) => item.storeId))
+      if (!active) return
+      setWhatsappPhone(recipient?.phone ?? null)
+      setWhatsappLoading(false)
+    }
+
+    loadRecipient()
+
+    return () => {
+      active = false
+    }
+  }, [items])
 
   async function shareCartByWhatsApp() {
+    if (!whatsappPhone) return
     const message = buildCartWhatsAppMessage(items, total(), formatPrice)
     const popup = window.open("about:blank", "_blank")
-    const recipient = await resolveCartWhatsAppRecipient(items.map((item) => item.storeId))
-    const url = recipient?.phone ? buildWhatsAppChatUrl(recipient.phone, message) : buildWhatsAppShareUrl(message)
+    const url = buildWhatsAppChatUrl(whatsappPhone, message)
     if (popup) {
       popup.location.href = url
       popup.opener = null
@@ -102,9 +128,19 @@ export default function CartPage() {
             <Button className="w-full" size="lg" asChild>
               <Link href="/checkout">Proceder al pago</Link>
             </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={shareCartByWhatsApp}>
-              Enviar carrito por WhatsApp
-            </Button>
+            {whatsappLoading || whatsappPhone ? (
+              <div className="space-y-2">
+                {whatsappLoading ? (
+                  <Button type="button" variant="outline" className="w-full" disabled>
+                    Verificando WhatsApp...
+                  </Button>
+                ) : (
+                  <Button type="button" variant="outline" className="w-full" onClick={shareCartByWhatsApp}>
+                    Enviar carrito por WhatsApp
+                  </Button>
+                )}
+              </div>
+            ) : null}
             <Button variant="outline" className="w-full" asChild>
               <Link href="/search">Seguir comprando</Link>
             </Button>
