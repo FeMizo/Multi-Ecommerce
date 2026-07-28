@@ -18,9 +18,9 @@ type Coupon = {
   maxRedemptions: number | null
   redeemedCount: number
   isActive: boolean
-  startsAt: string | null
-  endsAt: string | null
-  createdAt: string
+  startsAt: Date | string | null
+  endsAt: Date | string | null
+  createdAt: Date | string
 }
 
 type Props = {

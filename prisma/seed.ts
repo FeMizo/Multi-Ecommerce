@@ -168,7 +168,7 @@ async function main() {
   })
 
   if (demoStore) {
-    const categories = await db.category.findMany({
+    const categories: Array<{ id: string; slug: string }> = await db.category.findMany({
       where: { slug: { in: ["alimentos", "artesanias"] } },
       select: { id: true, slug: true },
     })

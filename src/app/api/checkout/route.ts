@@ -237,7 +237,24 @@ export async function POST(req: Request) {
               },
             },
           },
-          include: { items: true },
+          include: {
+            items: true,
+            coupon: {
+              select: {
+                id: true,
+                code: true,
+                type: true,
+                value: true,
+                minOrderAmount: true,
+                maxRedemptions: true,
+                redeemedCount: true,
+                startsAt: true,
+                endsAt: true,
+                isActive: true,
+                stripeCouponId: true,
+              },
+            },
+          },
         })
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
     } catch (error) {

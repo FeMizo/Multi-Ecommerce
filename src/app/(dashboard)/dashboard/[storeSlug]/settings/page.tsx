@@ -78,6 +78,7 @@ export default async function SettingsPage({
         isOwner={membership.role === "OWNER"}
         canManageVisibility={membership.role === "OWNER" || membership.role === "STAFF"}
         stripeOnboarded={store.stripeOnboarded}
+        cashOnDeliveryEnabled={store.cashOnDeliveryEnabled}
         initialData={{
           slug: store.slug,
           name: store.name,
