@@ -103,12 +103,16 @@ model Store {
   stripeOnboarded  Boolean   @default(false)
   customDomain     String?   @unique
   isActive         Boolean   @default(true)
+  cashOnDeliveryEnabled Boolean @default(true)
+  transferEnabled  Boolean   @default(true)
+  transferInstructions String? @db.Text
   isVerified       Boolean   @default(false)
   deletedAt        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   members      StoreMember[]
+  coupons      StoreCoupon[]
   products     Product[]
   orders       Order[]
   cartItems    CartItem[]
@@ -129,6 +133,31 @@ model StoreMember {
   @@unique([storeId, userId])
   @@index([userId])
   @@map("store_members")
+}
+
+model StoreCoupon {
+  id              String      @id @default(cuid())
+  storeId         String
+  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  code            String
+  name            String
+  type            CouponType
+  value           Float
+  minOrderAmount  Float?
+  maxRedemptions  Int?
+  redeemedCount   Int         @default(0)
+  isActive        Boolean     @default(true)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  stripeCouponId  String?     @unique
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  orders Order[]
+
+  @@unique([storeId, code])
+  @@index([storeId, isActive])
+  @@map("store_coupons")
 }
 
 // ─── Plans & Subscriptions ───────────────────────────────────────────────────
@@ -250,9 +279,15 @@ model Order {
   subtotal              Float
   platformFee           Float       @default(0)
   total                 Float
+  couponId              String?
+  coupon                StoreCoupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponCode           String?
+  discountAmount       Float       @default(0)
   shippingAddress       Json
   notes                 String?     @db.Text
   checkoutToken         String?     @unique
+  paymentMethod         PaymentMethod @default(STRIPE)
+  transferCode          String?     @unique
   stripePaymentIntentId String?
   stripeSessionId       String?     @unique
   reservationExpiresAt  DateTime?
@@ -267,6 +302,7 @@ model Order {
   @@index([storeId])
   @@index([storeId, customerId])
   @@index([storeId, status])
+  @@index([couponId])
   @@map("orders")
 }
 
@@ -363,6 +399,8 @@ enum ProductStatus {
 }
 
 enum OrderStatus {
+  PENDING_PAYMENT
+  AWAITING_CONFIRMATION
   PENDING
   PAID
   PROCESSING
@@ -377,4 +415,15 @@ enum PaymentStatus {
   SUCCEEDED
   FAILED
   REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  CASH_ON_DELIVERY
+  TRANSFER
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
 }

@@ -11,6 +11,7 @@ import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
 import { OrderStatusBadge } from "@/components/shared/order-status-badge"
 import { RefundButton } from "@/components/dashboard/refund-button"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
+import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
 type ShippingAddress = {
   name?: string
@@ -34,14 +35,15 @@ export default async function OrderDetailPage({
 
   const order = await db.order.findFirst({
     where: { id: orderId, storeId: store.id, deletedAt: null },
-    include: {
-      customer: { select: { name: true, email: true, phone: true } },
-      items: {
-        include: { product: { select: { name: true, images: true, slug: true } } },
+      include: {
+        customer: { select: { name: true, email: true, phone: true } },
+        items: {
+          include: { product: { select: { name: true, images: true, slug: true } } },
+        },
+        payment: { select: { status: true, stripePaymentIntentId: true } },
+        store: { select: { transferInstructions: true } },
       },
-      payment: { select: { status: true, stripePaymentIntentId: true } },
-    },
-  })
+    })
 
   if (!order) notFound()
 
@@ -154,13 +156,22 @@ export default async function OrderDetailPage({
               {order.payment && (
                 <div className="text-xs text-muted-foreground">
                   <p>Pago: {order.payment.status}</p>
+                  <p>{PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS] ?? order.paymentMethod}</p>
                   {order.payment.stripePaymentIntentId && (
                     <p className="font-mono truncate">{order.payment.stripePaymentIntentId}</p>
                   )}
+                  {order.paymentMethod === "TRANSFER" && order.transferCode && (
+                    <p className="font-mono truncate">Código: {order.transferCode}</p>
+                  )}
                 </div>
               )}
-              {order.payment?.status === "SUCCEEDED" && (
+              {order.paymentMethod === "STRIPE" && order.payment?.status === "SUCCEEDED" && (
                 <RefundButton storeSlug={storeSlug} orderId={order.id} />
+              )}
+              {order.paymentMethod === "TRANSFER" && order.store.transferInstructions && (
+                <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground whitespace-pre-wrap">
+                  {order.store.transferInstructions}
+                </div>
               )}
               {order.paidAt && (
                 <p className="text-xs text-muted-foreground">

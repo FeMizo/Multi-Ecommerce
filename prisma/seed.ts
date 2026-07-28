@@ -157,6 +157,110 @@ async function main() {
     },
   })
 
+  const demoStore = await db.store.findFirst({
+    where: {
+      OR: [
+        { name: "Tienda de prueba" },
+        { slug: "tienda-de-prueba" },
+      ],
+    },
+    select: { id: true },
+  })
+
+  if (demoStore) {
+    const categories = await db.category.findMany({
+      where: { slug: { in: ["alimentos", "artesanias"] } },
+      select: { id: true, slug: true },
+    })
+    const categoryBySlug = new Map(categories.map((category) => [category.slug, category.id]))
+
+    const demoProducts = [
+      {
+        slug: "cafe-de-la-casa",
+        name: "Cafe de la casa",
+        description: "Paquete de cafe tostado artesanal con perfil suave y notas de cacao.",
+        price: 180,
+        comparePrice: 220,
+        stock: 24,
+        sku: "DEMO-CAFE-001",
+        categorySlug: "alimentos",
+        images: ["/placeholders/product.webp"],
+        tags: ["artesanal", "local", "cafe"],
+      },
+      {
+        slug: "miel-cruda-de-aguacate",
+        name: "Miel cruda de aguacate",
+        description: "Miel mexicana de sabor intenso, ideal para desayunos, infusiones y postres.",
+        price: 210,
+        comparePrice: 250,
+        stock: 16,
+        sku: "DEMO-MIEL-001",
+        categorySlug: "alimentos",
+        images: ["/placeholders/product.webp"],
+        tags: ["miel", "local", "organico"],
+      },
+      {
+        slug: "vela-artesanal-citrica",
+        name: "Vela artesanal citrica",
+        description: "Vela decorativa con aroma fresco para mostrar el catalogo de la tienda de prueba.",
+        price: 140,
+        comparePrice: 170,
+        stock: 18,
+        sku: "DEMO-VELA-001",
+        categorySlug: "artesanias",
+        images: ["/placeholders/product.webp"],
+        tags: ["hogar", "artesania", "decoracion"],
+      },
+      {
+        slug: "bolsa-artesanal-de-yute",
+        name: "Bolsa artesanal de yute",
+        description: "Bolsa tejida a mano con acabados resistentes para uso diario.",
+        price: 320,
+        comparePrice: 380,
+        stock: 12,
+        sku: "DEMO-BOLSA-001",
+        categorySlug: "artesanias",
+        images: ["/placeholders/product.webp"],
+        tags: ["artesania", "bolsa", "hecho-a-mano"],
+      },
+    ]
+
+    for (const product of demoProducts) {
+      const categoryId = categoryBySlug.get(product.categorySlug)
+      if (!categoryId) continue
+
+      const existing = await db.product.findFirst({
+        where: { storeId: demoStore.id, slug: product.slug },
+        select: { id: true },
+      })
+
+      const data = {
+        storeId: demoStore.id,
+        name: product.name,
+        slug: product.slug,
+        description: product.description,
+        price: product.price,
+        comparePrice: product.comparePrice,
+        stock: product.stock,
+        sku: product.sku,
+        categoryId,
+        status: "ACTIVE",
+        featured: true,
+        images: product.images,
+        tags: product.tags,
+      }
+
+      if (existing) {
+        await db.product.update({
+          where: { id: existing.id },
+          data,
+        })
+      } else {
+        await db.product.create({ data })
+      }
+    }
+  }
+
   console.log("✓ Seed completado")
   console.log("  Admin: admin@mercadolocal.mx / Admin1234!")
 }

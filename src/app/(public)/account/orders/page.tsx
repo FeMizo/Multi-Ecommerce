@@ -6,8 +6,11 @@ import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
 import { OrderStatus } from "@prisma/client"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
+import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
 const statusConfig: Record<OrderStatus, { label: string; className: string }> = {
+  PENDING_PAYMENT: { label: "Pendiente de pago", className: "bg-yellow-100 text-yellow-800" },
+  AWAITING_CONFIRMATION: { label: "Esperando confirmación", className: "bg-amber-100 text-amber-800" },
   PENDING: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
   PAID: { label: "Pagado", className: "bg-green-100 text-green-800" },
   PROCESSING: { label: "Procesando", className: "bg-blue-100 text-blue-800" },
@@ -66,6 +69,14 @@ export default async function AccountOrdersPage() {
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${cfg.className}`}>
                       {cfg.label}
                     </span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS] ?? order.paymentMethod}
+                    </p>
+                    {order.paymentMethod === "TRANSFER" && order.transferCode && (
+                      <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                        Código {order.transferCode}
+                      </p>
+                    )}
                     <p className="text-sm font-semibold mt-1">{formatPrice(order.total)}</p>
                   </div>
                 </div>

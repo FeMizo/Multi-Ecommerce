@@ -41,7 +41,7 @@ export default async function AdminSellersPage({
         subscription: { include: { plan: { select: { id: true, name: true } } } },
         members: {
           where: { role: "OWNER" },
-          include: { user: { select: { name: true, email: true } } },
+          include: { user: { select: { name: true, email: true, phone: true } } },
           take: 1,
         },
         _count: {
@@ -112,6 +112,7 @@ export default async function AdminSellersPage({
                           <div>
                             <p>{owner.name ?? "—"}</p>
                             <p className="text-xs text-muted-foreground">{owner.email}</p>
+                            <p className="text-xs text-muted-foreground">{owner.phone ?? "Sin número"}</p>
                           </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
@@ -138,7 +139,7 @@ export default async function AdminSellersPage({
                         />
                       </td>
                       <td className="p-4">
-                        <Link href={`/dashboard/${store.slug}`} className="text-muted-foreground hover:text-foreground">
+                        <Link href={`/admin/sellers/${store.id}`} className="text-muted-foreground hover:text-foreground">
                           <ExternalLink className="h-4 w-4" />
                         </Link>
                       </td>

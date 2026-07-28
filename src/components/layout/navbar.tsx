@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useSession, signOut } from "next-auth/react"
-import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X } from "lucide-react"
+import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -142,6 +142,14 @@ export function Navbar() {
                         Mi perfil
                       </Link>
                     </DropdownMenuItem>
+                    {session.user.globalRole === "PLATFORM_ADMIN" && (
+                      <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                        <Link href="/admin" className="flex items-center gap-2">
+                          <LayoutDashboard className="h-4 w-4" />
+                          Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator className="my-2" />
                     <DropdownMenuItem
                       onClick={() => signOut({ callbackUrl: "/" })}

@@ -8,9 +8,23 @@ import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
+import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, buildWhatsAppShareUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, total } = useCartStore()
+
+  async function shareCartByWhatsApp() {
+    const message = buildCartWhatsAppMessage(items, total(), formatPrice)
+    const popup = window.open("about:blank", "_blank")
+    const recipient = await resolveCartWhatsAppRecipient(items.map((item) => item.storeId))
+    const url = recipient?.phone ? buildWhatsAppChatUrl(recipient.phone, message) : buildWhatsAppShareUrl(message)
+    if (popup) {
+      popup.location.href = url
+      popup.opener = null
+      return
+    }
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
 
   if (items.length === 0) {
     return (
@@ -87,6 +101,9 @@ export default function CartPage() {
             </div>
             <Button className="w-full" size="lg" asChild>
               <Link href="/checkout">Proceder al pago</Link>
+            </Button>
+            <Button type="button" variant="outline" className="w-full" onClick={shareCartByWhatsApp}>
+              Enviar carrito por WhatsApp
             </Button>
             <Button variant="outline" className="w-full" asChild>
               <Link href="/search">Seguir comprando</Link>

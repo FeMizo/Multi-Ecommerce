@@ -43,6 +43,8 @@ export function StoreToggles({ storeId, isActive, isVerified }: Props) {
         onClick={() => update({ isActive: !isActive })}
         loading={loading}
         disabled={deleteLoading}
+        activeLabel="Visible"
+        inactiveLabel="Oculta"
       />
       <Button
         variant={isVerified ? "secondary" : "ghost"}

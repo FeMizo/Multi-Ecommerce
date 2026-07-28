@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 
-type OrderStatus = "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED"
+type OrderStatus = "PENDING_PAYMENT" | "AWAITING_CONFIRMATION" | "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED"
 
 const statusLabels: Record<OrderStatus, string> = {
+  PENDING_PAYMENT: "Pendiente de pago",
+  AWAITING_CONFIRMATION: "Esperando confirmación",
   PENDING: "Pendiente",
   PAID: "Pagado",
   PROCESSING: "Procesando",
@@ -25,6 +27,9 @@ const statusLabels: Record<OrderStatus, string> = {
 }
 
 const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
+  PENDING_PAYMENT: "PAID",
+  AWAITING_CONFIRMATION: "PAID",
+  PENDING: "PAID",
   PAID: "PROCESSING",
   PROCESSING: "SHIPPED",
   SHIPPED: "DELIVERED",

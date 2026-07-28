@@ -3,6 +3,33 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
 
+export async function GET(req: Request) {
+  const url = new URL(req.url)
+  const storeId = url.searchParams.get("storeId")
+  if (!storeId) {
+    return NextResponse.json({ message: "Falta storeId" }, { status: 400 })
+  }
+
+  const store = await db.store.findUnique({
+    where: { id: storeId },
+    select: {
+      id: true,
+      name: true,
+      isActive: true,
+      deletedAt: true,
+      stripeOnboarded: true,
+      cashOnDeliveryEnabled: true,
+      transferEnabled: true,
+    },
+  })
+
+  if (!store) {
+    return NextResponse.json({ message: "Tienda no encontrada" }, { status: 404 })
+  }
+
+  return NextResponse.json(store)
+}
+
 const RESERVED_SLUGS = new Set([
   "admin", "dashboard", "api", "login", "register", "seller",
   "cart", "checkout", "products", "search", "account", "stores",
@@ -52,6 +79,8 @@ export async function POST(req: Request) {
         description,
         cityId: cityId || null,
         isActive: true,
+        cashOnDeliveryEnabled: true,
+        transferEnabled: true,
       },
     })
 

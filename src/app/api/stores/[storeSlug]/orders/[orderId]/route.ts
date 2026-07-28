@@ -7,10 +7,13 @@ import { sendOrderDeliveredEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 
 const schema = z.object({
-  status: z.enum(["PROCESSING", "SHIPPED", "DELIVERED"] as [OrderStatus, ...OrderStatus[]]),
+  status: z.enum(["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as [OrderStatus, ...OrderStatus[]]),
 })
 
 const allowedTransitions: Partial<Record<OrderStatus, OrderStatus>> = {
+  PENDING_PAYMENT: "PAID",
+  AWAITING_CONFIRMATION: "PAID",
+  PENDING: "PAID",
   PAID: "PROCESSING",
   PROCESSING: "SHIPPED",
   SHIPPED: "DELIVERED",

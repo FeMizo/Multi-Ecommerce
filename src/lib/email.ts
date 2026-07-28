@@ -67,6 +67,40 @@ export async function sendOrderConfirmationEmail({
   return { ok: true, id: data?.id }
 }
 
+export async function sendOrderReceivedEmail({
+  email,
+  orderId,
+  storeName,
+  total,
+  paymentMethodLabel,
+  transferCode,
+}: {
+  email: string
+  orderId: string
+  storeName: string
+  total: number
+  paymentMethodLabel: string
+  transferCode?: string | null
+}) {
+  const { data, error } = await emailClient().emails.send({
+    from: emailFrom,
+    to: [email],
+    subject: `Pedido recibido #${orderId.slice(-8).toUpperCase()}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <h2>Recibimos tu pedido</h2>
+        <p>Tu pedido en <strong>${escapeHtml(storeName)}</strong> quedo registrado.</p>
+        <p><strong>Metodo de pago:</strong> ${escapeHtml(paymentMethodLabel)}</p>
+        <p><strong>Total:</strong> ${formatPrice(total)}</p>
+        ${transferCode ? `<p><strong>Codigo de transferencia:</strong> <span style="font-family: monospace;">${escapeHtml(transferCode)}</span></p>` : ""}
+        <p><a href="${appUrl}/account/orders">Ver mis pedidos</a></p>
+      </div>
+    `,
+  }, { idempotencyKey: `order-received/${orderId}` })
+  if (error) throw new Error(error.message)
+  return { ok: true, id: data?.id }
+}
+
 export async function sendSellerNewOrderEmail({
   emails,
   orderId,

@@ -17,6 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/utils"
 
 const STATUS_COLORS: Record<string, string> = {
+  PENDING_PAYMENT: "#f59e0b",
+  AWAITING_CONFIRMATION: "#f97316",
   PENDING: "#94a3b8",
   PAID: "#22c55e",
   PROCESSING: "#3b82f6",

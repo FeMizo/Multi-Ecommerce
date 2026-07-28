@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/products/product-card"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import type { Metadata } from "next"
+import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
 type Params = { storeSlug: string }
 type SearchParams = { category?: string; page?: string }
@@ -15,10 +16,21 @@ type SearchParams = { category?: string; page?: string }
 async function getStore(slug: string) {
   return db.store.findFirst({
     where: { slug, isActive: true, deletedAt: null },
-    include: {
-      city: { select: { name: true } },
-      _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
-    },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoUrl: true,
+        bannerUrl: true,
+        primaryColor: true,
+        isVerified: true,
+        cashOnDeliveryEnabled: true,
+        transferEnabled: true,
+        stripeOnboarded: true,
+        city: { select: { name: true } },
+        _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
+      },
   })
 }
 
@@ -139,6 +151,21 @@ export default async function StorePage({
                         <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Verificada
+                        </Badge>
+                      )}
+                      {store.stripeOnboarded && (
+                        <Badge variant="outline" className="border-primary/30 text-primary">
+                          {PAYMENT_METHOD_LABELS.STRIPE}
+                        </Badge>
+                      )}
+                      {store.cashOnDeliveryEnabled && (
+                        <Badge variant="outline" className="border-primary/30 text-primary">
+                          {PAYMENT_METHOD_LABELS.CASH_ON_DELIVERY}
+                        </Badge>
+                      )}
+                      {store.transferEnabled && (
+                        <Badge variant="outline" className="border-primary/30 text-primary">
+                          {PAYMENT_METHOD_LABELS.TRANSFER}
                         </Badge>
                       )}
                     </div>

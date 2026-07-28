@@ -11,6 +11,7 @@ import { ReviewForm } from "@/components/products/review-form"
 import { auth } from "@/lib/auth"
 import { DEFAULT_PRODUCT_IMAGE, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import type { Metadata } from "next"
+import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
 async function getProduct(storeSlug: string, productSlug: string) {
   return db.product.findFirst({
@@ -190,6 +191,15 @@ export default async function StoreProductPage({
                     <MapPin className="h-3 w-3" />
                     {product.store.city.name}
                   </p>
+                )}
+                {product.store.stripeOnboarded && (
+                  <p className="text-xs text-primary mt-1">{PAYMENT_METHOD_LABELS.STRIPE} disponible</p>
+                )}
+                {product.store.cashOnDeliveryEnabled && (
+                  <p className="text-xs text-primary mt-1">{PAYMENT_METHOD_LABELS.CASH_ON_DELIVERY} disponible</p>
+                )}
+                {product.store.transferEnabled && (
+                  <p className="text-xs text-primary mt-1">{PAYMENT_METHOD_LABELS.TRANSFER} disponible</p>
                 )}
               </div>
             </Link>

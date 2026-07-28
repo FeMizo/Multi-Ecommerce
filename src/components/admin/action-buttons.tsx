@@ -12,6 +12,7 @@ interface DeleteIconButtonProps {
 export function DeleteIconButton({ onClick, loading = false, disabled = false }: DeleteIconButtonProps) {
   return (
     <Button
+      type="button"
       variant="ghost"
       size="sm"
       onClick={onClick}
@@ -44,6 +45,7 @@ export function ToggleStatusButton({
 }: ToggleStatusButtonProps) {
   return (
     <Button
+      type="button"
       variant={active ? "default" : "outline"}
       size="sm"
       onClick={onClick}

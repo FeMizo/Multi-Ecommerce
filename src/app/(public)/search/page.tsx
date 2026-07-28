@@ -17,10 +17,15 @@ async function searchProducts(params: SearchParams) {
   const take = 24
   const skip = (page - 1) * take
 
-  const where: Record<string, unknown> = { status: "ACTIVE" }
+  const where: Record<string, unknown> = {
+    status: "ACTIVE",
+    store: { isActive: true, deletedAt: null },
+  }
   if (params.q) where.name = { contains: params.q, mode: "insensitive" }
   if (params.category) where.category = { slug: params.category }
-  if (params.city) where.store = { city: { slug: params.city } }
+  if (params.city) {
+    where.store = { ...(where.store as Record<string, unknown>), city: { slug: params.city } }
+  }
   if (params.min || params.max) {
     where.price = {
       ...(params.min ? { gte: Number(params.min) } : {}),

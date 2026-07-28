@@ -3,12 +3,23 @@ import Image from "next/image"
 import Link from "next/link"
 import { MapPin } from "lucide-react"
 import { db } from "@/lib/db"
+import { Badge } from "@/components/ui/badge"
 import { DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
 async function getStore(slug: string) {
   return db.store.findFirst({
     where: { slug, isActive: true, deletedAt: null },
-    select: { name: true, slug: true, logoUrl: true, primaryColor: true, city: { select: { name: true } } },
+    select: {
+      name: true,
+      slug: true,
+      logoUrl: true,
+      primaryColor: true,
+      cashOnDeliveryEnabled: true,
+      transferEnabled: true,
+      stripeOnboarded: true,
+      city: { select: { name: true } },
+    },
   })
 }
 
@@ -52,6 +63,21 @@ export default async function StoreLayout({
                 <MapPin className="h-3 w-3" />
                 {store.city.name}
               </span>
+            )}
+            {store.stripeOnboarded && (
+              <Badge variant="outline" className="text-xs h-6 rounded-full">
+                {PAYMENT_METHOD_LABELS.STRIPE}
+              </Badge>
+            )}
+            {store.cashOnDeliveryEnabled && (
+              <Badge variant="outline" className="text-xs h-6 rounded-full">
+                {PAYMENT_METHOD_LABELS.CASH_ON_DELIVERY}
+              </Badge>
+            )}
+            {store.transferEnabled && (
+              <Badge variant="outline" className="text-xs h-6 rounded-full">
+                {PAYMENT_METHOD_LABELS.TRANSFER}
+              </Badge>
             )}
           </div>
         </div>

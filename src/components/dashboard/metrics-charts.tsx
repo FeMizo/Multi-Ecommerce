@@ -32,6 +32,8 @@ type Props = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
+  PENDING_PAYMENT: "#f59e0b",
+  AWAITING_CONFIRMATION: "#f97316",
   PENDING: "#f59e0b",
   PAID: "#10b981",
   PROCESSING: "#3b82f6",

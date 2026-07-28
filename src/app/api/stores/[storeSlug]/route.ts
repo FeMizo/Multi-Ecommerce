@@ -17,6 +17,8 @@ const schema = z.object({
   cityId: z.string().optional().nullable(),
   customDomain: z.string().max(100).optional().nullable(),
   isActive: z.boolean(),
+  transferEnabled: z.boolean(),
+  transferInstructions: z.string().max(2000).optional().nullable(),
 })
 
 export async function PATCH(
@@ -67,6 +69,8 @@ export async function PATCH(
       cityId: data.cityId ?? null,
       customDomain: data.customDomain ?? null,
       isActive: data.isActive,
+      transferEnabled: data.transferEnabled,
+      transferInstructions: data.transferInstructions ?? null,
     },
     select: { slug: true, name: true },
   })

@@ -10,38 +10,36 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { ToggleStatusButton } from "@/components/admin/action-buttons"
 
 const schema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres").max(60, "Máximo 60 caracteres"),
-  description: z.string().max(300, "Máximo 300 caracteres").optional(),
-  logoUrl: z.string().url("URL inválida").or(z.literal("")).optional(),
-  bannerUrl: z.string().url("URL inválida").or(z.literal("")).optional(),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color inválido"),
+  name: z.string().min(2, "Minimo 2 caracteres").max(60, "Maximo 60 caracteres"),
+  description: z.string().max(300, "Maximo 300 caracteres").optional(),
+  logoUrl: z.string().url("URL invalida").or(z.literal("")).optional(),
+  bannerUrl: z.string().url("URL invalida").or(z.literal("")).optional(),
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color invalido"),
   fontFamily: z.string(),
   cityId: z.string().optional(),
   customDomain: z.string().max(100).optional(),
   isActive: z.boolean(),
+  transferEnabled: z.boolean(),
+  transferInstructions: z.string().max(2000).optional(),
 })
 
 type FormData = z.infer<typeof schema>
-
 type City = { id: string; name: string }
 
 type Props = {
   storeSlug: string
-  initialData: FormData & { slug: string }
+  initialData: FormData & { slug: string; cashOnDeliveryEnabled: boolean }
   cities: City[]
   isOwner: boolean
+  canManageVisibility: boolean
   stripeOnboarded: boolean
+  cashOnDeliveryEnabled: boolean
 }
 
 const FONT_OPTIONS = [
@@ -53,10 +51,21 @@ const FONT_OPTIONS = [
   { value: "Merriweather", label: "Merriweather" },
 ]
 
-export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, stripeOnboarded }: Props) {
+export function StoreSettingsForm({
+  storeSlug,
+  initialData,
+  cities,
+  isOwner,
+  canManageVisibility,
+  stripeOnboarded,
+  cashOnDeliveryEnabled: initialCashOnDeliveryEnabled,
+}: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [connectingStripe, setConnectingStripe] = useState(false)
+  const [visibilityLoading, setVisibilityLoading] = useState(false)
+  const [cashOnDeliveryLoading, setCashOnDeliveryLoading] = useState(false)
+  const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(initialCashOnDeliveryEnabled)
   const [uploadingAsset, setUploadingAsset] = useState<"logoUrl" | "bannerUrl" | null>(null)
 
   const {
@@ -77,11 +86,14 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
       cityId: initialData.cityId ?? "",
       customDomain: initialData.customDomain ?? "",
       isActive: initialData.isActive,
+      transferEnabled: initialData.transferEnabled,
+      transferInstructions: initialData.transferInstructions ?? "",
     },
   })
 
   const primaryColor = useWatch({ control, name: "primaryColor" })
   const isActive = useWatch({ control, name: "isActive" })
+  const transferEnabled = useWatch({ control, name: "transferEnabled" })
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -92,6 +104,7 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
       bannerUrl: data.bannerUrl || null,
       cityId: data.cityId || null,
       customDomain: data.customDomain || null,
+      transferInstructions: data.transferInstructions || null,
     }
     const res = await fetch(`/api/stores/${storeSlug}`, {
       method: "PATCH",
@@ -100,7 +113,7 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
     })
     setLoading(false)
     if (!res.ok) {
-      const err = await res.json()
+      const err = await res.json().catch(() => ({}))
       toast.error(err.message ?? "Error al guardar")
       return
     }
@@ -111,10 +124,49 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
   async function startStripeOnboarding() {
     setConnectingStripe(true)
     const res = await fetch(`/api/stores/${storeSlug}/stripe/onboarding`, { method: "POST" })
-    const data = await res.json()
+    const data = await res.json().catch(() => ({}))
     setConnectingStripe(false)
-    if (!res.ok || !data.url) return toast.error(data.message ?? "No se pudo iniciar Stripe Connect")
+    if (!res.ok || !data.url) {
+      toast.error(data.message ?? "No se pudo iniciar Stripe Connect")
+      return
+    }
     window.location.assign(data.url)
+  }
+
+  async function updateVisibility(nextIsActive: boolean) {
+    setVisibilityLoading(true)
+    const res = await fetch(`/api/stores/${storeSlug}/visibility`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: nextIsActive }),
+    })
+    setVisibilityLoading(false)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      toast.error(err.message ?? "No se pudo actualizar la visibilidad")
+      return
+    }
+    setValue("isActive", nextIsActive, { shouldDirty: false })
+    toast.success(nextIsActive ? "Tienda visible" : "Tienda oculta")
+    router.refresh()
+  }
+
+  async function updateCashOnDelivery(nextEnabled: boolean) {
+    setCashOnDeliveryLoading(true)
+    const res = await fetch(`/api/stores/${storeSlug}/payment-options`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cashOnDeliveryEnabled: nextEnabled }),
+    })
+    setCashOnDeliveryLoading(false)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      toast.error(err.message ?? "No se pudo actualizar el cobro al entregar")
+      return
+    }
+    setCashOnDeliveryEnabled(nextEnabled)
+    toast.success(nextEnabled ? "Cobro al entregar habilitado" : "Cobro al entregar deshabilitado")
+    router.refresh()
   }
 
   async function uploadAsset(field: "logoUrl" | "bannerUrl", file?: File) {
@@ -127,7 +179,8 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
       const res = await fetch("/api/upload", { method: "POST", body: formData })
       const data = await res.json().catch(() => ({})) as { message?: string; url?: string }
       if (!res.ok || !data.url) {
-        return toast.error(data.message ?? "No se pudo subir la imagen")
+        toast.error(data.message ?? "No se pudo subir la imagen")
+        return
       }
       setValue(field, data.url, { shouldValidate: true, shouldDirty: true })
       toast.success("Imagen subida; guarda los cambios para aplicarla")
@@ -140,9 +193,9 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Configuración</h1>
+          <h1 className="text-2xl font-bold">Configuracion</h1>
           <p className="text-sm text-muted-foreground">/{initialData.slug}</p>
         </div>
         <Button type="submit" disabled={loading || !isOwner}>
@@ -151,11 +204,10 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Información general</CardTitle>
+              <CardTitle className="text-base">Informacion general</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
@@ -165,24 +217,19 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
               </div>
 
               <div className="space-y-1">
-                <Label>Descripción</Label>
+                <Label>Descripcion</Label>
                 <Textarea
                   placeholder="Describe tu tienda..."
                   rows={3}
                   className="resize-none"
                   {...register("description")}
                 />
-                {errors.description && (
-                  <p className="text-xs text-destructive">{errors.description.message}</p>
-                )}
+                {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
               </div>
 
               <div className="space-y-1">
                 <Label>Ciudad</Label>
-                <Select
-                  defaultValue={initialData.cityId ?? "none"}
-                  onValueChange={(v) => setValue("cityId", v === "none" ? "" : v)}
-                >
+                <Select defaultValue={initialData.cityId ?? "none"} onValueChange={(v) => setValue("cityId", v === "none" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una ciudad" />
                   </SelectTrigger>
@@ -200,14 +247,87 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Cobros con Stripe</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Cobros con Stripe</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 {stripeOnboarded ? "Tu cuenta puede recibir pagos." : "Conecta tu cuenta para recibir pagos en MXN."}
               </p>
-              <Button type="button" variant={stripeOnboarded ? "outline" : "default"} disabled={!isOwner || connectingStripe} onClick={startStripeOnboarding}>
+              <Button
+                type="button"
+                variant={stripeOnboarded ? "outline" : "default"}
+                disabled={!isOwner || connectingStripe}
+                onClick={startStripeOnboarding}
+              >
                 {connectingStripe ? "Abriendo Stripe..." : stripeOnboarded ? "Actualizar Stripe Connect" : "Conectar Stripe"}
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Cobro al entregar</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Permite que el cliente pague al recibir su pedido. La tienda asume el riesgo de este cobro.
+              </p>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <Label className="cursor-pointer">Habilitar pago contra entrega</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {cashOnDeliveryEnabled ? "Visible para visitantes" : "Oculto para visitantes"}
+                  </p>
+                </div>
+                <ToggleStatusButton
+                  active={cashOnDeliveryEnabled}
+                  onClick={() => updateCashOnDelivery(!cashOnDeliveryEnabled)}
+                  loading={cashOnDeliveryLoading}
+                  disabled={!isOwner}
+                  activeLabel="Habilitado"
+                  inactiveLabel="Deshabilitado"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pago por transferencia</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                El cliente recibirá un código de referencia al finalizar. La tienda configura sus datos bancarios y asume el riesgo.
+              </p>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <Label className="cursor-pointer">Habilitar pago por transferencia</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {transferEnabled ? "Visible para visitantes" : "Oculto para visitantes"}
+                  </p>
+                </div>
+                <ToggleStatusButton
+                  active={transferEnabled}
+                  onClick={() => setValue("transferEnabled", !transferEnabled, { shouldDirty: true })}
+                  disabled={!isOwner}
+                  activeLabel="Habilitado"
+                  inactiveLabel="Deshabilitado"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Instrucciones bancarias</Label>
+                <Textarea
+                  rows={4}
+                  className="resize-none"
+                  placeholder="Banco, titular, cuenta o CLABE, y texto que debe incluirse en la transferencia."
+                  {...register("transferInstructions")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Explica aquí cómo debe transferir el cliente y qué referencia usar.
+                </p>
+                {errors.transferInstructions && <p className="text-xs text-destructive">{errors.transferInstructions.message}</p>}
+              </div>
             </CardContent>
           </Card>
 
@@ -219,48 +339,42 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
               <div className="space-y-1">
                 <Label>URL del logo</Label>
                 <Input placeholder="https://ejemplo.com/logo.png" {...register("logoUrl")} />
-                <Input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingAsset !== null} onChange={(event) => uploadAsset("logoUrl", event.target.files?.[0])} />
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  disabled={uploadingAsset !== null}
+                  onChange={(event) => uploadAsset("logoUrl", event.target.files?.[0])}
+                />
                 {uploadingAsset === "logoUrl" && <p className="text-xs text-muted-foreground">Subiendo logo...</p>}
-                {errors.logoUrl && (
-                  <p className="text-xs text-destructive">{errors.logoUrl.message}</p>
-                )}
+                {errors.logoUrl && <p className="text-xs text-destructive">{errors.logoUrl.message}</p>}
               </div>
 
               <div className="space-y-1">
                 <Label>URL del banner</Label>
                 <Input placeholder="https://ejemplo.com/banner.jpg" {...register("bannerUrl")} />
-                <Input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingAsset !== null} onChange={(event) => uploadAsset("bannerUrl", event.target.files?.[0])} />
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  disabled={uploadingAsset !== null}
+                  onChange={(event) => uploadAsset("bannerUrl", event.target.files?.[0])}
+                />
                 {uploadingAsset === "bannerUrl" && <p className="text-xs text-muted-foreground">Subiendo banner...</p>}
-                {errors.bannerUrl && (
-                  <p className="text-xs text-destructive">{errors.bannerUrl.message}</p>
-                )}
+                {errors.bannerUrl && <p className="text-xs text-destructive">{errors.bannerUrl.message}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label>Color principal</Label>
                   <div className="flex items-center gap-2">
-                    <div
-                      className="h-9 w-9 rounded-md border shrink-0"
-                      style={{ backgroundColor: primaryColor }}
-                    />
-                    <Input
-                      type="color"
-                      className="h-9 cursor-pointer p-1"
-                      {...register("primaryColor")}
-                    />
+                    <div className="h-9 w-9 rounded-md border shrink-0" style={{ backgroundColor: primaryColor }} />
+                    <Input type="color" className="h-9 cursor-pointer p-1" {...register("primaryColor")} />
                   </div>
-                  {errors.primaryColor && (
-                    <p className="text-xs text-destructive">{errors.primaryColor.message}</p>
-                  )}
+                  {errors.primaryColor && <p className="text-xs text-destructive">{errors.primaryColor.message}</p>}
                 </div>
 
                 <div className="space-y-1">
-                  <Label>Tipografía</Label>
-                  <Select
-                    defaultValue={initialData.fontFamily ?? "Inter"}
-                    onValueChange={(v) => setValue("fontFamily", v)}
-                  >
+                  <Label>Tipografia</Label>
+                  <Select defaultValue={initialData.fontFamily ?? "Inter"} onValueChange={(v) => setValue("fontFamily", v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -276,43 +390,28 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
               </div>
             </CardContent>
           </Card>
-
-          {/* Card para futuro de CNamesi */}
-          {/* <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Dominio personalizado</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-1">
-                <Label>Dominio</Label>
-                <Input placeholder="mitienda.com" {...register("customDomain")} />
-                <p className="text-xs text-muted-foreground">
-                  Configura un CNAME en tu DNS apuntando a la plataforma.
-                </p>
-              </div>
-            </CardContent>
-          </Card> */}
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Visibilidad</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div>
                   <Label className="cursor-pointer">Tienda activa</Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {isActive ? "Visible al público" : "Oculta al público"}
+                    {isActive ? "Visible al publico" : "Oculta al publico"}
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-primary cursor-pointer"
-                  disabled={!isOwner}
-                  {...register("isActive")}
+                <ToggleStatusButton
+                  active={isActive}
+                  onClick={() => updateVisibility(!isActive)}
+                  loading={visibilityLoading}
+                  disabled={!canManageVisibility}
+                  activeLabel="Visible"
+                  inactiveLabel="Oculta"
                 />
               </div>
 
@@ -330,7 +429,7 @@ export function StoreSettingsForm({ storeSlug, initialData, cities, isOwner, str
             <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10">
               <CardContent className="pt-4">
                 <p className="text-xs text-yellow-800 dark:text-yellow-400">
-                  Solo el propietario puede modificar la configuración.
+                  Solo el propietario puede modificar la configuracion general.
                 </p>
               </CardContent>
             </Card>

@@ -13,7 +13,19 @@ export const metadata: Metadata = {
 export default async function CategoriesPage() {
   const categories = await db.category.findMany({
     where: { active: true, parentId: null },
-    include: { _count: { select: { products: true } } },
+    include: {
+      _count: {
+        select: {
+          products: {
+            where: {
+              status: "ACTIVE",
+              deletedAt: null,
+              store: { isActive: true, deletedAt: null },
+            },
+          },
+        },
+      },
+    },
     orderBy: { name: "asc" },
   })
 

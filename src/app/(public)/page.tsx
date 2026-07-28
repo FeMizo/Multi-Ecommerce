@@ -17,7 +17,11 @@ export const metadata: Metadata = {
 
 async function getFeaturedProducts() {
   return db.product.findMany({
-    where: { status: "ACTIVE", featured: true },
+    where: {
+      status: "ACTIVE",
+      featured: true,
+      store: { isActive: true, deletedAt: null },
+    },
     include: { store: { select: { name: true, city: true, primaryColor: true } }, category: true },
     take: 8,
     orderBy: { createdAt: "desc" },
@@ -27,7 +31,19 @@ async function getFeaturedProducts() {
 async function getCategories() {
   return db.category.findMany({
     where: { active: true, parentId: null },
-    include: { _count: { select: { products: true } } },
+    include: {
+      _count: {
+        select: {
+          products: {
+            where: {
+              status: "ACTIVE",
+              deletedAt: null,
+              store: { isActive: true, deletedAt: null },
+            },
+          },
+        },
+      },
+    },
     take: 8,
   })
 }
@@ -46,15 +62,15 @@ async function getFeaturedStores() {
 
 const testimonials = [
   {
-    name: "Maria Garcia",
+    name: "Cliente anónima",
     role: "Compradora frecuente",
     avatar: "M",
     content: "Encontre productos artesanales increibles que no conseguia en ningun otro lugar. La entrega fue super rapida!",
     rating: 5,
   },
   {
-    name: "Carlos Rodriguez",
-    role: "Vendedor desde 2024",
+    name: "Tienda local",
+    role: "Desde 2024",
     avatar: "C",
     content: "Abri mi tienda en minutos y ya tengo clientes recurrentes. La plataforma es muy facil de usar.",
     rating: 5,
@@ -105,7 +121,7 @@ export default async function HomePage() {
         </div>
         
         <div className="container mx-auto px-4 py-20 md:py-28 lg:py-36 relative">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-5xl mx-auto text-center">
             <div className="animate-fade-in-up">
               <Badge variant="secondary" className="mb-6 px-5 py-2.5 text-sm font-medium bg-primary/10 text-primary border-0 hover:bg-primary/15 transition-colors">
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -124,7 +140,7 @@ export default async function HomePage() {
               <span className="gradient-text">productos de tu comunidad</span>
             </h1>
             
-            <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 text-balance leading-relaxed">
+            <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 text-balance leading-relaxed">
               AionSite Shop conecta compradores con tiendas locales de Mexico. Encuentra productos artesanales, tiendas cercanas y apoyo directo a emprendedores de tu ciudad.
             </p>
 

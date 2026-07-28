@@ -1,8 +1,10 @@
 import { Badge } from "@/components/ui/badge"
 
-type OrderStatus = "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED"
+type OrderStatus = "PENDING_PAYMENT" | "AWAITING_CONFIRMATION" | "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED"
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; variant: "default" | "secondary" | "destructive" | "success" | "outline" }> = {
+  PENDING_PAYMENT: { label: "Pendiente de pago", variant: "secondary" },
+  AWAITING_CONFIRMATION: { label: "Esperando confirmación", variant: "outline" },
   PENDING:    { label: "Pendiente",    variant: "secondary" },
   PAID:       { label: "Pagado",       variant: "success" },
   PROCESSING: { label: "Procesando",  variant: "default" },

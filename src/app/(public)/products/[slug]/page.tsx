@@ -133,7 +133,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {/* Store info */}
           <div className="rounded-xl border p-4 space-y-2">
-            <p className="font-semibold">Vendedor</p>
+            <p className="font-semibold">Tienda</p>
             <Link href={`/${product.store.slug}`} className="flex items-center gap-3 hover:opacity-80">
               <div className="relative h-10 w-10 rounded-full bg-primary/10 overflow-hidden shrink-0">
                 <Image

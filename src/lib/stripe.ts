@@ -30,6 +30,7 @@ export const stripe = {
   get accounts() { return getStripe().accounts },
   get accountLinks() { return getStripe().accountLinks },
   get webhooks() { return getStripe().webhooks },
+  get coupons() { return getStripe().coupons },
   get prices() { return getStripe().prices },
   get products() { return getStripe().products },
 }

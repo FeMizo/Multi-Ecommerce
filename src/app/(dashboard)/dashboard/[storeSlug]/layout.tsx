@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   BarChart3,
   Settings,
+  Tag,
   ChevronDown,
 } from "lucide-react"
 
@@ -17,6 +18,7 @@ const navItems = [
   { href: "", label: "Dashboard", icon: LayoutDashboard },
   { href: "/products", label: "Productos", icon: Package },
   { href: "/orders", label: "Pedidos", icon: ShoppingBag },
+  { href: "/coupons", label: "Cupones", icon: Tag },
   { href: "/metrics", label: "Métricas", icon: BarChart3 },
   { href: "/settings", label: "Configuración", icon: Settings },
 ]

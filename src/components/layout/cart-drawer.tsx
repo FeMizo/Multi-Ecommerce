@@ -13,9 +13,23 @@ import {
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
+import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, buildWhatsAppShareUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, total } = useCartStore()
+
+  async function shareCartByWhatsApp() {
+    const message = buildCartWhatsAppMessage(items, total(), formatPrice)
+    const popup = window.open("about:blank", "_blank")
+    const recipient = await resolveCartWhatsAppRecipient(items.map((item) => item.storeId))
+    const url = recipient?.phone ? buildWhatsAppChatUrl(recipient.phone, message) : buildWhatsAppShareUrl(message)
+    if (popup) {
+      popup.location.href = url
+      popup.opener = null
+      return
+    }
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
@@ -133,6 +147,9 @@ export function CartDrawer() {
                     Finalizar compra
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
+                </Button>
+                <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={shareCartByWhatsApp}>
+                  Enviar por WhatsApp
                 </Button>
                 <Button variant="outline" className="w-full h-11 rounded-xl" onClick={closeCart} asChild>
                   <Link href="/cart">Ver carrito completo</Link>
