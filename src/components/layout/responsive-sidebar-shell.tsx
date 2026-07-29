@@ -149,7 +149,7 @@ export function ResponsiveSidebarShell({
       : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
   const toggleTheme =
     variant === "admin"
-      ? "text-background hover:bg-background/10 hover:text-background"
+      ? "text-[var(--foreground)] hover:bg-foreground/10 hover:text-[var(--foreground)]"
       : "text-foreground hover:bg-muted"
   const topFooterTheme =
     variant === "admin"
