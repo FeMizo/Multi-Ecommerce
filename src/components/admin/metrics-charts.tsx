@@ -28,16 +28,19 @@ const STATUS_COLORS: Record<string, string> = {
   REFUNDED: "#f59e0b",
 }
 
+const PAYMENT_COLORS = ["#3b82f6", "#f97316", "#10b981", "#a855f7"]
+
 type Props = {
   dailyData: Array<{ date: string; gmv: number; fee: number }>
   statusData: Array<{ status: string; count: number }>
+  paymentData: Array<{ method: string; count: number }>
 }
 
-export function AdminMetricsCharts({ dailyData, statusData }: Props) {
+export function AdminMetricsCharts({ dailyData, statusData, paymentData }: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <Card className="lg:col-span-2">
-        <CardHeader><CardTitle>GMV y comisiones · Últimos 30 días</CardTitle></CardHeader>
+        <CardHeader><CardTitle>GMV y comisiones - Ultimos 30 dias</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={dailyData}>
@@ -67,7 +70,7 @@ export function AdminMetricsCharts({ dailyData, statusData }: Props) {
               <Area
                 type="monotone"
                 dataKey="fee"
-                name="Comisión"
+                name="Comision"
                 stroke="#10b981"
                 fill="none"
                 strokeWidth={2}
@@ -79,38 +82,73 @@ export function AdminMetricsCharts({ dailyData, statusData }: Props) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle>Pedidos por estado</CardTitle></CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                dataKey="count"
-                nameKey="status"
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={85}
-              >
-                {statusData.map((entry) => (
-                  <Cell
-                    key={entry.status}
-                    fill={STATUS_COLORS[entry.status] ?? "#94a3b8"}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value, name) => [
-                  Number(value ?? 0),
-                  String(name ?? ""),
-                ]}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader><CardTitle>Pedidos por estado</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  dataKey="count"
+                  nameKey="status"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={85}
+                >
+                  {statusData.map((entry) => (
+                    <Cell
+                      key={entry.status}
+                      fill={STATUS_COLORS[entry.status] ?? "#94a3b8"}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name) => [
+                    Number(value ?? 0),
+                    String(name ?? ""),
+                  ]}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Pedidos por metodo de pago</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={paymentData}
+                  dataKey="count"
+                  nameKey="method"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={85}
+                >
+                  {paymentData.map((entry, index) => (
+                    <Cell
+                      key={entry.method}
+                      fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name) => [
+                    Number(value ?? 0),
+                    String(name ?? ""),
+                  ]}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

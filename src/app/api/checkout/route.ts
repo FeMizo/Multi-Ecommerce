@@ -15,6 +15,7 @@ import { fromMinorUnits, toMinorUnits } from "@/lib/money"
 import { checkoutRecoveryAction } from "@/lib/checkout-recovery"
 import { generateTransferCode, PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/lib/payment-methods"
 import { sendOrderReceivedEmail } from "@/lib/email"
+import { sendWhatsAppText } from "@/lib/whatsapp"
 import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from "@/lib/store-coupons"
 
 const checkoutSchema = z.object({
@@ -301,6 +302,7 @@ export async function POST(req: Request) {
         id: true,
         total: true,
         transferCode: true,
+        shippingAddress: true,
         customer: { select: { email: true } },
         store: {
           select: {
@@ -327,6 +329,15 @@ export async function POST(req: Request) {
       ])
     }
 
+    const shipping = orderForEmail?.shippingAddress as { phone?: string } | undefined
+    const whatsappResult = await sendWhatsAppText({
+      phone: shipping?.phone,
+      message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${orderForEmail?.store.name ?? "la tienda"} fue recibido.`,
+    }).catch(() => null)
+    if (whatsappResult?.ok) {
+      await db.order.update({ where: { id: order.id }, data: { whatsappNotifiedAt: new Date() } })
+    }
+
     return NextResponse.json({
       url: `${origin}/checkout/success?order_id=${order.id}&payment_method=cash_on_delivery`,
     })
@@ -349,6 +360,7 @@ export async function POST(req: Request) {
         id: true,
         total: true,
         transferCode: true,
+        shippingAddress: true,
         customer: { select: { email: true } },
         store: {
           select: {
@@ -381,6 +393,15 @@ export async function POST(req: Request) {
           },
         }),
       ])
+    }
+
+    const shipping = orderForEmail?.shippingAddress as { phone?: string } | undefined
+    const whatsappResult = await sendWhatsAppText({
+      phone: shipping?.phone,
+      message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${orderForEmail?.store.name ?? "la tienda"} fue recibido.`,
+    }).catch(() => null)
+    if (whatsappResult?.ok) {
+      await db.order.update({ where: { id: order.id }, data: { whatsappNotifiedAt: new Date() } })
     }
 
     return NextResponse.json({

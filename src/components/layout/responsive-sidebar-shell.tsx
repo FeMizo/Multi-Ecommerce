@@ -109,17 +109,15 @@ export function ResponsiveSidebarShell({
   }, [])
 
   useEffect(() => {
-    if (!isDesktop) {
-      setCollapsed(true)
-      return
-    }
-
-    const stored = window.localStorage.getItem(storageKey)
-    setCollapsed(stored ? stored === "collapsed" : false)
+    const nextCollapsed = !isDesktop ? true : (window.localStorage.getItem(storageKey) === "collapsed")
+    const frame = window.requestAnimationFrame(() => setCollapsed(nextCollapsed))
+    return () => window.cancelAnimationFrame(frame)
   }, [isDesktop, storageKey])
 
   useEffect(() => {
-    if (!isDesktop) return
+    if (!isDesktop) {
+      return
+    }
     window.localStorage.setItem(storageKey, collapsed ? "collapsed" : "expanded")
   }, [collapsed, isDesktop, storageKey])
 
@@ -154,7 +152,7 @@ export function ResponsiveSidebarShell({
       >
         <div
           className={cn(
-            "relative flex items-center border-b px-3 py-4 pr-14",
+            "relative flex items-center border-b px-3 py-4",
             collapsed ? "justify-center" : "justify-start",
             variant === "admin" ? "border-background/10" : "border-border"
           )}
@@ -184,17 +182,11 @@ export function ResponsiveSidebarShell({
               />
             )}
           </Link>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("hidden absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 shrink-0 xl:inline-flex", toggleTheme)}
-            onClick={() => setCollapsed((value) => !value)}
-            aria-label={collapsed ? "Mostrar textos" : "Mostrar solo iconos"}
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
+          {!collapsed && brandSubtitle && (
+            <p className={cn("mt-2 text-xs tracking-wide", variant === "admin" ? "text-background/60" : "text-muted-foreground")}>
+              {brandSubtitle}
+            </p>
+          )}
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
@@ -238,12 +230,27 @@ export function ResponsiveSidebarShell({
 
       <main
         className={cn(
-          "min-h-screen min-w-0 p-4 transition-[margin-left] duration-300 ease-in-out sm:p-6 lg:p-8",
+          "min-h-screen min-w-0 transition-[margin-left] duration-300 ease-in-out",
           variant === "admin" ? "bg-muted/30" : "bg-background"
         )}
         style={{ marginLeft: sidebarWidth }}
       >
-        {children}
+        <div className="sticky top-0 z-30 border-b bg-background/90 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn("hidden h-9 w-9 shrink-0 xl:inline-flex", toggleTheme)}
+              onClick={() => setCollapsed((value) => !value)}
+              aria-label={collapsed ? "Mostrar textos" : "Mostrar solo iconos"}
+            >
+              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </Button>
+            <div className="min-w-0 flex-1" />
+          </div>
+        </div>
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   )

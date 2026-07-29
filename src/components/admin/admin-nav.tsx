@@ -6,6 +6,7 @@ import { LayoutDashboard, Users, Store, Package, BarChart3, MapPin, ShoppingBag,
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/marketing", label: "Marketing", icon: Tag },
   { href: "/admin/users", label: "Usuarios", icon: Users },
   { href: "/admin/sellers", label: "Vendedores", icon: Store },
   { href: "/admin/plans", label: "Planes", icon: CreditCard },

@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 
 const navItems: SidebarItem[] = [
   { href: "/admin", label: "Dashboard", iconKey: "LayoutDashboard" },
+  { href: "/admin/marketing", label: "Marketing", iconKey: "Tag" },
   { href: "/admin/users", label: "Usuarios", iconKey: "Users" },
   { href: "/admin/sellers", label: "Vendedores", iconKey: "Store" },
   { href: "/admin/plans", label: "Planes", iconKey: "CreditCard" },

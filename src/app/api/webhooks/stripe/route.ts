@@ -150,21 +150,24 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
   })
   if (order) {
     const shipping = order.shippingAddress as { phone?: string }
+    const customerWhatsApp = await sendWhatsAppText({
+      phone: order.customer.phone ?? shipping.phone,
+      message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${order.store.name} fue confirmado.`,
+    }).catch(() => null)
     const sellerEmails = order.store.members.map((member) => member.user.email)
     const sellerPhones = order.store.members.map((member) => member.user.phone).filter(Boolean)
     try {
       await Promise.allSettled([
         sendOrderConfirmationEmail({ email: order.customer.email, orderId: order.id, storeName: order.store.name, total: order.total }),
         sendSellerNewOrderEmail({ emails: sellerEmails, orderId: order.id, storeName: order.store.name, total: order.total }),
-        sendWhatsAppText({
-          phone: order.customer.phone ?? shipping.phone,
-          message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${order.store.name} fue confirmado.`,
-        }),
         ...sellerPhones.map((phone) => sendWhatsAppText({
           phone,
           message: `Nuevo pedido pagado #${order.id.slice(-8).toUpperCase()} en ${order.store.name} por ${order.total} MXN.`,
         })),
       ])
+      if (customerWhatsApp?.ok) {
+        await db.order.update({ where: { id: order.id }, data: { whatsappNotifiedAt: new Date() } })
+      }
     } catch (error) {
       console.error("No se pudieron enviar notificaciones del pedido", webhookError(error))
     }
