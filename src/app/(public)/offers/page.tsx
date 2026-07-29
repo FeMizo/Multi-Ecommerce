@@ -3,11 +3,13 @@ import { ArrowRight, Tag } from "lucide-react"
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { Badge } from "@/components/ui/badge"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Ofertas",
   description: "Productos en oferta disponibles en AionSite Shop.",
+  keywords: buildKeywords("Ofertas", ["descuentos", "promociones", "productos rebajados"]),
   alternates: { canonical: "/offers" },
 }
 

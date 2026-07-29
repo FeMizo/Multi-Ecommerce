@@ -1,9 +1,11 @@
 import { InfoPage } from "@/components/public/info-page"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Cookies",
   description: "Informacion sobre cookies y almacenamiento local usados por AionSite Shop.",
+  keywords: buildKeywords("Cookies", ["politica de cookies", "almacenamiento local", "preferencias del sitio"]),
   alternates: { canonical: "/cookies" },
 }
 

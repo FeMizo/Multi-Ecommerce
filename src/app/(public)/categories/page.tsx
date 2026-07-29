@@ -2,11 +2,13 @@ import Link from "next/link"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Categorias",
   description: "Explora productos de AionSite Shop por categoria.",
+  keywords: buildKeywords("Categorias", ["categorias de productos", "catalogo por categoria", "compras locales"]),
   alternates: { canonical: "/categories" },
 }
 

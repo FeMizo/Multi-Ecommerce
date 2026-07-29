@@ -4,11 +4,13 @@ import { MapPin, Package, CheckCircle2, Store, ArrowRight, Sparkles } from "luci
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Tiendas",
   description: "Directorio de tiendas locales activas en AionSite Shop.",
+  keywords: buildKeywords("Tiendas", ["tiendas locales", "tiendas activas", "directorio de vendedores"]),
   alternates: { canonical: "/stores" },
 }
 

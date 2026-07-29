@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/products/product-card"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
@@ -42,12 +43,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const description = store.description
     ?? `${store.name} en AionSite Shop${store.city ? `, ${store.city.name}` : ""}. Explora sus productos disponibles.`
 
-  return {
-    title: store.name,
-    description,
-    alternates: { canonical: `/${store.slug}` },
-    openGraph: {
+    return {
       title: store.name,
+      description,
+      keywords: buildKeywords(store.name, [store.city?.name ?? "", "tienda local", "vendedores locales"].filter(Boolean)),
+      alternates: { canonical: `/${store.slug}` },
+      openGraph: {
+        title: store.name,
       description,
       url: `/${store.slug}`,
       type: "website",

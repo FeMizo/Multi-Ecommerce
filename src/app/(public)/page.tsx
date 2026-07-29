@@ -7,11 +7,13 @@ import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { CategoryGrid } from "@/components/products/category-grid"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "AionSite Shop",
   description: "AionSite Shop es un marketplace local para descubrir productos unicos de tu comunidad y comprar a vendedores locales en Mexico.",
+  keywords: buildKeywords("AionSite Shop", ["marketplace mexicano", "productos locales", "comprar en linea"]),
   alternates: { canonical: "/" },
 }
 
@@ -87,11 +89,11 @@ const testimonials = [
 const SHOW_TESTIMONIALS = false
 
 const promoItems = [
-  "Envio gratis en tu primera compra",
-  "Nuevas tiendas cada semana",
-  "Soporte 24/7",
+  "Nuevas tiendas locales",
+  "Soporte",
   "Compra protegida garantizada",
   "Miles de productos unicos",
+  "Apoyo local a emprendedores",
 ]
 
 export default async function HomePage() {
@@ -120,8 +122,8 @@ export default async function HomePage() {
           <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-primary/5 rounded-full blur-3xl animate-float" />
         </div>
         
-        <div className="container mx-auto px-4 py-20 md:py-28 lg:py-36 relative">
-          <div className="max-w-5xl mx-auto text-center">
+        <div className="container mx-auto px-4 py-16 md:py-20 lg:pt-15 lg:pb-25 relative">
+          <div className="max-w-4xl mx-auto text-center">
             <div className="animate-fade-in-up">
               <Badge variant="secondary" className="mb-6 px-5 py-2.5 text-sm font-medium bg-primary/10 text-primary border-0 hover:bg-primary/15 transition-colors">
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -132,7 +134,7 @@ export default async function HomePage() {
               Marketplace local en Mexico
             </p>
             
-            <h1 className="animate-fade-in-up delay-100 text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-6 text-balance leading-[1.1]">
+            <h1 className="animate-fade-in-up delay-100 text-4xl md:text-5xl lg:text-[4rem] font-bold tracking-tight mb-6 text-balance leading-[1.1]">
               AionSite Shop
               <br />
               Marketplace local para comprar y vender
@@ -140,7 +142,7 @@ export default async function HomePage() {
               <span className="gradient-text">productos de tu comunidad</span>
             </h1>
             
-            <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 text-balance leading-relaxed">
+            <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto mb-10 text-balance leading-relaxed">
               AionSite Shop conecta compradores con tiendas locales de Mexico. Encuentra productos artesanales, tiendas cercanas y apoyo directo a emprendedores de tu ciudad.
             </p>
 

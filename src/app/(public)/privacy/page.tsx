@@ -1,9 +1,11 @@
 import { InfoPage } from "@/components/public/info-page"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Privacidad",
   description: "Como usamos informacion necesaria para operar cuentas, tiendas, pedidos y soporte.",
+  keywords: buildKeywords("Privacidad", ["politica de privacidad", "datos personales", "proteccion de datos"]),
   alternates: { canonical: "/privacy" },
 }
 

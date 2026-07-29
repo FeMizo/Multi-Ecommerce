@@ -10,6 +10,7 @@ import { AddToCartButton } from "@/components/products/add-to-cart-button"
 import { ReviewForm } from "@/components/products/review-form"
 import { auth } from "@/lib/auth"
 import { DEFAULT_PRODUCT_IMAGE, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
@@ -47,12 +48,13 @@ export async function generateMetadata({
     ?? `${product.name} de ${product.store.name}, disponible en AionSite Shop.`
   const canonical = `/${product.store.slug}/${product.slug}`
 
-  return {
-    title: product.name,
-    description,
-    alternates: { canonical },
-    openGraph: {
+    return {
       title: product.name,
+      description,
+      keywords: buildKeywords(product.name, [product.category.name, product.store.name, "producto local", "tienda online"]),
+      alternates: { canonical },
+      openGraph: {
+        title: product.name,
       description,
       url: canonical,
       type: "website",

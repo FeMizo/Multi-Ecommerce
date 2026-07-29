@@ -4,6 +4,14 @@ import { SessionProvider } from "next-auth/react"
 import Link from "next/link"
 import Image from "next/image"
 import { AdminNav } from "@/components/admin/admin-nav"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()

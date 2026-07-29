@@ -1,9 +1,11 @@
 import { InfoPage } from "@/components/public/info-page"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Terminos y condiciones",
   description: "Reglas generales para usar AionSite Shop como comprador o vendedor.",
+  keywords: buildKeywords("Terminos y condiciones", ["terminos de uso", "condiciones del servicio", "reglas de la plataforma"]),
   alternates: { canonical: "/terms" },
 }
 

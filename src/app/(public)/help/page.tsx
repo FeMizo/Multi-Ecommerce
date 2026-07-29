@@ -1,11 +1,13 @@
 import Link from "next/link"
 import { Mail, Phone } from "lucide-react"
 import { InfoPage } from "@/components/public/info-page"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Centro de ayuda",
   description: "Soporte para compradores y vendedores de AionSite Shop.",
+  keywords: buildKeywords("Centro de ayuda", ["soporte", "ayuda", "atencion al cliente"]),
   alternates: { canonical: "/help" },
 }
 

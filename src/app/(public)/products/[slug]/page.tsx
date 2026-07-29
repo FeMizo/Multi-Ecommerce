@@ -10,6 +10,7 @@ import { AddToCartButton } from "@/components/products/add-to-cart-button"
 import { ReviewForm } from "@/components/products/review-form"
 import { auth } from "@/lib/auth"
 import { DEFAULT_PRODUCT_IMAGE, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import { buildKeywords } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
@@ -35,10 +36,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = product.description
     ?? `${product.name} de ${product.store.name}, disponible en AionSite Shop.`
 
-  return {
-    title: product.name,
-    description,
-    alternates: { canonical },
+    return {
+      title: product.name,
+      description,
+      keywords: buildKeywords(product.name, [product.category.name, product.store.name, "producto local", "tienda online"]),
+      alternates: { canonical },
+      robots: {
+        index: false,
+      follow: true,
+    },
     openGraph: {
       title: product.name,
       description,

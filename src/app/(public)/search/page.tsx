@@ -1,13 +1,19 @@
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { Badge } from "@/components/ui/badge"
+import { buildKeywords } from "@/lib/seo"
 import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Productos",
   description: "Busca productos locales disponibles en AionSite Shop.",
+  keywords: buildKeywords("Productos", ["catalogo de productos", "buscador de productos", "tienda online"]),
   alternates: { canonical: "/search" },
+  robots: {
+    index: false,
+    follow: true,
+  },
 }
 
 type SearchParams = { q?: string; category?: string; city?: string; min?: string; max?: string; page?: string }
