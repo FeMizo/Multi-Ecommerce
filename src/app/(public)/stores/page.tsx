@@ -20,6 +20,7 @@ async function getStores(citySlug?: string) {
   return db.store.findMany({
     where: {
       isActive: true,
+      isVerified: true,
       deletedAt: null,
       ...(citySlug ? { city: { slug: citySlug } } : {}),
     },

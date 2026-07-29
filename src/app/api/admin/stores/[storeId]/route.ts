@@ -5,7 +5,6 @@ import { z } from "zod"
 
 const schema = z.object({
   isActive: z.boolean().optional(),
-  isVerified: z.boolean().optional(),
 })
 
 export async function PATCH(

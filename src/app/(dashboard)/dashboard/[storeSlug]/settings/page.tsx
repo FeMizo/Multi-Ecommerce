@@ -105,7 +105,7 @@ export default async function SettingsPage({
         } : null}
       />
       <Card>
-        <CardContent className="flex items-center justify-between gap-4 p-6">
+        <CardContent className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4">
           <div>
             <p className="font-semibold">Cupones de la tienda</p>
             <p className="text-sm text-muted-foreground">Crea descuentos exclusivos para esta tienda.</p>

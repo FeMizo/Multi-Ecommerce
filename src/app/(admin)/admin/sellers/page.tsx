@@ -78,7 +78,7 @@ export default async function AdminSellersPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gapy-2 px-3 flex-wrap">
         <h1 className="text-2xl font-bold">Tiendas</h1>
         <div className="flex items-center gap-3">
           <AdminSearch placeholder="Buscar tienda u owner..." />
@@ -92,15 +92,15 @@ export default async function AdminSellersPage({
             <table className="min-w-max w-full whitespace-nowrap text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-4 font-medium text-muted-foreground">Tienda</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Dueño</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Ciudad</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Plan</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">Productos</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">Pedidos</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Revenue</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">Estado</th>
-                  <th className="sticky right-0 z-20 bg-background p-4 text-center shadow-[inset_1px_0_0_0_hsl(var(--border))]">
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Tienda</th>
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Dueño</th>
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Ciudad</th>
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Plan</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Productos</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Pedidos</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">Revenue</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Estado</th>
+                  <th className="sticky right-0 z-20 bg-background py-2 px-3 text-center shadow-[inset_1px_0_0_0_hsl(var(--border))]">
                     Detalle
                   </th>
                 </tr>
@@ -112,7 +112,7 @@ export default async function AdminSellersPage({
 
                   return (
                     <tr key={store.id} className="border-b last:border-0 hover:bg-muted/40">
-                      <td className="p-4">
+                      <td className="py-2 px-3">
                         <div className="flex items-center gap-2">
                           <div>
                             <p className="font-medium">{store.name}</p>
@@ -125,7 +125,7 @@ export default async function AdminSellersPage({
                           )}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="py-2 px-3">
                         {owner ? (
                           <div>
                             <p>{owner.name ?? "—"}</p>
@@ -136,25 +136,25 @@ export default async function AdminSellersPage({
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="p-4 text-muted-foreground">{store.city?.name ?? "—"}</td>
-                      <td className="p-4">
+                      <td className="py-2 px-3 text-muted-foreground">{store.city?.name ?? "—"}</td>
+                      <td className="py-2 px-3">
                         <StorePlanSelector
                           storeId={store.id}
                           plans={plans}
                           currentPlanId={store.subscription?.plan.id}
                         />
                       </td>
-                      <td className="p-4 text-center">{store._count.products}</td>
-                      <td className="p-4 text-center">{store._count.orders}</td>
-                      <td className="p-4 text-right font-medium">{formatPrice(revenue)}</td>
-                      <td className="p-4">
+                      <td className="py-2 px-3 text-center">{store._count.products}</td>
+                      <td className="py-2 px-3 text-center">{store._count.orders}</td>
+                      <td className="py-2 px-3 text-right font-medium">{formatPrice(revenue)}</td>
+                      <td className="py-2 px-3">
                         <StoreToggles
                           storeId={store.id}
                           isActive={store.isActive}
                           isVerified={store.isVerified}
                         />
                       </td>
-                      <td className="sticky right-0 z-10 bg-background p-4 text-center shadow-[inset_1px_0_0_0_hsl(var(--border))]">
+                      <td className="sticky right-0 z-10 bg-background py-2 px-3 text-center shadow-[inset_1px_0_0_0_hsl(var(--border))]">
                         <SellerDetailsSheet
                           storeName={store.name}
                           slug={store.slug}

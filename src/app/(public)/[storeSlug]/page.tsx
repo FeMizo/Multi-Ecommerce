@@ -16,7 +16,7 @@ type SearchParams = { category?: string; page?: string }
 
 async function getStore(slug: string) {
   return db.store.findFirst({
-    where: { slug, isActive: true, deletedAt: null },
+    where: { slug, isActive: true, isVerified: true, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -65,6 +65,7 @@ async function getStoreProducts(storeId: string, categorySlug?: string, page = 1
     storeId,
     status: "ACTIVE" as const,
     deletedAt: null,
+    store: { isActive: true, isVerified: true, deletedAt: null },
     ...(categorySlug ? { category: { slug: categorySlug } } : {}),
   }
   const [products, total] = await Promise.all([

@@ -19,7 +19,7 @@ export default async function OffersPage() {
       status: "ACTIVE",
       deletedAt: null,
       comparePrice: { not: null },
-      store: { isActive: true, deletedAt: null },
+      store: { isActive: true, isVerified: true, deletedAt: null },
     },
     include: { store: { select: { name: true, slug: true, city: true, primaryColor: true } }, category: true },
     orderBy: { createdAt: "desc" },

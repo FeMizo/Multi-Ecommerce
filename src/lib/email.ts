@@ -39,6 +39,59 @@ export async function sendPasswordResetEmail(email: string, token: string) {
   return { ok: true, id: data?.id }
 }
 
+export async function sendWelcomeEmail({
+  email,
+  name,
+}: {
+  email: string
+  name: string
+}) {
+  const { data, error } = await emailClient().emails.send({
+    from: emailFrom,
+    to: [email],
+    subject: "Bienvenido a AionSite Shop",
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <h2>Bienvenido, ${escapeHtml(name)}</h2>
+        <p>Tu cuenta en <strong>AionSite Shop</strong> ya quedó creada.</p>
+        <p>Desde aquí podrás administrar tu tienda, productos y pedidos.</p>
+        <p style="margin: 24px 0;"><a href="${appUrl}/login" style="background-color: #2563eb; color: #ffffff; padding: 12px 16px; border-radius: 8px; text-decoration: none;">Iniciar sesión</a></p>
+      </div>
+    `,
+  }, { idempotencyKey: `welcome/${email}` })
+  if (error) throw new Error(error.message)
+  return { ok: true, id: data?.id }
+}
+
+export async function sendStoreVerificationEmail({
+  email,
+  name,
+  storeName,
+  verificationUrl,
+}: {
+  email: string
+  name: string
+  storeName: string
+  verificationUrl: string
+}) {
+  const { data, error } = await emailClient().emails.send({
+    from: emailFrom,
+    to: [email],
+    subject: `Verifica tu cuenta de ${escapeHtml(storeName)}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <h2>Hola, ${escapeHtml(name)}</h2>
+        <p>Recibimos una solicitud para verificar la cuenta de <strong>${escapeHtml(storeName)}</strong>.</p>
+        <p>Si todo está correcto, confirma la verificación con el botón de abajo.</p>
+        <p style="margin: 24px 0;"><a href="${verificationUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 16px; border-radius: 8px; text-decoration: none;">Verificar cuenta</a></p>
+        <p style="font-size: 12px; color: #6b7280;">Si el botón no funciona, copia y pega esta URL: ${escapeHtml(verificationUrl)}</p>
+      </div>
+    `,
+  }, { idempotencyKey: `store-verification/${email}/${verificationUrl}` })
+  if (error) throw new Error(error.message)
+  return { ok: true, id: data?.id }
+}
+
 export async function sendOrderConfirmationEmail({
   email,
   orderId,

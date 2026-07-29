@@ -10,20 +10,33 @@ import { DeleteIconButton, ToggleStatusButton } from "@/components/admin/action-
 type Props = { storeId: string; isActive: boolean; isVerified: boolean }
 
 export function StoreToggles({ storeId, isActive, isVerified }: Props) {
-  const [loading, setLoading] = useState(false)
+  const [visibilityLoading, setVisibilityLoading] = useState(false)
+  const [verificationLoading, setVerificationLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const router = useRouter()
 
-  async function update(data: Partial<{ isActive: boolean; isVerified: boolean }>) {
-    setLoading(true)
+  async function updateVisibility(nextIsActive: boolean) {
+    setVisibilityLoading(true)
     const res = await fetch(`/api/admin/stores/${storeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ isActive: nextIsActive }),
     })
-    setLoading(false)
+    setVisibilityLoading(false)
     if (!res.ok) { toast.error("Error al actualizar"); return }
     router.refresh()
+  }
+
+  async function sendVerificationEmail() {
+    setVerificationLoading(true)
+    const res = await fetch(`/api/admin/stores/${storeId}/verification`, { method: "POST" })
+    setVerificationLoading(false)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      toast.error(err.message ?? "Error al enviar verificación")
+      return
+    }
+    toast.success("Correo de verificación enviado")
   }
 
   async function deleteStore() {
@@ -40,8 +53,8 @@ export function StoreToggles({ storeId, isActive, isVerified }: Props) {
     <div className="flex items-center gap-2">
       <ToggleStatusButton
         active={isActive}
-        onClick={() => update({ isActive: !isActive })}
-        loading={loading}
+        onClick={() => updateVisibility(!isActive)}
+        loading={visibilityLoading}
         disabled={deleteLoading}
         activeLabel="Visible"
         inactiveLabel="Oculta"
@@ -49,13 +62,13 @@ export function StoreToggles({ storeId, isActive, isVerified }: Props) {
       <Button
         variant={isVerified ? "secondary" : "ghost"}
         size="sm"
-        onClick={() => update({ isVerified: !isVerified })}
-        disabled={loading || deleteLoading}
+        onClick={sendVerificationEmail}
+        disabled={verificationLoading || deleteLoading || isVerified}
         className="text-xs h-7 px-2"
       >
-        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : isVerified ? "✓ Verificada" : "Verificar"}
+        {verificationLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : isVerified ? "✓ Verificada" : "Verificar"}
       </Button>
-      <DeleteIconButton onClick={deleteStore} loading={deleteLoading} disabled={loading} />
+      <DeleteIconButton onClick={deleteStore} loading={deleteLoading} disabled={visibilityLoading || verificationLoading} />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { sendWelcomeEmail } from "@/lib/email"
 
 const schema = z.object({
   name: z.string().min(2),
@@ -21,6 +22,8 @@ export async function POST(req: Request) {
 
   const hashed = await bcrypt.hash(password, 12)
   await db.user.create({ data: { name, email, password: hashed, globalRole: "USER" } })
+
+  void sendWelcomeEmail({ email, name }).catch(() => {})
 
   return NextResponse.json({ success: true }, { status: 201 })
 }

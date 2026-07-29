@@ -18,13 +18,13 @@ export default async function CategoriesPage() {
     include: {
       _count: {
         select: {
-          products: {
-            where: {
-              status: "ACTIVE",
-              deletedAt: null,
-              store: { isActive: true, deletedAt: null },
-            },
-          },
+              products: {
+                where: {
+                  status: "ACTIVE",
+                  deletedAt: null,
+                  store: { isActive: true, isVerified: true, deletedAt: null },
+                },
+              },
         },
       },
     },

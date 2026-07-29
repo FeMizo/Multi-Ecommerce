@@ -22,7 +22,7 @@ async function getFeaturedProducts() {
     where: {
       status: "ACTIVE",
       featured: true,
-      store: { isActive: true, deletedAt: null },
+      store: { isActive: true, isVerified: true, deletedAt: null },
     },
     include: { store: { select: { name: true, city: true, primaryColor: true } }, category: true },
     take: 8,
@@ -36,13 +36,13 @@ async function getCategories() {
     include: {
       _count: {
         select: {
-          products: {
-            where: {
-              status: "ACTIVE",
-              deletedAt: null,
-              store: { isActive: true, deletedAt: null },
-            },
-          },
+              products: {
+                where: {
+                  status: "ACTIVE",
+                  deletedAt: null,
+                  store: { isActive: true, isVerified: true, deletedAt: null },
+                },
+              },
         },
       },
     },
@@ -52,7 +52,7 @@ async function getCategories() {
 
 async function getFeaturedStores() {
   return db.store.findMany({
-    where: { isActive: true, deletedAt: null },
+    where: { isActive: true, isVerified: true, deletedAt: null },
     include: {
       city: { select: { name: true } },
       _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
