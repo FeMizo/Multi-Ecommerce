@@ -19,7 +19,7 @@ export default async function AdminSellersPage({
 
   const { q } = await searchParams
 
-  const [stores, plans] = await Promise.all([
+  const [stores, plans, cities] = await Promise.all([
     db.store.findMany({
       where: {
         deletedAt: null,
@@ -47,7 +47,7 @@ export default async function AdminSellersPage({
       },
       orderBy: { createdAt: "desc" },
       include: {
-        city: { select: { name: true } },
+        city: { select: { id: true, name: true } },
         subscription: { include: { plan: { select: { id: true, name: true, commissionRate: true } } } },
         members: {
           where: { role: "OWNER" },
@@ -66,6 +66,11 @@ export default async function AdminSellersPage({
       where: { isActive: true },
       select: { id: true, name: true, commissionRate: true },
       orderBy: { priceMonthly: "asc" },
+    }),
+    db.city.findMany({
+      where: { active: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
     }),
   ])
 
@@ -156,10 +161,13 @@ export default async function AdminSellersPage({
                       </td>
                       <td className="sticky right-0 z-10 bg-background py-2 px-3 text-center shadow-[inset_1px_0_0_0_hsl(var(--border))]">
                         <SellerDetailsSheet
+                          storeId={store.id}
                           storeName={store.name}
                           slug={store.slug}
                           description={store.description}
                           cityName={store.city?.name ?? null}
+                          cityId={store.cityId}
+                          cities={cities}
                           isActive={store.isActive}
                           isVerified={store.isVerified}
                           stripeOnboarded={store.stripeOnboarded}

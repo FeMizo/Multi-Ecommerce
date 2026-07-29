@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { SessionProvider } from "next-auth/react"
 import { ResponsiveSidebarShell, type SidebarItem } from "@/components/layout/responsive-sidebar-shell"
 import { SubscriptionRenewalReminder } from "@/components/dashboard/subscription-renewal-reminder"
+import { PhoneReminderBanner } from "@/components/dashboard/phone-reminder-banner"
 
 const navItems: SidebarItem[] = [
   { href: "", label: "Dashboard", iconKey: "LayoutDashboard" },
@@ -26,30 +27,36 @@ export default async function DashboardLayout({
 
   if (!session?.user) redirect("/login")
 
-  const membership = await db.storeMember.findFirst({
-    where: {
-      userId: session.user.id,
-      store: { slug: storeSlug },
-      role: { in: ["OWNER", "STAFF"] },
-    },
-    include: {
-      store: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          primaryColor: true,
-          subscription: {
-            select: {
-              status: true,
-              currentPeriodEnd: true,
-              cancelAtPeriodEnd: true,
+  const [membership, user] = await Promise.all([
+    db.storeMember.findFirst({
+      where: {
+        userId: session.user.id,
+        store: { slug: storeSlug },
+        role: { in: ["OWNER", "STAFF"] },
+      },
+      include: {
+        store: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            primaryColor: true,
+            subscription: {
+              select: {
+                status: true,
+                currentPeriodEnd: true,
+                cancelAtPeriodEnd: true,
+              },
             },
           },
         },
       },
-    },
-  })
+    }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { phone: true },
+    }),
+  ])
 
   if (!membership) redirect("/dashboard")
 
@@ -64,6 +71,9 @@ export default async function DashboardLayout({
         brandSubtitle="Dashboard"
         brandImageAlt="AionSite"
         items={navItems.map((item) => ({ ...item, href: `${base}${item.href}` }))}
+        topFooterHref="/"
+        topFooterLabel="Volver al sitio"
+        topFooterIconKey="ArrowLeft"
         footerHref={`/${storeSlug}`}
         footerLabel="Ver tienda"
         footerIconKey="ArrowUpRight"
@@ -71,6 +81,7 @@ export default async function DashboardLayout({
         variant="dashboard"
         storageKey={`dashboard-sidebar:${storeSlug}`}
       >
+        <PhoneReminderBanner userId={session.user.id} hasPhone={Boolean(user?.phone?.trim())} />
         <div
           style={storeColor ? ({ "--primary": storeColor, "--primary-foreground": "#ffffff" } as React.CSSProperties) : undefined}
           className="min-h-screen"

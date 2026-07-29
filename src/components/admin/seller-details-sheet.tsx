@@ -1,7 +1,11 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Sheet,
   SheetContent,
@@ -23,10 +27,13 @@ type Member = {
 }
 
 type SellerDetailsSheetProps = {
+  storeId: string
   storeName: string
   slug: string
   description: string | null
   cityName: string | null
+  cityId: string | null
+  cities: { id: string; name: string }[]
   isActive: boolean
   isVerified: boolean
   stripeOnboarded: boolean
@@ -80,7 +87,31 @@ export function SellerDetailsSheet({
   ownerEmail,
   ownerPhone,
   members,
+  storeId,
+  cityId,
+  cities,
 }: SellerDetailsSheetProps) {
+  const router = useRouter()
+  const [selectedCityId, setSelectedCityId] = useState(cityId ?? "none")
+  const [savingCity, setSavingCity] = useState(false)
+
+  async function saveCity() {
+    setSavingCity(true)
+    const res = await fetch(`/api/admin/stores/${storeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cityId: selectedCityId === "none" ? null : selectedCityId }),
+    })
+    setSavingCity(false)
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      toast.error(err?.message ?? "Error al actualizar ciudad")
+      return
+    }
+    toast.success("Ciudad actualizada")
+    router.refresh()
+  }
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -105,7 +136,25 @@ export function SellerDetailsSheet({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Ciudad</p>
-              <p className="font-medium">{cityName ?? "Sin ciudad"}</p>
+              <div className="space-y-2">
+                <Select value={selectedCityId} onValueChange={setSelectedCityId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona una ciudad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin ciudad</SelectItem>
+                    {cities.map((city) => (
+                      <SelectItem key={city.id} value={city.id}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" size="sm" onClick={saveCity} disabled={savingCity}>
+                  {savingCity ? "Guardando..." : "Guardar ciudad"}
+                </Button>
+                <p className="text-xs text-muted-foreground">Actual: {cityName ?? "Sin ciudad"}</p>
+              </div>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Plan</p>

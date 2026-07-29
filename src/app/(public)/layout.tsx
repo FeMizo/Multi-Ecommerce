@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Mail, Phone } from "lucide-react"
+import { Mail, Phone } from "lucide-react"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -86,10 +86,6 @@ export default async function PublicLayout({ children }: { children: React.React
                   <a href="tel:+529381573988" className="hover:text-foreground transition-colors">
                     +52 938 157 3988
                   </a>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Tu ciudad, tu país</span>
                 </li>
               </ul>
             </div>

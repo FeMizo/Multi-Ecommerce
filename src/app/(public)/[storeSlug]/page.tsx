@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, Package, Clock, ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react"
+import { Package, Clock, ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -30,7 +30,6 @@ async function getStore(slug: string) {
         cashOnDeliveryEnabled: true,
         transferEnabled: true,
         stripeOnboarded: true,
-        city: { select: { name: true } },
         _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
       },
   })
@@ -42,12 +41,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!store) return { title: "Tienda no encontrada" }
 
   const description = store.description
-    ?? `${store.name} en AionSite Shop${store.city ? `, ${store.city.name}` : ""}. Explora sus productos disponibles.`
+    ?? `${store.name} en AionSite Shop. Explora sus productos disponibles.`
 
     return {
       title: store.name,
       description,
-      keywords: buildKeywords(store.name, [store.city?.name ?? "", "tienda local", "vendedores locales"].filter(Boolean)),
+      keywords: buildKeywords(store.name, ["tienda local", "vendedores locales"]),
       alternates: { canonical: `/${store.slug}` },
       openGraph: {
         title: store.name,
@@ -72,7 +71,7 @@ async function getStoreProducts(storeId: string, categorySlug?: string, page = 1
   const [products, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: { store: { select: { name: true, slug: true, city: true, primaryColor: true } }, category: true },
+      include: { store: { select: { name: true, slug: true, primaryColor: true } }, category: true },
       orderBy: { createdAt: "desc" },
       take,
       skip,
@@ -169,12 +168,6 @@ export default async function StorePage({
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                      {store.city && (
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="h-4 w-4" />
-                          {store.city.name}
-                        </span>
-                      )}
                       <span className="flex items-center gap-1.5">
                         <Package className="h-4 w-4" />
                         {store._count.products} productos

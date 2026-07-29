@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
 }
 
-type SearchParams = { q?: string; category?: string; city?: string; min?: string; max?: string; page?: string }
+type SearchParams = { q?: string; category?: string; min?: string; max?: string; page?: string }
 
 async function searchProducts(params: SearchParams) {
   const page = Number(params.page ?? 1)
@@ -32,9 +32,6 @@ async function searchProducts(params: SearchParams) {
   }
   if (params.q) where.name = { contains: params.q, mode: "insensitive" }
   if (params.category) where.category = { slug: params.category }
-  if (params.city) {
-    where.store = { ...(where.store as Record<string, unknown>), city: { slug: params.city } }
-  }
   if (params.min || params.max) {
     where.price = {
       ...(params.min ? { gte: Number(params.min) } : {}),
@@ -45,7 +42,7 @@ async function searchProducts(params: SearchParams) {
   const [products, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: { store: { select: { name: true, city: true, primaryColor: true } }, category: true },
+      include: { store: { select: { name: true, primaryColor: true } }, category: true },
       take,
       skip,
       orderBy: { createdAt: "desc" },
@@ -60,10 +57,6 @@ async function getCategories() {
   return db.category.findMany({ where: { active: true, parentId: null } })
 }
 
-async function getCities() {
-  return db.city.findMany({ where: { active: true }, select: { name: true, slug: true }, orderBy: { name: "asc" } })
-}
-
 function buildUrl(params: SearchParams) {
   const p = Object.fromEntries(
     Object.entries(params).filter(([, v]) => v !== undefined && v !== "")
@@ -74,10 +67,9 @@ function buildUrl(params: SearchParams) {
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams
-  const [{ products, total, page, pages }, categories, cities] = await Promise.all([
+  const [{ products, total, page, pages }, categories] = await Promise.all([
     searchProducts(params),
     getCategories(),
-    getCities(),
   ])
 
   return (
@@ -98,15 +90,14 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           </Button>
         </form>
         <p className="mt-3 text-xs text-muted-foreground">
-          Busca por producto, categoría o ciudad.
+          Busca por producto o categoria.
         </p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Sidebar */}
         <aside className="order-2 md:order-1 w-full md:w-56 shrink-0 space-y-6">
           <div>
-            <h3 className="font-semibold mb-3">Categorías</h3>
+            <h3 className="font-semibold mb-3">Categorias</h3>
             <div className="flex flex-col gap-1">
               <Link
                 href={buildUrl({ ...params, category: undefined, page: undefined })}
@@ -125,29 +116,6 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               ))}
             </div>
           </div>
-
-          {cities.length > 0 && (
-            <div>
-              <h3 className="font-semibold mb-3">Ciudad</h3>
-              <div className="flex flex-col gap-1">
-                <Link
-                  href={buildUrl({ ...params, city: undefined, page: undefined })}
-                  className={`text-sm px-3 py-1.5 rounded-md hover:bg-accent ${!params.city ? "bg-accent font-medium" : ""}`}
-                >
-                  Todas
-                </Link>
-                {cities.map((c) => (
-                  <Link
-                    key={c.slug}
-                    href={buildUrl({ ...params, city: c.slug, page: undefined })}
-                    className={`text-sm px-3 py-1.5 rounded-md hover:bg-accent ${params.city === c.slug ? "bg-accent font-medium" : ""}`}
-                  >
-                    {c.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </aside>
 
         <div className="order-1 md:order-2 flex-1">
@@ -156,22 +124,13 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               {params.q ? `Resultados para "${params.q}"` : "Todos los productos"}
             </h1>
             <p className="text-sm text-muted-foreground mb-3">{total} productos</p>
-            {(params.category || params.city) && (
+            {params.category && (
               <div className="flex flex-wrap gap-2">
-                {params.category && (
-                  <Link href={buildUrl({ ...params, category: undefined, page: undefined })}>
-                    <Badge variant="secondary" className="cursor-pointer gap-1">
-                      {params.category} ×
-                    </Badge>
-                  </Link>
-                )}
-                {params.city && (
-                  <Link href={buildUrl({ ...params, city: undefined, page: undefined })}>
-                    <Badge variant="secondary" className="cursor-pointer gap-1">
-                      {params.city} ×
-                    </Badge>
-                  </Link>
-                )}
+                <Link href={buildUrl({ ...params, category: undefined, page: undefined })}>
+                  <Badge variant="secondary" className="cursor-pointer gap-1">
+                    {params.category} ×
+                  </Badge>
+                </Link>
               </div>
             )}
           </div>

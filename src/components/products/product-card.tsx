@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, ShoppingCart, Heart } from "lucide-react"
+import { ShoppingCart, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
@@ -28,7 +28,6 @@ type ProductCardProps = {
     store: {
       name: string
       slug?: string
-      city?: { name: string } | null
       primaryColor?: string | null
     }
   }
@@ -145,10 +144,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
         <div className="p-4 md:p-5">
           {/* Store Info */}
           <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-2">
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate">
-              {product.store.name}{product.store.city ? ` - ${product.store.city.name}` : ""}
-            </span>
+            <span className="truncate">{product.store.name}</span>
           </p>
           
           {/* Product Name */}

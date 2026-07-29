@@ -21,7 +21,7 @@ export default async function OffersPage() {
       comparePrice: { not: null },
       store: { isActive: true, deletedAt: null },
     },
-    include: { store: { select: { name: true, slug: true, city: true, primaryColor: true } }, category: true },
+    include: { store: { select: { name: true, slug: true, primaryColor: true } }, category: true },
     orderBy: { createdAt: "desc" },
     take: 24,
   })

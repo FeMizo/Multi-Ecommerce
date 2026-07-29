@@ -1,47 +1,39 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { db } from "@/lib/db"
 import { z } from "zod"
+import { db } from "@/lib/db"
+import { requireAdmin } from "@/lib/admin-auth"
 
 const schema = z.object({
-  isActive: z.boolean().optional(),
+  cityId: z.string().nullable().optional(),
 })
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ storeId: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user || session.user.globalRole !== "PLATFORM_ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 })
-  }
-
+  await requireAdmin()
   const { storeId } = await params
   const body = await req.json()
   const parsed = schema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ message: "Inválido" }, { status: 400 })
+  if (!parsed.success) {
+    return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })
+  }
+
+  if (parsed.data.cityId) {
+    const city = await db.city.findFirst({
+      where: { id: parsed.data.cityId, active: true },
+      select: { id: true },
+    })
+    if (!city) {
+      return NextResponse.json({ message: "Ciudad no encontrada" }, { status: 404 })
+    }
+  }
 
   const store = await db.store.update({
     where: { id: storeId },
-    data: parsed.data,
+    data: { cityId: parsed.data.cityId ?? null },
+    select: { id: true, cityId: true },
   })
 
   return NextResponse.json(store)
-}
-
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ storeId: string }> }
-) {
-  const session = await auth()
-  if (!session?.user || session.user.globalRole !== "PLATFORM_ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 })
-  }
-
-  const { storeId } = await params
-  await db.store.update({
-    where: { id: storeId },
-    data: { deletedAt: new Date(), isActive: false },
-  })
-  return NextResponse.json({ ok: true })
 }

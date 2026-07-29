@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useCartStore } from "@/stores/cart"
-import { CitySelector } from "@/components/layout/city-selector"
 import { CartDrawer } from "@/components/layout/cart-drawer"
 import type { Session } from "next-auth"
 import { useState } from "react"
@@ -45,7 +44,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-lg supports-backdrop-filter:bg-background/80">
         <div className="container mx-auto px-4">
           <div className="h-16 flex items-center justify-between gap-4">
-            {/* Logo & City */}
+            {/* Logo */}
             <div className="flex items-center gap-4">
               <Link href="/" className="flex items-center gap-2 group">
                 <Image
@@ -67,9 +66,6 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                   AionSite Shop
                 </span>
               </Link>
-              <div className="hidden md:block">
-                <CitySelector />
-              </div>
             </div>
 
             {/* Search - Desktop */}
@@ -104,10 +100,6 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              <div className="md:hidden">
-                <CitySelector />
-              </div>
-
               {/* Search Mobile */}
               <Dialog>
                 <DialogTrigger asChild>

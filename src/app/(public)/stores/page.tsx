@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Package, Store, ArrowRight, Sparkles } from "lucide-react"
+import { Package, Store, ArrowRight, Sparkles } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
@@ -15,38 +15,24 @@ export const metadata: Metadata = {
   alternates: { canonical: "/stores" },
 }
 
-type SearchParams = { city?: string }
-
-async function getStores(citySlug?: string) {
+async function getStores() {
   return db.store.findMany({
     where: {
       isActive: true,
       deletedAt: null,
-      ...(citySlug ? { city: { slug: citySlug } } : {}),
     },
     include: {
-      city: { select: { name: true, slug: true } },
       _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
     },
     orderBy: [{ isVerified: "desc" }, { createdAt: "desc" }],
   })
 }
 
-async function getCities() {
-  return db.city.findMany({
-    where: { active: true },
-    select: { name: true, slug: true },
-    orderBy: { name: "asc" },
-  })
-}
-
-export default async function StoresPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { city } = await searchParams
-  const [stores, cities] = await Promise.all([getStores(city), getCities()])
+export default async function StoresPage() {
+  const stores = await getStores()
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
       <div className="bg-card border-b border-border/50">
         <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="max-w-2xl">
@@ -65,38 +51,6 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* City filter */}
-        {cities.length > 0 && (
-          <div className="mb-8">
-            <p className="text-sm font-medium text-muted-foreground mb-3">Filtrar por ciudad</p>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-              <Link
-                href="/stores"
-                className={`shrink-0 px-5 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
-                  !city 
-                    ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20" 
-                    : "bg-card hover:bg-accent border-border/50 hover:border-primary/30"
-                }`}
-              >
-                Todas las ciudades
-              </Link>
-              {cities.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/stores?city=${c.slug}`}
-                  className={`shrink-0 px-5 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
-                    city === c.slug 
-                      ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20" 
-                      : "bg-card hover:bg-accent border-border/50 hover:border-primary/30"
-                  }`}
-                >
-                  {c.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
         {stores.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-6">
@@ -104,10 +58,10 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
             </div>
             <h3 className="text-lg font-semibold mb-2">No hay tiendas disponibles</h3>
             <p className="text-muted-foreground mb-6">
-              {city ? "No encontramos tiendas en esta ciudad" : "Sé el primero en abrir una tienda"}
+              Se el primero en abrir una tienda
             </p>
-            <Link 
-              href="/register" 
+            <Link
+              href="/register"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
             >
               Abrir mi tienda
@@ -119,19 +73,17 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
             {stores.map((store, index) => (
               <Link
                 key={store.id}
-                  href={`/${store.slug}`}
-                  className="group rounded-2xl border border-border/50 bg-card overflow-hidden hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300"
-                >
-                {/* Banner */}
+                href={`/${store.slug}`}
+                className="group rounded-2xl border border-border/50 bg-card overflow-hidden hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300"
+              >
                 <div className="relative h-32 md:h-36 bg-muted/50 overflow-hidden">
                   <Image
                     src={store.bannerUrl || DEFAULT_SHOP_BANNER}
-                    alt={store.bannerUrl ? "" : `Banner genérico de ${store.name}`}
+                    alt={store.bannerUrl ? "" : `Banner generico de ${store.name}`}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  
-                  {/* Featured Badge */}
+
                   <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
                     {index < 3 && (
                       <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-xs px-2.5 py-1 rounded-full">
@@ -144,7 +96,6 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
                 </div>
 
                 <div className="p-5">
-                  {/* Logo & Name */}
                   <div className="flex items-start gap-4 -mt-12 mb-4">
                     <div
                       className="z-20 h-16 w-16 rounded-2xl border-[3px] border-card bg-card flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden shadow-lg"
@@ -152,32 +103,23 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
                     >
                       <Image
                         src={store.logoUrl || DEFAULT_SHOP_ICON}
-                        alt={store.logoUrl ? store.name : `Icono genérico de ${store.name}`}
+                        alt={store.logoUrl ? store.name : `Icono generico de ${store.name}`}
                         width={64}
                         height={64}
                         className="h-full w-full object-cover"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">
                       {store.name}
                     </h3>
                   </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                    {store.city && (
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {store.city.name}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1.5">
-                      <Package className="h-3.5 w-3.5" />
-                      {store._count.products} productos
-                    </span>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+                    <Package className="h-3.5 w-3.5" />
+                    {store._count.products} productos
                   </div>
 
                   {store.description && (

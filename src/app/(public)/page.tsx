@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, Shield, Star, MapPin, CheckCircle2, Package, Sparkles, Heart, Clock, Quote, Zap, TrendingUp } from "lucide-react"
+import { ArrowRight, Shield, Star, CheckCircle2, Package, Sparkles, Heart, Clock, Quote, Zap, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { db } from "@/lib/db"
@@ -25,7 +25,7 @@ async function getFeaturedProducts() {
       featured: true,
       store: { isActive: true, deletedAt: null },
     },
-    include: { store: { select: { name: true, city: true, primaryColor: true } }, category: true },
+    include: { store: { select: { name: true, primaryColor: true } }, category: true },
     take: 8,
     orderBy: { createdAt: "desc" },
   })
@@ -52,15 +52,73 @@ async function getCategories() {
 }
 
 async function getFeaturedStores() {
-  return db.store.findMany({
-    where: { isActive: true, deletedAt: null },
-    include: {
-      city: { select: { name: true } },
-      _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
-    },
-    orderBy: [{ isVerified: "desc" }, { createdAt: "desc" }],
-    take: 8,
-  })
+  const [stores, orders] = await Promise.all([
+    db.store.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+      },
+      include: {
+        _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
+      },
+      orderBy: [{ createdAt: "desc" }],
+    }),
+    db.order.groupBy({
+      by: ["storeId"],
+      where: { status: { notIn: ["CANCELLED", "REFUNDED"] } },
+      _count: { _all: true },
+    }),
+  ])
+
+  const orderCountMap = new Map(orders.map((order) => [order.storeId, order._count._all]))
+
+  return stores
+    .filter((store) => store._count.products > 0)
+    .sort((a, b) => {
+      const aOrders = orderCountMap.get(a.id) ?? 0
+      const bOrders = orderCountMap.get(b.id) ?? 0
+      if (bOrders !== aOrders) return bOrders - aOrders
+      return b.createdAt.getTime() - a.createdAt.getTime()
+    })
+    .slice(0, 8)
+    .map((store) => ({
+      ...store,
+      orderCount: orderCountMap.get(store.id) ?? 0,
+    }))
+}
+
+async function getHomeStats() {
+  const [storesCount, productsCount, categoriesCount] = await Promise.all([
+    db.store.count({
+      where: { isActive: true, deletedAt: null },
+    }),
+    db.product.count({
+      where: {
+        status: "ACTIVE",
+        deletedAt: null,
+        store: { isActive: true, deletedAt: null },
+      },
+    }),
+    db.category.count({
+      where: {
+        active: true,
+        parentId: null,
+        products: {
+          some: {
+            status: "ACTIVE",
+            deletedAt: null,
+            store: { isActive: true, deletedAt: null },
+          },
+        },
+      },
+    }),
+  ])
+
+  return [
+    { value: storesCount, label: "Tiendas activas", icon: Package },
+    { value: productsCount, label: "Productos únicos", icon: Heart },
+    { value: categoriesCount, label: "Categorias activas", icon: Sparkles },
+  ]
 }
 
 const testimonials = [
@@ -98,7 +156,13 @@ const promoItems = [
 ]
 
 export default async function HomePage() {
-  const [products, categories, stores] = await Promise.all([getFeaturedProducts(), getCategories(), getFeaturedStores()])
+  const [products, categories, stores, stats] = await Promise.all([
+    getFeaturedProducts(),
+    getCategories(),
+    getFeaturedStores(),
+    getHomeStats(),
+  ])
+  const visibleCategories = categories.filter((category) => category._count.products > 0)
 
   return (
     <div className="flex flex-col">
@@ -144,7 +208,7 @@ export default async function HomePage() {
             </h1>
             
             <p className="animate-fade-in-up delay-200 text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto mb-10 text-balance leading-relaxed">
-              AionSite Shop conecta compradores con tiendas locales de Mexico. Encuentra productos artesanales, tiendas cercanas y apoyo directo a emprendedores de tu ciudad.
+              AionSite Shop conecta compradores con tiendas locales de Mexico. Encuentra productos artesanales y apoyo directo a emprendedores de tu comunidad.
             </p>
 
             <div className="animate-fade-in-up delay-250 mx-auto mb-10 max-w-3xl rounded-3xl border border-border/60 bg-background/80 p-6 text-left shadow-sm backdrop-blur-sm">
@@ -152,7 +216,7 @@ export default async function HomePage() {
                 Que hace esta app
               </p>
               <p className="text-base md:text-lg text-foreground leading-relaxed">
-                AionSite Shop es una aplicacion web de marketplace local en Mexico. Permite a los compradores descubrir tiendas cercanas,
+                AionSite Shop es una aplicacion web de marketplace local en Mexico. Permite a los compradores descubrir tiendas locales,
                 comprar productos, y permite a los vendedores abrir su tienda y administrar su catalogo y ventas.
               </p>
             </div>
@@ -185,17 +249,15 @@ export default async function HomePage() {
           </div>
           
           {/* Stats */}
-          <div className="animate-fade-in-up delay-500 grid grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto mt-20">
-            {[
-              { value: "500+", label: "Tiendas activas", icon: Package },
-              { value: "10K+", label: "Productos unicos", icon: Heart },
-              { value: "50+", label: "Ciudades", icon: MapPin },
-            ].map((stat) => (
+          <div className="animate-fade-in-up delay-500 grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto mt-20">
+            {stats.map((stat) => (
               <div key={stat.label} className="relative group">
                 <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl group-hover:bg-primary/10 transition-colors" />
                 <div className="relative p-6 md:p-8 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 text-center hover-lift">
                   <stat.icon className="h-6 w-6 mx-auto mb-3 text-primary" />
-                  <p className="text-3xl md:text-4xl font-bold text-foreground mb-1">{stat.value}</p>
+                  <p className="text-3xl md:text-4xl font-bold text-foreground mb-1">
+                    {new Intl.NumberFormat("es-MX").format(stat.value)}
+                  </p>
                   <p className="text-xs md:text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
@@ -216,15 +278,8 @@ export default async function HomePage() {
             <p className="text-muted-foreground max-w-xl mx-auto text-lg">Una experiencia de compra disenada para ti y tu comunidad</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {[
-              { 
-                icon: Clock, 
-                title: "Entrega express", 
-                desc: "Recibe tus productos en horas, no dias. Conectamos con vendedores cercanos a ti.",
-                color: "from-primary/20 to-primary/5",
-                iconColor: "text-primary"
-              },
               { 
                 icon: Shield, 
                 title: "Compra protegida", 
@@ -256,7 +311,7 @@ export default async function HomePage() {
       </section>
 
       {/* Categories */}
-      {categories.length > 0 && (
+      {visibleCategories.length > 0 && (
         <section className="py-20 md:py-24">
           <div className="container mx-auto px-4">
             <div className="flex items-end justify-between mb-10">
@@ -273,7 +328,7 @@ export default async function HomePage() {
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
-            <CategoryGrid categories={categories} />
+            <CategoryGrid categories={visibleCategories} />
             <Link href="/categories" className="flex sm:hidden items-center justify-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors mt-8">
               Ver todas las categorias
               <ArrowRight className="h-4 w-4" />
@@ -284,7 +339,7 @@ export default async function HomePage() {
 
       {/* Featured Stores */}
       {stores.length > 0 && (
-        <section className="py-20 md:py-24 bg-muted/30">
+        <section className="py-20 md:py-24 bg-white">
           <div className="container mx-auto px-4">
             <div className="flex items-end justify-between mb-10">
               <div>
@@ -338,10 +393,8 @@ export default async function HomePage() {
                     {store.isVerified && <VerifiedBadge compact className="shrink-0" />}
                   </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      {store.city ? (
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{store.city.name}</span>
-                      ) : <span />}
                       <span className="flex items-center gap-1 font-medium"><Package className="h-3 w-3" />{store._count.products} productos</span>
+                      <span className="text-right font-medium">{store.orderCount} compras</span>
                     </div>
                   </div>
                 </Link>

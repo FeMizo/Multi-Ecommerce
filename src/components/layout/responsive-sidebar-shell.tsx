@@ -51,6 +51,10 @@ type ResponsiveSidebarShellProps = {
   brandImageAlt: string
   brandImageClassName?: string
   items: SidebarItem[]
+  topFooterHref?: string
+  topFooterLabel?: string
+  topFooterIconKey?: SidebarIconName
+  topFooterExternal?: boolean
   footerHref: string
   footerLabel: string
   footerIconKey: SidebarIconName
@@ -83,6 +87,10 @@ export function ResponsiveSidebarShell({
   brandImageAlt,
   brandImageClassName,
   items,
+  topFooterHref,
+  topFooterLabel,
+  topFooterIconKey,
+  topFooterExternal = false,
   footerHref,
   footerLabel,
   footerIconKey,
@@ -142,7 +150,12 @@ export function ResponsiveSidebarShell({
     variant === "admin"
       ? "text-background hover:bg-background/10 hover:text-background"
       : "text-foreground hover:bg-muted"
+  const topFooterTheme =
+    variant === "admin"
+      ? "border-background/10 text-background/60 hover:text-background"
+      : "border-border text-muted-foreground hover:text-foreground"
   const FooterIcon = ICONS[footerIconKey]
+  const TopFooterIcon = topFooterIconKey ? ICONS[topFooterIconKey] : null
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
@@ -213,6 +226,21 @@ export function ResponsiveSidebarShell({
           })}
         </nav>
 
+        {topFooterHref && topFooterLabel && TopFooterIcon && (
+          <div className={cn("border-t px-3 py-3", topFooterTheme)}>
+            <Link
+              href={topFooterHref}
+              className={cn("flex items-center gap-2 text-xs font-medium transition-colors", collapsed && "justify-center")}
+              target={topFooterExternal ? "_blank" : undefined}
+              rel={topFooterExternal ? "noreferrer" : undefined}
+              title={topFooterLabel}
+              aria-label={topFooterLabel}
+            >
+              <TopFooterIcon className="h-4 w-4 shrink-0" />
+              {!collapsed ? <span>{topFooterLabel}</span> : <span className="sr-only">{topFooterLabel}</span>}
+            </Link>
+          </div>
+        )}
         <div className={cn("border-t px-3 py-3", footerTheme)}>
           <Link
             href={footerHref}

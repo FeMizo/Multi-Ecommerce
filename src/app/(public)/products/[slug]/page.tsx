@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { Star, MapPin, Package, Shield } from "lucide-react"
+import { Star, Package, Shield } from "lucide-react"
 import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -19,7 +19,7 @@ async function getProduct(slug: string) {
   return db.product.findFirst({
     where: { slug, status: "ACTIVE", deletedAt: null },
     include: {
-      store: { include: { city: true } },
+      store: true,
       category: true,
       reviews: { include: { user: { select: { name: true, image: true } } }, take: 10 },
       _count: { select: { reviews: true } },
@@ -151,12 +151,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </div>
               <div>
                 <p className="font-medium">{product.store.name}</p>
-                {product.store.city && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {product.store.city.name}
-                  </p>
-                )}
               </div>
             </Link>
           </div>

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Star, Package, Shield, MapPin, CheckCircle2 } from "lucide-react"
+import { ChevronLeft, Star, Package, Shield, CheckCircle2 } from "lucide-react"
 import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,7 @@ async function getProduct(storeSlug: string, productSlug: string) {
       store: { slug: storeSlug, isActive: true, deletedAt: null },
     },
     include: {
-      store: { include: { city: true } },
+      store: true,
       category: true,
       reviews: {
         include: { user: { select: { name: true, image: true } } },
@@ -194,12 +194,6 @@ export default async function StoreProductPage({
                     Verificada
                   </span>}
                 </p>
-                {product.store.city && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {product.store.city.name}
-                  </p>
-                )}
                 {product.store.stripeOnboarded && (
                   <p className="text-xs text-primary mt-1">{PAYMENT_METHOD_LABELS.STRIPE} disponible</p>
                 )}

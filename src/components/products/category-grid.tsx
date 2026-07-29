@@ -1,5 +1,20 @@
 import Link from "next/link"
-import { ArrowRight, Shirt, Smartphone, Home, Dumbbell, Sparkles, Gamepad2, BookOpen, UtensilsCrossed, Palette, Dog, Flower2, Laptop } from "lucide-react"
+import {
+  ArrowRight,
+  Shirt,
+  Smartphone,
+  Home,
+  Dumbbell,
+  Sparkles,
+  Gamepad2,
+  BookOpen,
+  UtensilsCrossed,
+  Palette,
+  Dog,
+  Flower2,
+  Laptop,
+  BriefcaseBusiness,
+} from "lucide-react"
 
 type Category = {
   id: string
@@ -23,10 +38,18 @@ const categoryConfig: Record<string, { icon: React.ElementType; gradient: string
   "mascotas": { icon: Dog, gradient: "from-teal-500/20 to-cyan-500/10" },
   "jardin": { icon: Flower2, gradient: "from-lime-500/20 to-green-500/10" },
   "electronica": { icon: Laptop, gradient: "from-slate-500/20 to-gray-500/10" },
+  "servicios": { icon: BriefcaseBusiness, gradient: "from-sky-500/20 to-blue-500/10" },
+  "alimentos": { icon: UtensilsCrossed, gradient: "from-red-500/20 to-orange-500/10" },
+  "artesanias": { icon: Palette, gradient: "from-fuchsia-500/20 to-purple-500/10" },
 }
 
 function getCategoryConfig(slug: string) {
-  const normalizedSlug = slug.toLowerCase().replace(/-/g, "")
+  const normalizedSlug = slug
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "")
+
   return categoryConfig[normalizedSlug] || { icon: Sparkles, gradient: "from-primary/20 to-primary/5" }
 }
 
@@ -74,8 +97,8 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
               </div>
               
               {/* Arrow indicator */}
-              <div className={`absolute right-4 flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-all ${
-                isFirst ? 'bottom-6 sm:bottom-10' : 'bottom-4'
+              <div className={`absolute right-4 bottom-4 flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-all ${
+                isFirst ? '' : ''
               }`}>
                 <span className={`font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ${
                   isFirst ? 'text-sm' : 'text-xs'
@@ -83,10 +106,10 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
                   Ver mas
                 </span>
                 <div className={`rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-all ${
-                  isFirst ? 'h-10 w-10' : 'h-8 w-8'
+                  isFirst ? 'h-9 w-9' : 'h-8 w-8'
                 }`}>
                   <ArrowRight className={`group-hover:translate-x-0.5 transition-transform ${
-                    isFirst ? 'h-5 w-5' : 'h-4 w-4'
+                    isFirst ? 'h-6 w-6' : 'h-4 w-4'
                   }`} />
                 </div>
               </div>
