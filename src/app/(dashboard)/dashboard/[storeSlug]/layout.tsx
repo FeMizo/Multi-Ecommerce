@@ -3,24 +3,16 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { SessionProvider } from "next-auth/react"
 import Link from "next/link"
-import Image from "next/image"
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingBag,
-  BarChart3,
-  Settings,
-  Tag,
-  ChevronDown,
-} from "lucide-react"
+import { ArrowUpRight, BarChart3, LayoutDashboard, Package, Settings, ShoppingBag, Tag } from "lucide-react"
+import { ResponsiveSidebarShell } from "@/components/layout/responsive-sidebar-shell"
 
 const navItems = [
   { href: "", label: "Dashboard", icon: LayoutDashboard },
   { href: "/products", label: "Productos", icon: Package },
   { href: "/orders", label: "Pedidos", icon: ShoppingBag },
   { href: "/coupons", label: "Cupones", icon: Tag },
-  { href: "/metrics", label: "Métricas", icon: BarChart3 },
-  { href: "/settings", label: "Configuración", icon: Settings },
+  { href: "/metrics", label: "Metricas", icon: BarChart3 },
+  { href: "/settings", label: "Configuracion", icon: Settings },
 ]
 
 export default async function DashboardLayout({
@@ -47,49 +39,39 @@ export default async function DashboardLayout({
   if (!membership) redirect("/dashboard")
 
   const base = `/dashboard/${storeSlug}`
-
   const storeColor = membership.store.primaryColor
 
   return (
     <SessionProvider session={session}>
-      <div
-        className="flex min-h-screen"
-        style={storeColor ? ({ "--primary": storeColor, "--primary-foreground": "#ffffff" } as React.CSSProperties) : undefined}
+      <ResponsiveSidebarShell
+        brandHref="/"
+        brandTitle={membership.store.name}
+        brandSubtitle="Dashboard"
+        brandImageAlt="AionSite"
+        items={navItems.map((item) => ({ ...item, href: `${base}${item.href}` }))}
+        variant="dashboard"
+        storageKey={`dashboard-sidebar:${storeSlug}`}
+        footer={(collapsed) => (
+          <Link
+            href={`/${storeSlug}`}
+            className="flex items-center gap-2 text-xs font-medium transition-colors"
+            target="_blank"
+            rel="noreferrer"
+            title="Ver tienda"
+            aria-label="Ver tienda"
+          >
+            <ArrowUpRight className="h-4 w-4 shrink-0" />
+            {!collapsed ? <span>Ver tienda</span> : <span className="sr-only">Ver tienda</span>}
+          </Link>
+        )}
       >
-        <aside className="fixed left-0 top-0 h-screen w-60 border-r bg-card flex flex-col">
-          <div className="p-4 border-b" style={storeColor ? { borderTopColor: storeColor, borderTopWidth: 3 } : undefined}>
-            <Link href="/" className="inline-block">
-              <Image src="/logo.png" alt="AionSite" width={110} height={32} className="h-7 w-auto object-contain" />
-            </Link>
-            <div className="flex items-center gap-1 mt-2 text-xs font-medium text-primary">
-              <span className="truncate">{membership.store.name}</span>
-              <ChevronDown className="h-3 w-3 shrink-0" />
-            </div>
-          </div>
-          <nav className="flex-1 p-3 pb-20 space-y-1 overflow-y-auto">
-            {navItems.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={`${base}${href}`}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-primary/10 hover:text-primary transition-colors"
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            ))}
-          </nav>
-          <div className="absolute bottom-0 left-0 w-full bg-card p-4 border-t">
-            <Link
-              href={`/${storeSlug}`}
-              className="block text-xs text-muted-foreground hover:text-primary transition-colors"
-              target="_blank"
-            >
-              Ver tienda →
-            </Link>
-          </div>
-        </aside>
-        <main className="ml-60 flex-1 p-6 overflow-auto">{children}</main>
-      </div>
+        <div
+          style={storeColor ? ({ "--primary": storeColor, "--primary-foreground": "#ffffff" } as React.CSSProperties) : undefined}
+          className="min-h-screen"
+        >
+          {children}
+        </div>
+      </ResponsiveSidebarShell>
     </SessionProvider>
   )
 }
