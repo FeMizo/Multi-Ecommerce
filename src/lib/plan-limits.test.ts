@@ -20,12 +20,10 @@ async function planLimits() {
 function productLimitClient({
   subscriptionStatus = "ACTIVE",
   subscribedMax = 2,
-  freeMax = 10,
   productCount = 0,
 }: {
   subscriptionStatus?: "ACTIVE" | "TRIALING" | "PAST_DUE" | "CANCELLED"
   subscribedMax?: number | null
-  freeMax?: number | null
   productCount?: number
 }) {
   let countQueries = 0
@@ -35,9 +33,6 @@ function productLimitClient({
         status: subscriptionStatus,
         plan: { maxProducts: subscribedMax },
       }),
-    },
-    plan: {
-      findFirst: async () => ({ maxProducts: freeMax }),
     },
     product: {
       count: async () => {
@@ -70,18 +65,17 @@ test("bloquea la creación al alcanzar el máximo de productos", async () => {
   })
 })
 
-test("una suscripción sin beneficios usa los límites del plan Free", async () => {
+test("sin suscripción activa no hay beneficios de plan", async () => {
   const { client } = productLimitClient({
     subscriptionStatus: "CANCELLED",
     subscribedMax: 200,
-    freeMax: 10,
     productCount: 10,
   })
 
   assert.deepEqual(await checkProductLimit("store_1", client), {
     ok: false,
     count: 10,
-    max: 10,
+    max: 0,
   })
 })
 
@@ -114,9 +108,6 @@ test("bloquea checkouts al alcanzar el máximo mensual de órdenes", async () =>
   const client = {
     storeSubscription: {
       findUnique: async () => ({ status: "ACTIVE", plan: { maxOrdersMonth: 20 } }),
-    },
-    plan: {
-      findFirst: async () => ({ maxOrdersMonth: 10 }),
     },
     order: {
       count: async ({ where }: { where: unknown }) => {

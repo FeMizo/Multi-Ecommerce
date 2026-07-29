@@ -44,6 +44,7 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -121,6 +122,20 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
     setPlans((prev) => prev.filter((p) => p.id !== plan.id))
   }
 
+  async function syncCatalog() {
+    setSyncing(true)
+    const res = await fetch("/api/admin/plans/sync", { method: "POST" })
+    const data = await res.json().catch(() => ({}))
+    setSyncing(false)
+    if (!res.ok) {
+      toast.error(data.message ?? "Error al sincronizar planes")
+      return
+    }
+    toast.success("Catálogo base sincronizado")
+    setPlans((data.plans ?? []) as Plan[])
+    router.refresh()
+  }
+
   function startEdit(plan: Plan) {
     setEditingId(plan.id)
     resetEdit({
@@ -138,9 +153,14 @@ export function PlanManager({ plans: initial }: { plans: Plan[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{plans.length} planes</p>
-        <Button size="sm" onClick={() => setCreating(!creating)}>
-          <Plus className="h-4 w-4 mr-1" /> Nuevo plan
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={syncCatalog} disabled={syncing}>
+            {syncing ? "Sincronizando..." : "Sincronizar catálogo base"}
+          </Button>
+          <Button size="sm" onClick={() => setCreating(!creating)}>
+            <Plus className="h-4 w-4 mr-1" /> Nuevo plan
+          </Button>
+        </div>
       </div>
 
       {creating && (

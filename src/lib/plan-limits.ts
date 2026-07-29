@@ -48,7 +48,7 @@ export async function getEffectivePlan(storeId: string, client: DbClient = db) {
     return subscription.plan
   }
 
-  return client.plan.findFirst({ where: { slug: "free", isActive: true } })
+  return null
 }
 
 export async function checkProductLimit(storeId: string, client: DbClient = db) {
@@ -100,9 +100,9 @@ export async function getPlanUsage(storeId: string) {
   ])
 
   return {
-    planName: plan?.name ?? "Free",
+    planName: plan?.name ?? "Sin plan",
     products,
     orders,
-    commissionRate: plan?.commissionRate ?? 0.05,
+    commissionRate: plan?.commissionRate ?? 0,
   }
 }

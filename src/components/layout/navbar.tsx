@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useSession, signOut } from "next-auth/react"
+import { signOut } from "next-auth/react"
 import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,13 +17,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useCartStore } from "@/stores/cart"
 import { CitySelector } from "@/components/layout/city-selector"
 import { CartDrawer } from "@/components/layout/cart-drawer"
+import type { Session } from "next-auth"
 import { useState } from "react"
 
-export function Navbar() {
-  const { data: session } = useSession()
+type NavbarProps = {
+  session: Session | null
+  dashboardSlug: string | null
+}
+
+export function Navbar({ session, dashboardSlug }: NavbarProps) {
   const itemCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0))
   const openCart = useCartStore((s) => s.openCart)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const sessionUser = session?.user
 
   return (
     <>
@@ -112,22 +118,22 @@ export function Navbar() {
                 )}
               </Button>
 
-              {session ? (
+              {sessionUser ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
                       <Avatar className="h-9 w-9 border-2 border-border">
-                        <AvatarImage src={session.user.image ?? ""} />
+                        <AvatarImage src={sessionUser.image ?? ""} />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {session.user.name?.[0]?.toUpperCase()}
+                          {sessionUser.name?.[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
                     <DropdownMenuLabel className="font-normal p-3 rounded-lg bg-muted/50">
-                      <p className="font-semibold">{session.user.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+                      <p className="font-semibold">{sessionUser.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{sessionUser.email}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="my-2" />
                     <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
@@ -142,7 +148,15 @@ export function Navbar() {
                         Mi perfil
                       </Link>
                     </DropdownMenuItem>
-                    {session.user.globalRole === "PLATFORM_ADMIN" && (
+                    {dashboardSlug && (
+                      <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                        <Link href={`/dashboard/${dashboardSlug}`} className="flex items-center gap-2">
+                          <LayoutDashboard className="h-4 w-4" />
+                          Panel de vendedor
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {sessionUser.globalRole === "PLATFORM_ADMIN" && (
                       <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                         <Link href="/admin" className="flex items-center gap-2">
                           <LayoutDashboard className="h-4 w-4" />

@@ -8,6 +8,8 @@ const { PrismaPg } = require("@prisma/adapter-pg")
 const { Pool } = require("pg")
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const bcrypt = require("bcryptjs")
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PLAN_CATALOG } = require("../src/lib/plan-catalog")
 
 const connectionString = (process.env.MULTI_POSTGRES_URL_NON_POOLING ?? "")
   .replace(/[?&]sslmode=[^&]*/g, "")
@@ -41,108 +43,33 @@ async function main() {
   ])
 
   // ─── Plans ────────────────────────────────────────────────────────────────
-  await db.plan.upsert({
-    where: { slug: "free" },
-    update: {
-      name: "Free",
-      priceMonthly: 0,
-      priceYearly: 0,
-      maxProducts: 10,
-      maxOrdersMonth: 20,
-      commissionRate: 0.05,
-      features: { analytics: false, customDomain: false, staffInvites: false, prioritySupport: false },
-      stripePriceId: null,
-      isActive: true,
-    },
-    create: {
-      name: "Free",
-      slug: "free",
-      priceMonthly: 0,
-      priceYearly: 0,
-      maxProducts: 10,
-      maxOrdersMonth: 20,
-      commissionRate: 0.05,
-      features: { analytics: false, customDomain: false, staffInvites: false, prioritySupport: false },
-    },
-  })
-
-  await db.plan.upsert({
-    where: { slug: "starter" },
-    update: {
-      name: "Starter",
-      priceMonthly: 50,
-      priceYearly: 500,
-      maxProducts: 50,
-      maxOrdersMonth: 100,
-      commissionRate: 0.03,
-      features: { analytics: true, customDomain: false, staffInvites: false, prioritySupport: false },
-      stripePriceId: "price_1Tsr4UIecXF2Xs1S0YmYEALi",
-      isActive: true,
-    },
-    create: {
-      name: "Starter",
-      slug: "starter",
-      priceMonthly: 50,
-      priceYearly: 500,
-      maxProducts: 50,
-      maxOrdersMonth: 100,
-      commissionRate: 0.03,
-      features: { analytics: true, customDomain: false, staffInvites: false, prioritySupport: false },
-      stripePriceId: "price_1Tsr4UIecXF2Xs1S0YmYEALi",
-    },
-  })
-
-  await db.plan.upsert({
-    where: { slug: "pro" },
-    update: {
-      name: "Pro",
-      priceMonthly: 100,
-      priceYearly: 1000,
-      maxProducts: 200,
-      maxOrdersMonth: 500,
-      commissionRate: 0.02,
-      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: false },
-      stripePriceId: "price_1Tsr4VIecXF2Xs1SDwRMFQIt",
-      isActive: true,
-    },
-    create: {
-      name: "Pro",
-      slug: "pro",
-      priceMonthly: 100,
-      priceYearly: 1000,
-      maxProducts: 200,
-      maxOrdersMonth: 500,
-      commissionRate: 0.02,
-      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: false },
-      stripePriceId: "price_1Tsr4VIecXF2Xs1SDwRMFQIt",
-    },
-  })
-
-  await db.plan.upsert({
-    where: { slug: "business" },
-    update: {
-      name: "Business",
-      priceMonthly: 400,
-      priceYearly: 4000,
-      maxProducts: null,
-      maxOrdersMonth: null,
-      commissionRate: 0,
-      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: true },
-      stripePriceId: "price_1Tsr4WIecXF2Xs1S67pkNhdz",
-      isActive: true,
-    },
-    create: {
-      name: "Business",
-      slug: "business",
-      priceMonthly: 400,
-      priceYearly: 4000,
-      maxProducts: null,
-      maxOrdersMonth: null,
-      commissionRate: 0,
-      features: { analytics: true, customDomain: true, staffInvites: true, prioritySupport: true },
-      stripePriceId: "price_1Tsr4WIecXF2Xs1S67pkNhdz",
-    },
-  })
+  for (const plan of PLAN_CATALOG) {
+    await db.plan.upsert({
+      where: { slug: plan.slug },
+      update: {
+        name: plan.name,
+        priceMonthly: plan.priceMonthly,
+        priceYearly: plan.priceYearly,
+        maxProducts: plan.maxProducts,
+        maxOrdersMonth: plan.maxOrdersMonth,
+        commissionRate: plan.commissionRate,
+        features: plan.features,
+        stripePriceId: plan.stripePriceId,
+        isActive: true,
+      },
+      create: {
+        name: plan.name,
+        slug: plan.slug,
+        priceMonthly: plan.priceMonthly,
+        priceYearly: plan.priceYearly,
+        maxProducts: plan.maxProducts,
+        maxOrdersMonth: plan.maxOrdersMonth,
+        commissionRate: plan.commissionRate,
+        features: plan.features,
+        stripePriceId: plan.stripePriceId,
+      },
+    })
+  }
 
   // ─── Admin de plataforma ──────────────────────────────────────────────────
   const adminPassword = await bcrypt.hash("Admin1234!", 12)
@@ -161,7 +88,10 @@ async function main() {
     where: {
       OR: [
         { name: "Tienda de prueba" },
-        { slug: "tienda-de-prueba" },
+        { name: "Tienda Prueba Codex" },
+        { name: "Usuario Prueba" },
+        { slug: "tienda-prueba" },
+        { slug: "aion-e2e-20260713102332" },
       ],
     },
     select: { id: true },

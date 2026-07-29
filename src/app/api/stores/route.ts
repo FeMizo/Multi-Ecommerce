@@ -69,8 +69,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Ese nombre de tienda ya está en uso" }, { status: 409 })
   }
 
-  const freePlan = await db.plan.findUnique({ where: { slug: "free" } })
-
   const store = await db.$transaction(async (tx) => {
     const newStore = await tx.store.create({
       data: {
@@ -91,16 +89,6 @@ export async function POST(req: Request) {
         role: "OWNER",
       },
     })
-
-    if (freePlan) {
-      await tx.storeSubscription.create({
-        data: {
-          storeId: newStore.id,
-          planId: freePlan.id,
-          status: "ACTIVE",
-        },
-      })
-    }
 
     return newStore
   })
