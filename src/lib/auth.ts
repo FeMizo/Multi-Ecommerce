@@ -20,7 +20,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorization: {
         params: {
           scope: "openid email profile https://www.googleapis.com/auth/user.phonenumbers.read",
-          prompt: "consent",
           access_type: "offline",
           response_type: "code",
         },
