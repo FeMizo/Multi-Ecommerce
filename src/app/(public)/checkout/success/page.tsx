@@ -18,12 +18,13 @@ export default async function CheckoutSuccessPage({
 }: {
   searchParams: Promise<SearchParams>
 }) {
-  const { payment_method: paymentMethod, order_id: orderId } = await searchParams
+  const { payment_method: paymentMethod, order_id: orderId, session_id: sessionId } = await searchParams
   const order = orderId
     ? await db.order.findUnique({
         where: { id: orderId },
         select: {
           id: true,
+          storeId: true,
           paymentMethod: true,
           transferCode: true,
           store: {
@@ -37,6 +38,25 @@ export default async function CheckoutSuccessPage({
           },
         },
       })
+    : sessionId
+      ? await db.order.findFirst({
+          where: { stripeSessionId: sessionId },
+          select: {
+            id: true,
+            storeId: true,
+            paymentMethod: true,
+            transferCode: true,
+            store: {
+              select: {
+                transferAccountName: true,
+                transferAccountNumber: true,
+                transferBank: true,
+                transferReferencePrefix: true,
+                transferReferenceExtra: true,
+              },
+            },
+          },
+        })
     : null
 
   const effectiveMethod = order?.paymentMethod ?? paymentMethod?.toUpperCase()
@@ -45,7 +65,7 @@ export default async function CheckoutSuccessPage({
 
   return (
     <div className="container mx-auto px-4 py-20 max-w-lg text-center">
-      <ClearCartOnSuccess />
+      <ClearCartOnSuccess storeId={order?.storeId ?? null} />
       <div className="flex justify-center mb-6">
         <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center">
           <CheckCircle2 className="h-10 w-10 text-green-600" />

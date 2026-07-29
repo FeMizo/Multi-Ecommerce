@@ -25,3 +25,17 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ ok: true })
 }
+
+export async function GET() {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, name: true, email: true, phone: true, image: true },
+  })
+
+  if (!user) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
+
+  return NextResponse.json(user)
+}

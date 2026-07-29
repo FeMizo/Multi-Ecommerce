@@ -62,7 +62,7 @@ export async function PATCH(
       status: true,
       customerInfo: true,
       customer: { select: { email: true, phone: true } },
-      store: { select: { name: true } },
+      store: { select: { name: true, slug: true, logoUrl: true, primaryColor: true } },
     },
   })
 
@@ -73,7 +73,7 @@ export async function PATCH(
       message: `Tu pedido #${updated.id.slice(-8).toUpperCase()} de ${updated.store.name} fue entregado.`,
     }).catch(() => null)
     await Promise.allSettled([
-      sendOrderDeliveredEmail({ email: updated.customer.email, orderId: updated.id, storeName: updated.store.name }),
+      sendOrderDeliveredEmail({ email: updated.customer.email, orderId: updated.id, store: updated.store }),
     ])
     if (whatsappResult?.ok) {
       await db.order.update({ where: { id: updated.id }, data: { whatsappNotifiedAt: new Date() } })

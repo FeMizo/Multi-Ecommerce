@@ -14,7 +14,7 @@ import {
 import { fromMinorUnits, toMinorUnits } from "@/lib/money"
 import { checkoutRecoveryAction } from "@/lib/checkout-recovery"
 import { generateTransferCode, PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/lib/payment-methods"
-import { sendOrderReceivedEmail } from "@/lib/email"
+import { sendOrderReceivedEmail, sendSellerNewOrderEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from "@/lib/store-coupons"
 
@@ -25,8 +25,8 @@ const checkoutSchema = z.object({
   couponCode: z.string().max(32).optional(),
   customerInfo: z.object({
     fullName: z.string().min(3).max(120),
+    email: z.string().email().max(120),
     phone: z.string().min(9).max(30),
-    address: z.string().min(5).max(300),
     city: z.string().min(2).max(100),
     notes: z.string().max(500).optional(),
   }),
@@ -77,7 +77,6 @@ async function loadCoupon(storeId: string, code: string) {
 
 export async function POST(req: Request) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 
   try {
     await releaseExpiredOrderReservations(5)
@@ -86,14 +85,33 @@ export async function POST(req: Request) {
   }
 
   const parsed = checkoutSchema.safeParse(await req.json())
-  if (!parsed.success) return NextResponse.json({ message: "Carrito o direccion invalidos" }, { status: 422 })
+  if (!parsed.success) return NextResponse.json({ message: "Carrito o datos invalidos" }, { status: 422 })
 
   const { checkoutToken, items, storeId, customerInfo, paymentMethod, couponCode: rawCouponCode } = parsed.data
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   let requestedCouponCode = rawCouponCode ? normalizeCouponCode(rawCouponCode) : null
+  const customerEmail = customerInfo.email.trim().toLowerCase()
 
   if (new Set(items.map((item) => item.id)).size !== items.length) {
     return NextResponse.json({ message: "No repitas la misma variante en el carrito" }, { status: 422 })
+  }
+
+  let customerId = session?.user?.id ?? null
+  if (!customerId) {
+    const customer = await db.user.upsert({
+      where: { email: customerEmail },
+      update: {
+        name: customerInfo.fullName,
+        phone: customerInfo.phone,
+      },
+      create: {
+        email: customerEmail,
+        name: customerInfo.fullName,
+        phone: customerInfo.phone,
+      },
+      select: { id: true },
+    })
+    customerId = customer.id
   }
 
   let order = await db.order.findUnique({
@@ -118,7 +136,7 @@ export async function POST(req: Request) {
     },
   })
 
-  if (order && (order.customerId !== session.user.id || order.storeId !== storeId)) {
+  if (order && (order.customerId !== customerId || order.storeId !== storeId)) {
     return NextResponse.json({ message: "Token de checkout invalido" }, { status: 409 })
   }
 
@@ -205,7 +223,7 @@ export async function POST(req: Request) {
           data: {
             checkoutToken,
             storeId,
-            customerId: session.user.id,
+            customerId,
             status: paymentMethod === "CASH_ON_DELIVERY"
               ? "PENDING_PAYMENT"
               : paymentMethod === "TRANSFER"
@@ -316,12 +334,30 @@ export async function POST(req: Request) {
       select: {
         id: true,
         total: true,
+        subtotal: true,
+        discountAmount: true,
+        paymentMethod: true,
         transferCode: true,
         customerInfo: true,
+        items: {
+          select: {
+            quantity: true,
+            unitPrice: true,
+            total: true,
+            productSnapshot: true,
+          },
+        },
         customer: { select: { email: true } },
         store: {
           select: {
             name: true,
+            slug: true,
+            logoUrl: true,
+            primaryColor: true,
+            members: {
+              where: { role: { in: ["OWNER", "STAFF"] } },
+              select: { user: { select: { email: true, phone: true } } },
+            },
             transferAccountName: true,
             transferAccountNumber: true,
             transferBank: true,
@@ -333,15 +369,76 @@ export async function POST(req: Request) {
     })
 
     if (orderForEmail?.customer.email) {
-      await Promise.allSettled([
+      const sellerEmails = orderForEmail.store.members.map((member) => member.user.email)
+      const results = await Promise.allSettled([
         sendOrderReceivedEmail({
           email: orderForEmail.customer.email,
           orderId: orderForEmail.id,
-          storeName: orderForEmail.store.name,
+          store: orderForEmail.store,
+          items: orderForEmail.items.map((item) => {
+            const snapshot = item.productSnapshot as {
+              name?: unknown
+              selectedOptions?: Array<{ name: string; value: string }>
+            }
+            return {
+              name: typeof snapshot.name === "string" ? snapshot.name : "Producto",
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.total,
+              selectedOptions: Array.isArray(snapshot.selectedOptions) ? snapshot.selectedOptions : [],
+            }
+          }),
           total: orderForEmail.total,
+          subtotal: orderForEmail.subtotal,
+          discountAmount: orderForEmail.discountAmount,
           paymentMethodLabel: PAYMENT_METHOD_LABELS.CASH_ON_DELIVERY,
+          customerInfo: orderForEmail.customerInfo as {
+            fullName?: string | null
+            phone?: string | null
+            address?: string | null
+            city?: string | null
+            notes?: string | null
+          },
+        }),
+        sendSellerNewOrderEmail({
+          emails: sellerEmails,
+          orderId: orderForEmail.id,
+          store: orderForEmail.store,
+          items: orderForEmail.items.map((item) => {
+            const snapshot = item.productSnapshot as {
+              name?: unknown
+              selectedOptions?: Array<{ name: string; value: string }>
+            }
+            return {
+              name: typeof snapshot.name === "string" ? snapshot.name : "Producto",
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.total,
+              selectedOptions: Array.isArray(snapshot.selectedOptions) ? snapshot.selectedOptions : [],
+            }
+          }),
+          total: orderForEmail.total,
+          subtotal: orderForEmail.subtotal,
+          discountAmount: orderForEmail.discountAmount,
+          paymentMethodLabel: PAYMENT_METHOD_LABELS.CASH_ON_DELIVERY,
+          customerInfo: orderForEmail.customerInfo as {
+            fullName?: string | null
+            phone?: string | null
+            address?: string | null
+            city?: string | null
+            notes?: string | null
+          },
         }),
       ])
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          console.error("No se pudo enviar correo de checkout", {
+            orderId: orderForEmail.id,
+            kind: index === 0 ? "customer" : "seller",
+            error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+          })
+        }
+      })
     }
 
     const customerInfo = orderForEmail?.customerInfo as { phone?: string } | undefined
@@ -374,12 +471,30 @@ export async function POST(req: Request) {
       select: {
         id: true,
         total: true,
+        subtotal: true,
+        discountAmount: true,
+        paymentMethod: true,
         transferCode: true,
         customerInfo: true,
+        items: {
+          select: {
+            quantity: true,
+            unitPrice: true,
+            total: true,
+            productSnapshot: true,
+          },
+        },
         customer: { select: { email: true } },
         store: {
           select: {
             name: true,
+            slug: true,
+            logoUrl: true,
+            primaryColor: true,
+            members: {
+              where: { role: { in: ["OWNER", "STAFF"] } },
+              select: { user: { select: { email: true, phone: true } } },
+            },
             transferAccountName: true,
             transferAccountNumber: true,
             transferBank: true,
@@ -391,13 +506,73 @@ export async function POST(req: Request) {
     })
 
     if (orderForEmail?.customer.email) {
-      await Promise.allSettled([
+      const sellerEmails = orderForEmail.store.members.map((member) => member.user.email)
+      const results = await Promise.allSettled([
         sendOrderReceivedEmail({
           email: orderForEmail.customer.email,
           orderId: orderForEmail.id,
-          storeName: orderForEmail.store.name,
+          store: orderForEmail.store,
+          items: orderForEmail.items.map((item) => {
+            const snapshot = item.productSnapshot as {
+              name?: unknown
+              selectedOptions?: Array<{ name: string; value: string }>
+            }
+            return {
+              name: typeof snapshot.name === "string" ? snapshot.name : "Producto",
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.total,
+              selectedOptions: Array.isArray(snapshot.selectedOptions) ? snapshot.selectedOptions : [],
+            }
+          }),
           total: orderForEmail.total,
+          subtotal: orderForEmail.subtotal,
+          discountAmount: orderForEmail.discountAmount,
           paymentMethodLabel: PAYMENT_METHOD_LABELS.TRANSFER,
+          transferCode: orderForEmail.transferCode,
+          transferDetails: {
+            transferAccountName: orderForEmail.store.transferAccountName,
+            transferAccountNumber: orderForEmail.store.transferAccountNumber,
+            transferBank: orderForEmail.store.transferBank,
+            transferReferencePrefix: orderForEmail.store.transferReferencePrefix,
+            transferReferenceExtra: orderForEmail.store.transferReferenceExtra,
+          },
+          customerInfo: orderForEmail.customerInfo as {
+            fullName?: string | null
+            phone?: string | null
+            address?: string | null
+            city?: string | null
+            notes?: string | null
+          },
+        }),
+        sendSellerNewOrderEmail({
+          emails: sellerEmails,
+          orderId: orderForEmail.id,
+          store: orderForEmail.store,
+          items: orderForEmail.items.map((item) => {
+            const snapshot = item.productSnapshot as {
+              name?: unknown
+              selectedOptions?: Array<{ name: string; value: string }>
+            }
+            return {
+              name: typeof snapshot.name === "string" ? snapshot.name : "Producto",
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.total,
+              selectedOptions: Array.isArray(snapshot.selectedOptions) ? snapshot.selectedOptions : [],
+            }
+          }),
+          total: orderForEmail.total,
+          subtotal: orderForEmail.subtotal,
+          discountAmount: orderForEmail.discountAmount,
+          paymentMethodLabel: PAYMENT_METHOD_LABELS.TRANSFER,
+          customerInfo: orderForEmail.customerInfo as {
+            fullName?: string | null
+            phone?: string | null
+            address?: string | null
+            city?: string | null
+            notes?: string | null
+          },
           transferCode: orderForEmail.transferCode,
           transferDetails: {
             transferAccountName: orderForEmail.store.transferAccountName,
@@ -408,6 +583,15 @@ export async function POST(req: Request) {
           },
         }),
       ])
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          console.error("No se pudo enviar correo de checkout", {
+            orderId: orderForEmail.id,
+            kind: index === 0 ? "customer" : "seller",
+            error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+          })
+        }
+      })
     }
 
     const customerInfo = orderForEmail?.customerInfo as { phone?: string } | undefined
@@ -480,7 +664,7 @@ export async function POST(req: Request) {
     cancel_url: `${origin}/cart`,
     metadata: { orderId: order.id, storeId },
   } as const
-  const idempotencyKey = `checkout:${session.user.id}:${checkoutToken}`
+  const idempotencyKey = `checkout:${session!.user.id}:${checkoutToken}`
 
   let checkoutSession
   try {

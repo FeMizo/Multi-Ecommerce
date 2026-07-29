@@ -4,6 +4,7 @@ import Stripe from "stripe"
 import { db } from "@/lib/db"
 import { stripe } from "@/lib/stripe"
 import { completeFullRefund, releaseOrderReservation } from "@/lib/payment-lifecycle"
+import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 import { sendOrderConfirmationEmail, sendSellerNewOrderEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { getCurrentPeriodEnd } from "@/lib/billing-rules"
@@ -145,11 +146,25 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
     select: {
       id: true,
       total: true,
+      subtotal: true,
+      discountAmount: true,
+      paymentMethod: true,
       customerInfo: true,
+      items: {
+        select: {
+          quantity: true,
+          unitPrice: true,
+          total: true,
+          productSnapshot: true,
+        },
+      },
       customer: { select: { email: true, phone: true } },
       store: {
         select: {
           name: true,
+          slug: true,
+          logoUrl: true,
+          primaryColor: true,
           members: {
             where: { role: { in: ["OWNER", "STAFF"] } },
             select: { user: { select: { email: true, phone: true } } },
@@ -160,6 +175,25 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
   })
   if (order) {
     const customerInfo = order.customerInfo as { phone?: string }
+    const orderItems = order.items.map((item) => {
+      const snapshot = item.productSnapshot as {
+        name?: unknown
+        selectedOptions?: Array<{ name: string; value: string }>
+      }
+      return {
+        name: typeof snapshot.name === "string" ? snapshot.name : "Producto",
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.total,
+        selectedOptions: Array.isArray(snapshot.selectedOptions) ? snapshot.selectedOptions : [],
+      }
+    })
+    const storeBranding = {
+      name: order.store.name,
+      slug: order.store.slug,
+      logoUrl: order.store.logoUrl,
+      primaryColor: order.store.primaryColor,
+    }
     const customerWhatsApp = await sendWhatsAppText({
       phone: order.customer.phone ?? customerInfo.phone,
       message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${order.store.name} fue confirmado.`,
@@ -168,8 +202,28 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
     const sellerPhones = order.store.members.map((member) => member.user.phone).filter(Boolean)
     try {
       await Promise.allSettled([
-        sendOrderConfirmationEmail({ email: order.customer.email, orderId: order.id, storeName: order.store.name, total: order.total }),
-        sendSellerNewOrderEmail({ emails: sellerEmails, orderId: order.id, storeName: order.store.name, total: order.total }),
+        sendOrderConfirmationEmail({
+          email: order.customer.email,
+          orderId: order.id,
+          store: storeBranding,
+          items: orderItems,
+          total: order.total,
+          subtotal: order.subtotal,
+          discountAmount: order.discountAmount,
+          paymentMethodLabel: PAYMENT_METHOD_LABELS[order.paymentMethod],
+          customerInfo: customerInfo,
+        }),
+        sendSellerNewOrderEmail({
+          emails: sellerEmails,
+          orderId: order.id,
+          store: storeBranding,
+          items: orderItems,
+          total: order.total,
+          subtotal: order.subtotal,
+          discountAmount: order.discountAmount,
+          paymentMethodLabel: PAYMENT_METHOD_LABELS[order.paymentMethod],
+          customerInfo: customerInfo,
+        }),
         ...sellerPhones.map((phone) => sendWhatsAppText({
           phone,
           message: `Nuevo pedido pagado #${order.id.slice(-8).toUpperCase()} en ${order.store.name} por ${order.total} MXN.`,

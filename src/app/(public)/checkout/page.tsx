@@ -1,9 +1,10 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useSession } from "next-auth/react"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Banknote, CheckCircle2, CreditCard, Landmark } from "lucide-react"
@@ -22,8 +23,8 @@ import {
 
 const schema = z.object({
   fullName: z.string().min(3, "Nombre requerido"),
+  email: z.string().email("Correo inválido"),
   phone: z.string().min(9, "Teléfono inválido"),
-  address: z.string().min(5, "Dirección requerida"),
   city: z.string().min(2, "Ciudad requerida"),
   notes: z.string().optional(),
 })
@@ -66,29 +67,77 @@ const PAYMENT_METHOD_CARDS: Record<PaymentMethodValue, PaymentMethodCard> = {
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { items, total } = useCartStore()
+  const { data: session, status } = useSession()
+  const { items } = useCartStore()
   const [loading, setLoading] = useState(false)
   const [checkoutToken] = useState(() => crypto.randomUUID())
   const [optionsLoading, setOptionsLoading] = useState(true)
+  const [profileReady, setProfileReady] = useState(false)
   const [storeOptions, setStoreOptions] = useState<StoreOptions | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodValue>("CASH_ON_DELIVERY")
   const [couponCode, setCouponCode] = useState("")
+  const profilePrefilled = useRef(false)
+  const checkoutStoreId = items[0]?.storeId ?? null
+  const checkoutStoreName = items[0]?.storeName ?? null
+  const checkoutItems = useMemo(() => {
+    if (!checkoutStoreId) return []
+    return items.filter((item) => item.storeId === checkoutStoreId)
+  }, [checkoutStoreId, items])
+  const checkoutTotal = useMemo(
+    () => checkoutItems.reduce((acc, item) => acc + item.price * item.quantity, 0),
+    [checkoutItems]
+  )
+  const profileLoading = status === "authenticated" && !profileReady
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
   useEffect(() => {
-    const storeId = items[0]?.storeId
-    if (!storeId) return
+    if (status !== "authenticated" || profilePrefilled.current) return
+
+    fetch("/api/account/profile")
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data.message ?? "No se pudo cargar tu perfil")
+        return data as { name?: string | null; email?: string | null; phone?: string | null }
+      })
+      .then((user) => {
+        reset({
+          fullName: user.name ?? session?.user?.name ?? "",
+          email: user.email ?? session?.user?.email ?? "",
+          phone: user.phone ?? "",
+          city: "",
+          notes: "",
+        })
+        profilePrefilled.current = true
+      })
+      .catch(() => {
+        reset({
+          fullName: session?.user?.name ?? "",
+          email: session?.user?.email ?? "",
+          phone: "",
+          city: "",
+          notes: "",
+        })
+        profilePrefilled.current = true
+      })
+      .finally(() => {
+        setProfileReady(true)
+      })
+  }, [reset, session?.user?.email, session?.user?.name, status])
+
+  useEffect(() => {
+    if (!checkoutStoreId) return
 
     const controller = new AbortController()
 
-    fetch(`/api/stores?storeId=${storeId}`, { signal: controller.signal })
+    fetch(`/api/stores?storeId=${checkoutStoreId}`, { signal: controller.signal })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(data.message ?? "No se pudieron cargar los métodos de pago")
@@ -105,21 +154,20 @@ export default function CheckoutPage() {
       })
 
     return () => controller.abort()
-  }, [items])
+  }, [checkoutStoreId])
 
   async function onSubmit(data: FormData) {
-    if (items.length === 0) return
+    if (checkoutItems.length === 0 || !checkoutStoreId) return
     setLoading(true)
 
-    const storeId = items[0]?.storeId
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         checkoutToken,
-        items,
-        storeId,
-        paymentMethod,
+        items: checkoutItems,
+        storeId: checkoutStoreId,
+        paymentMethod: selectedPaymentMethod,
         couponCode: couponCode.trim() || undefined,
         customerInfo: data,
       }),
@@ -139,11 +187,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (items.length === 0) {
-    router.push("/cart")
-    return null
-  }
-
+  const hasPendingItems = checkoutItems.length !== items.length
   const canUseStripe = Boolean(storeOptions?.stripeOnboarded)
   const canUseCashOnDelivery = Boolean(storeOptions?.cashOnDeliveryEnabled)
   const canUseTransfer = Boolean(storeOptions?.transferEnabled)
@@ -153,17 +197,23 @@ export default function CheckoutPage() {
     canUseStripe ? ["STRIPE"] : [],
   )
   const hasAnyPayment = availablePaymentMethods.length > 0
+  const selectedPaymentMethod = hasAnyPayment && !availablePaymentMethods.includes(paymentMethod)
+    ? availablePaymentMethods[0]
+    : paymentMethod
 
-  useEffect(() => {
-    if (!hasAnyPayment) return
-    if (!availablePaymentMethods.includes(paymentMethod)) {
-      setPaymentMethod(availablePaymentMethods[0])
-    }
-  }, [availablePaymentMethods, hasAnyPayment, paymentMethod])
+  if (items.length === 0) {
+    router.push("/cart")
+    return null
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-2xl font-bold mb-8">Checkout</h1>
+      {hasPendingItems && checkoutStoreName && (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Solo se procesarán los productos de {checkoutStoreName}. Los demás seguirán en tu carrito.
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 space-y-6">
@@ -176,6 +226,16 @@ export default function CheckoutPage() {
                     <Input {...register("fullName")} />
                     {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
                   </div>
+                  <div className="col-span-2 space-y-1">
+                    <Label>Correo electrónico</Label>
+                    <Input
+                      {...register("email")}
+                      readOnly={status === "authenticated"}
+                      className={status === "authenticated" ? "bg-muted" : undefined}
+                      placeholder="tu@correo.com"
+                    />
+                    {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                  </div>
                   <div className="space-y-1">
                     <Label>Teléfono</Label>
                     <Input {...register("phone")} placeholder="987 654 321" />
@@ -185,11 +245,6 @@ export default function CheckoutPage() {
                     <Label>Ciudad</Label>
                     <Input {...register("city")} />
                     {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label>Dirección</Label>
-                    <Input {...register("address")} placeholder="Av. Los Olivos 123, Dpto 4B" />
-                    {errors.address && <p className="text-xs text-destructive">{errors.address.message}</p>}
                   </div>
                   <div className="col-span-2 space-y-1">
                     <Label>Notas (opcional)</Label>
@@ -209,7 +264,7 @@ export default function CheckoutPage() {
                     {availablePaymentMethods.map((method) => {
                       const card = PAYMENT_METHOD_CARDS[method]
                       const Icon = card.icon
-                      const selected = paymentMethod === method
+                      const selected = selectedPaymentMethod === method
 
                       return (
                         <button
@@ -251,12 +306,12 @@ export default function CheckoutPage() {
                         Esta tienda no tiene métodos de pago disponibles.
                       </p>
                     )}
-                    {paymentMethod === "CASH_ON_DELIVERY" && (
+                    {selectedPaymentMethod === "CASH_ON_DELIVERY" && (
                       <p className="text-xs text-muted-foreground">
                         Se mostrará como pago contra entrega en el pedido.
                       </p>
                     )}
-                    {paymentMethod === "TRANSFER" && (
+                    {selectedPaymentMethod === "TRANSFER" && (
                       <p className="text-xs text-muted-foreground">
                         Te mostraremos los datos bancarios, el código de transferencia y la referencia al finalizar.
                       </p>
@@ -288,7 +343,7 @@ export default function CheckoutPage() {
             <Card className="sticky top-20">
               <CardHeader><CardTitle>Tu pedido</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                {items.map((item) => (
+                {checkoutItems.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
                     <span>{formatPrice(item.price * item.quantity)}</span>
@@ -297,26 +352,26 @@ export default function CheckoutPage() {
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>{formatPrice(total())}</span>
+                  <span>{formatPrice(checkoutTotal)}</span>
                 </div>
                 <Button
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={loading || optionsLoading || !hasAnyPayment}
+                  disabled={loading || optionsLoading || profileLoading || !hasAnyPayment || checkoutItems.length === 0}
                 >
                   {loading
                     ? "Procesando..."
-                    : paymentMethod === "CASH_ON_DELIVERY"
+                    : selectedPaymentMethod === "CASH_ON_DELIVERY"
                       ? "Confirmar pedido"
-                      : paymentMethod === "TRANSFER"
+                      : selectedPaymentMethod === "TRANSFER"
                         ? "Generar código de transferencia"
                         : "Pagar con Stripe"}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  {paymentMethod === "CASH_ON_DELIVERY"
+                  {selectedPaymentMethod === "CASH_ON_DELIVERY"
                     ? "Cobro al entregar · La tienda asume el riesgo"
-                    : paymentMethod === "TRANSFER"
+                    : selectedPaymentMethod === "TRANSFER"
                       ? "Pago por transferencia · Usa el código de referencia"
                       : "Pago seguro · Tu dinero está protegido"}
                 </p>
