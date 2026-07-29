@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
 import { Package, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -72,6 +73,7 @@ export default async function StoreDashboardPage({
     select: { id: true, name: true },
   })
   if (!store) redirect("/dashboard")
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
 
   const metrics = await getStoreMetrics(store.id)
 

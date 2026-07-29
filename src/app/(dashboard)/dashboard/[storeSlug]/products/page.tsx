@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import { Plus, Package } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { checkProductLimit } from "@/lib/plan-limits"
+import { checkProductLimit, getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -64,6 +64,7 @@ export default async function StoreProductsPage({
     select: { id: true, name: true },
   })
   if (!store) redirect("/dashboard")
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
 
   const [products, productLimit] = await Promise.all([
     db.product.findMany({
@@ -99,7 +100,7 @@ export default async function StoreProductsPage({
       )}
 
       {products.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center border rounded-xl">
+        <div className="flex flex-col items-center justify-center px-3 py-20 text-center border rounded-xl">
           <Package className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="font-semibold text-lg mb-1">Sin productos</h3>
           <p className="text-sm text-muted-foreground mb-4">

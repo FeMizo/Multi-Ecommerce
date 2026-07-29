@@ -4,6 +4,7 @@ import Image from "next/image"
 import { ChevronLeft, Package } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -32,6 +33,7 @@ export default async function OrderDetailPage({
 
   const store = await db.store.findUnique({ where: { slug: storeSlug }, select: { id: true } })
   if (!store) redirect("/dashboard")
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
 
   const order = await db.order.findFirst({
     where: { id: orderId, storeId: store.id, deletedAt: null },

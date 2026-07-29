@@ -63,7 +63,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                   className="hidden sm:block h-9 w-auto object-contain"
                   priority
                 />
-                <span className="hidden md:inline-block text-sm font-semibold tracking-wide text-foreground">
+                <span className="hidden text-sm font-semibold tracking-wide text-foreground">
                   AionSite Shop
                 </span>
               </Link>

@@ -3,6 +3,7 @@ import { subDays, format, eachDayOfInterval } from "date-fns"
 import { es } from "date-fns/locale"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { getEffectivePlan } from "@/lib/plan-limits"
 import { MetricsCharts } from "@/components/dashboard/metrics-charts"
 
 export default async function MetricsPage({
@@ -16,6 +17,7 @@ export default async function MetricsPage({
 
   const store = await db.store.findUnique({ where: { slug: storeSlug }, select: { id: true } })
   if (!store) redirect("/dashboard")
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
 
   const now = new Date()
   const thirtyDaysAgo = subDays(now, 29)

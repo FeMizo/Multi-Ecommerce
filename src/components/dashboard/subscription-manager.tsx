@@ -75,9 +75,7 @@ export function SubscriptionManager({
       <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
           const hasPaidEntitlements = subscription && ["ACTIVE", "TRIALING"].includes(subscription.status)
-          const current = hasPaidEntitlements
-            ? subscription.planId === plan.id
-            : plan.priceMonthly === 0
+          const current = hasPaidEntitlements ? subscription.planId === plan.id : false
           return (
             <div key={plan.id} className={`rounded-lg border p-4 ${current ? "border-primary" : ""}`}>
               <div className="flex items-center justify-between gap-2">

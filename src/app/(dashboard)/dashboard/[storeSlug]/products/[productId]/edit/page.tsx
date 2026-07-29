@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { getEffectivePlan } from "@/lib/plan-limits"
 import { ProductForm } from "@/components/dashboard/product-form"
 
 export default async function EditProductPage({
@@ -17,6 +18,7 @@ export default async function EditProductPage({
     select: { id: true },
   })
   if (!store) redirect("/dashboard")
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
 
   const [product, categories] = await Promise.all([
     db.product.findFirst({

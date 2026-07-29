@@ -152,28 +152,36 @@ export function ResponsiveSidebarShell({
         className={cn("fixed inset-y-0 left-0 z-40 flex flex-col border-r transition-[width] duration-300 ease-in-out", asideTheme)}
         style={{ width: sidebarWidth }}
       >
-        <div className={cn("flex items-center gap-3 border-b px-3 py-4", variant === "admin" ? "border-background/10" : "border-border")}>
+        <div
+          className={cn(
+            "relative flex items-center border-b px-3 py-4 pr-14",
+            collapsed ? "justify-center" : "justify-start",
+            variant === "admin" ? "border-background/10" : "border-border"
+          )}
+        >
           <Link
             href={brandHref}
-            className={cn("flex min-w-0 flex-1 items-center gap-3", collapsed && "justify-center")}
+            className={cn("flex min-w-0 items-center gap-3", collapsed ? "justify-center" : "flex-1")}
             aria-label={brandTitle}
           >
-            <Image
-              src="/logo.png"
-              alt={brandImageAlt}
-              width={110}
-              height={32}
-              className={cn("h-7 w-auto shrink-0 object-contain", variant === "admin" && "brightness-0 invert", brandImageClassName)}
-            />
-            {!collapsed && (
-              <div className="min-w-0">
-                {brandSubtitle ? (
-                  <p className={cn("text-[10px] uppercase tracking-[0.2em]", variant === "admin" ? "text-background/50" : "text-muted-foreground")}>
-                    {brandSubtitle}
-                  </p>
-                ) : null}
-                <p className="truncate text-sm font-semibold">{brandTitle}</p>
-              </div>
+            {collapsed ? (
+              <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl">
+                <Image
+                  src="/logo.png"
+                  alt={brandImageAlt}
+                  fill
+                  sizes="40px"
+                  className={cn("object-contain", variant === "admin" && "brightness-0 invert", brandImageClassName)}
+                />
+              </span>
+            ) : (
+              <Image
+                src="/logo.png"
+                alt={brandImageAlt}
+                width={110}
+                height={32}
+                className={cn("h-7 w-auto shrink-0 object-contain", variant === "admin" && "brightness-0 invert", brandImageClassName)}
+              />
             )}
           </Link>
 
@@ -181,7 +189,7 @@ export function ResponsiveSidebarShell({
             type="button"
             variant="ghost"
             size="icon"
-            className={cn("hidden h-8 w-8 shrink-0 xl:inline-flex", toggleTheme)}
+            className={cn("hidden absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 shrink-0 xl:inline-flex", toggleTheme)}
             onClick={() => setCollapsed((value) => !value)}
             aria-label={collapsed ? "Mostrar textos" : "Mostrar solo iconos"}
           >

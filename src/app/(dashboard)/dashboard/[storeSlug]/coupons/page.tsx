@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { getEffectivePlan } from "@/lib/plan-limits"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { StoreCouponsManager } from "@/components/dashboard/store-coupons-manager"
@@ -25,6 +26,7 @@ export default async function CouponsPage({
   })
 
   if (!membership) redirect("/dashboard")
+  if (!await getEffectivePlan(membership.store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
 
   const coupons = await db.storeCoupon.findMany({
     where: { storeId: membership.store.id },
