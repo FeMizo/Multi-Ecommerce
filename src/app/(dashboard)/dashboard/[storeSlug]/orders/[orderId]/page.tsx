@@ -15,7 +15,7 @@ import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 import { buildTransferReference } from "@/lib/transfer-details"
 
-type ShippingAddress = {
+type CustomerInfo = {
   name?: string
   address?: string
   city?: string
@@ -58,7 +58,7 @@ export default async function OrderDetailPage({
 
   if (!order) notFound()
 
-  const shipping = order.shippingAddress as ShippingAddress
+  const customerInfo = order.customerInfo as CustomerInfo
 
   return (
     <div className="space-y-6">
@@ -217,15 +217,15 @@ export default async function OrderDetailPage({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Dirección de envío</CardTitle>
+              <CardTitle className="text-base">Información del cliente</CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-0.5">
-              {shipping.name && <p className="font-medium">{shipping.name}</p>}
-              {shipping.address && <p className="text-muted-foreground">{shipping.address}</p>}
-              {shipping.city && <p className="text-muted-foreground">{shipping.city}</p>}
-              {shipping.phone && <p className="text-muted-foreground">{shipping.phone}</p>}
-              {!shipping.name && !shipping.address && (
-                <p className="text-muted-foreground italic">Sin información de envío</p>
+              {customerInfo.name && <p className="font-medium">{customerInfo.name}</p>}
+              {customerInfo.address && <p className="text-muted-foreground">{customerInfo.address}</p>}
+              {customerInfo.city && <p className="text-muted-foreground">{customerInfo.city}</p>}
+              {customerInfo.phone && <p className="text-muted-foreground">{customerInfo.phone}</p>}
+              {!customerInfo.name && !customerInfo.address && (
+                <p className="text-muted-foreground italic">Sin información disponible</p>
               )}
             </CardContent>
           </Card>

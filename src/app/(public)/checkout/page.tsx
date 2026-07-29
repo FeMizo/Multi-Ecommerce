@@ -99,7 +99,7 @@ export default function CheckoutPage() {
         storeId,
         paymentMethod,
         couponCode: couponCode.trim() || undefined,
-        shippingAddress: data,
+        customerInfo: data,
       }),
     })
 
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 space-y-6">
             <Card>
-              <CardHeader><CardTitle>Datos de entrega</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Datos del cliente</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 space-y-1">
@@ -159,7 +159,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="col-span-2 space-y-1">
                     <Label>Notas (opcional)</Label>
-                    <Input {...register("notes")} placeholder="Instrucciones para el delivery" />
+                    <Input {...register("notes")} placeholder="Instrucciones adicionales" />
                   </div>
                 </div>
               </CardContent>

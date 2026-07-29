@@ -9,7 +9,7 @@ import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
 async function getStore(slug: string) {
   return db.store.findFirst({
-    where: { slug, isActive: true, isVerified: true, deletedAt: null },
+    where: { slug, isActive: true, deletedAt: null },
     select: {
       name: true,
       slug: true,

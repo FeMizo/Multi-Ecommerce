@@ -288,7 +288,7 @@ model Order {
   coupon                StoreCoupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
   couponCode           String?
   discountAmount       Float       @default(0)
-  shippingAddress       Json
+  customerInfo          Json      @map("shippingAddress")
   notes                 String?     @db.Text
   checkoutToken         String?     @unique
   paymentMethod         PaymentMethod @default(STRIPE)

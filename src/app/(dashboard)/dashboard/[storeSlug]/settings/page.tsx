@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { StoreSettingsForm } from "@/components/dashboard/store-settings-form"
 import { SubscriptionManager } from "@/components/dashboard/subscription-manager"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -29,6 +30,7 @@ export default async function SettingsPage({
             id: true,
             slug: true,
             name: true,
+            isVerified: true,
             description: true,
             logoUrl: true,
             bannerUrl: true,
@@ -112,6 +114,24 @@ export default async function SettingsPage({
           currentPeriodEnd: store.subscription.currentPeriodEnd?.toISOString() ?? null,
         } : null}
       />
+      <Card id="verificacion" className={!store.isVerified ? "border-amber-200 bg-amber-50 dark:bg-amber-950/20" : undefined}>
+        <CardContent className="space-y-3 pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold">Verificación</p>
+              <p className="text-sm text-muted-foreground">
+                {store.isVerified ? "Tu cuenta ya está verificada." : "Tu cuenta aún no está verificada."}
+              </p>
+            </div>
+            <Badge variant={store.isVerified ? "secondary" : "outline"}>
+              {store.isVerified ? "Verificada" : "Pendiente"}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            La verificación se completa con un enlace enviado por correo a la cuenta del propietario.
+          </p>
+        </CardContent>
+      </Card>
       <Card>
         <CardContent className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4">
           <div>

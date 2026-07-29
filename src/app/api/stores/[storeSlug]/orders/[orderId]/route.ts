@@ -60,16 +60,16 @@ export async function PATCH(
     select: {
       id: true,
       status: true,
-      shippingAddress: true,
+      customerInfo: true,
       customer: { select: { email: true, phone: true } },
       store: { select: { name: true } },
     },
   })
 
   if (updated.status === "DELIVERED") {
-    const shipping = updated.shippingAddress as { phone?: string }
+    const customerInfo = updated.customerInfo as { phone?: string }
     const whatsappResult = await sendWhatsAppText({
-      phone: updated.customer.phone ?? shipping.phone,
+      phone: updated.customer.phone ?? customerInfo.phone,
       message: `Tu pedido #${updated.id.slice(-8).toUpperCase()} de ${updated.store.name} fue entregado.`,
     }).catch(() => null)
     await Promise.allSettled([

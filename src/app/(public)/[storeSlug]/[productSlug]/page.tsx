@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Star, Package, Shield, MapPin } from "lucide-react"
+import { ChevronLeft, Star, Package, Shield, MapPin, CheckCircle2 } from "lucide-react"
 import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -187,7 +187,13 @@ export default async function StoreProductPage({
                 />
               </div>
               <div>
-                <p className="font-medium">{product.store.name}</p>
+                <p className="font-medium flex items-center gap-2">
+                  {product.store.name}
+                  {product.store.isVerified && <span title="Tienda verificada" aria-label="Tienda verificada" className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary cursor-help">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Verificada
+                  </span>}
+                </p>
                 {product.store.city && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <MapPin className="h-3 w-3" />

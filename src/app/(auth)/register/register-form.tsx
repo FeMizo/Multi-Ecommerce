@@ -15,16 +15,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 const schema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres"),
-  email: z.string().email("Email inválido"),
-  password: z.string().min(8, "Mínimo 8 caracteres"),
+  name: z.string().min(2, "Minimo 2 caracteres"),
+  email: z.string().email("Email invalido"),
+  phone: z.string().min(9, "Minimo 9 digitos"),
+  password: z.string().min(8, "Minimo 8 caracteres"),
 })
+
 type FormData = z.infer<typeof schema>
 
 export function RegisterForm({ planId }: { planId: string | null }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
@@ -49,7 +55,7 @@ export function RegisterForm({ planId }: { planId: string | null }) {
     })
     setLoading(false)
     if (login?.error) {
-      toast.success("Cuenta creada. Inicia sesión.")
+      toast.success("Cuenta creada. Inicia sesion.")
       router.push("/login")
       return
     }
@@ -72,7 +78,7 @@ export function RegisterForm({ planId }: { planId: string | null }) {
             <span className="text-2xl font-bold text-primary-foreground">AionSite</span>
           </Link>
           <h1 className="text-4xl lg:text-5xl font-bold text-primary-foreground mb-4 max-w-md text-balance">
-            Únete a tu comunidad
+            Unete a tu comunidad
           </h1>
           <p className="text-primary-foreground/80 text-lg mb-8 max-w-md">
             Crea tu cuenta y empieza a vender con un plan activo desde el inicio.
@@ -116,7 +122,7 @@ export function RegisterForm({ planId }: { planId: string | null }) {
 
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold mb-2">Crear cuenta</h2>
-              <p className="text-muted-foreground">Únete a tu comunidad local</p>
+              <p className="text-muted-foreground">Unete a tu comunidad local</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -138,7 +144,7 @@ export function RegisterForm({ planId }: { planId: string | null }) {
               <div className="space-y-2">
                 <Label>Nombre completo</Label>
                 <Input
-                  placeholder="Juan Pérez"
+                  placeholder="Juan Perez"
                   className="h-12 rounded-xl"
                   {...register("name")}
                 />
@@ -155,10 +161,21 @@ export function RegisterForm({ planId }: { planId: string | null }) {
                 {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Contraseña</Label>
+                <Label>Telefono</Label>
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="55 1234 5678"
+                  className="h-12 rounded-xl"
+                  {...register("phone")}
+                />
+                {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label>Contrasena</Label>
                 <Input
                   type="password"
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder="Minimo 8 caracteres"
                   className="h-12 rounded-xl"
                   {...register("password")}
                 />
@@ -167,9 +184,9 @@ export function RegisterForm({ planId }: { planId: string | null }) {
 
               <p className="text-xs text-muted-foreground">
                 Al crear una cuenta, aceptas nuestros{" "}
-                <Link href="/terms" className="text-primary hover:underline">términos de servicio</Link>
+                <Link href="/terms" className="text-primary hover:underline">terminos de servicio</Link>
                 {" "}y{" "}
-                <Link href="/privacy" className="text-primary hover:underline">política de privacidad</Link>.
+                <Link href="/privacy" className="text-primary hover:underline">politica de privacidad</Link>.
               </p>
 
               <Button
@@ -184,7 +201,7 @@ export function RegisterForm({ planId }: { planId: string | null }) {
             <p className="text-center text-sm text-muted-foreground mt-6">
               ¿Ya tienes cuenta?{" "}
               <Link href="/login" className="text-primary hover:underline font-medium">
-                Inicia sesión
+                Inicia sesion
               </Link>
             </p>
           </div>

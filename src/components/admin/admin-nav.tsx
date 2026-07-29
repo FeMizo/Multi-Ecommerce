@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Store, Package, BarChart3, MapPin, ShoppingBag, CreditCard } from "lucide-react"
+import { LayoutDashboard, Users, Store, Package, BarChart3, MapPin, ShoppingBag, CreditCard, Tag } from "lucide-react"
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },

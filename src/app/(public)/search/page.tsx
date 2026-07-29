@@ -28,7 +28,7 @@ async function searchProducts(params: SearchParams) {
 
   const where: Record<string, unknown> = {
     status: "ACTIVE",
-    store: { isActive: true, isVerified: true, deletedAt: null },
+    store: { isActive: true, deletedAt: null },
   }
   if (params.q) where.name = { contains: params.q, mode: "insensitive" }
   if (params.category) where.category = { slug: params.category }

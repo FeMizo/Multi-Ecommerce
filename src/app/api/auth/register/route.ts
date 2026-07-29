@@ -7,6 +7,7 @@ import { sendWelcomeEmail } from "@/lib/email"
 const schema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
+  phone: z.string().min(9).max(30),
   password: z.string().min(8),
 })
 
@@ -15,13 +16,13 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ message: "Datos inválidos" }, { status: 400 })
 
-  const { name, email, password } = parsed.data
+  const { name, email, phone, password } = parsed.data
 
   const existing = await db.user.findUnique({ where: { email } })
   if (existing) return NextResponse.json({ message: "El email ya está registrado" }, { status: 409 })
 
   const hashed = await bcrypt.hash(password, 12)
-  await db.user.create({ data: { name, email, password: hashed, globalRole: "USER" } })
+  await db.user.create({ data: { name, email, phone, password: hashed, globalRole: "USER" } })
 
   void sendWelcomeEmail({ email, name }).catch(() => {})
 

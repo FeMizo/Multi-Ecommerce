@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
+import { fetchGooglePhoneNumber } from "@/lib/google-people"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -16,6 +17,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      authorization: {
+        params: {
+          scope: "openid email profile https://www.googleapis.com/auth/user.phonenumbers.read",
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
     }),
     Credentials({
       async authorize(credentials) {
@@ -33,6 +42,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "google" || !account.access_token) return true
+      if (!user.email) return true
+
+      const current = await db.user.findUnique({
+        where: { email: user.email },
+        select: { id: true, phone: true },
+      })
+      if (!current || current.phone) return true
+
+      const phone = await fetchGooglePhoneNumber(account.access_token).catch(() => null)
+      if (!phone) return true
+
+      await db.user.update({
+        where: { id: current.id },
+        data: { phone },
+      })
+
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.globalRole = user.globalRole

@@ -22,7 +22,7 @@ export default async function CategoriesPage() {
                 where: {
                   status: "ACTIVE",
                   deletedAt: null,
-                  store: { isActive: true, isVerified: true, deletedAt: null },
+                  store: { isActive: true, deletedAt: null },
                 },
               },
         },

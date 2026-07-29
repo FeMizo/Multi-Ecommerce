@@ -104,6 +104,10 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              <div className="md:hidden">
+                <CitySelector />
+              </div>
+
               {/* Search Mobile */}
               <Dialog>
                 <DialogTrigger asChild>
@@ -228,10 +232,6 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                 {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
-          </div>
-
-          <div className="md:hidden border-t border-border/50 py-2">
-            <CitySelector />
           </div>
         </div>
 

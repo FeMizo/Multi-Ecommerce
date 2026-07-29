@@ -82,7 +82,7 @@ export function CartDrawer() {
               <ShoppingBag className="h-10 w-10 text-muted-foreground/40" />
             </div>
             <div>
-              <p className="font-semibold text-lg mb-1">Tu carrito está vacío</p>
+              <p className="font-semibold text-lg mb-1">Tu carrito estÃ¡ vacÃ­o</p>
               <p className="text-sm text-muted-foreground">Explora productos y agrega tus favoritos</p>
             </div>
             <Button className="rounded-full px-6" onClick={closeCart} asChild>
@@ -100,7 +100,7 @@ export function CartDrawer() {
                   <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-muted shrink-0">
                     <Image
                       src={item.image || DEFAULT_PRODUCT_IMAGE}
-                      alt={item.image ? item.name : `Imagen genérica de ${item.name}`}
+                      alt={item.image ? item.name : `Imagen genÃ©rica de ${item.name}`}
                       fill
                       className="object-cover"
                     />
@@ -149,15 +149,10 @@ export function CartDrawer() {
             </div>
 
             <div className="border-t border-border/50 bg-muted/30">
-              {/* Summary */}
               <div className="px-6 py-4 space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="tabular-nums">{formatPrice(total())}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Envío</span>
-                  <span className="text-success font-medium">Gratis</span>
                 </div>
                 <div className="h-px bg-border/50" />
                 <div className="flex justify-between font-bold text-lg">
@@ -165,8 +160,7 @@ export function CartDrawer() {
                   <span className="tabular-nums">{formatPrice(total())}</span>
                 </div>
               </div>
-              
-              {/* Actions */}
+
               <div className="px-6 pb-6 space-y-3">
                 <Button className="w-full h-12 rounded-xl text-base" size="lg" asChild onClick={closeCart}>
                   <Link href="/checkout">

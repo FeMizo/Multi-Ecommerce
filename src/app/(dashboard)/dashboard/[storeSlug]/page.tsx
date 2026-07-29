@@ -1,9 +1,11 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
-import { Package, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
+import { Package, ShoppingBag, DollarSign, TrendingUp, ShieldAlert, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { OrderStatusBadge } from "@/components/shared/order-status-badge"
 
@@ -70,7 +72,7 @@ export default async function StoreDashboardPage({
 
   const store = await db.store.findUnique({
     where: { slug: storeSlug },
-    select: { id: true, name: true },
+    select: { id: true, name: true, isVerified: true },
   })
   if (!store) redirect("/dashboard")
   if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
@@ -79,6 +81,28 @@ export default async function StoreDashboardPage({
 
   return (
     <div className="space-y-6">
+      {!store.isVerified && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-600" />
+              <div>
+                <p className="font-semibold">Verifica tu cuenta</p>
+                <p className="text-sm text-muted-foreground">
+                  Completa la verificación para habilitar tu tienda públicamente.
+                </p>
+              </div>
+            </div>
+            <Button asChild>
+              <Link href={`/dashboard/${storeSlug}/settings#verificacion`}>
+                Ir a verificación
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold">{store.name}</h1>
         <p className="text-sm text-muted-foreground">Panel de control</p>

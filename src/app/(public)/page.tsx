@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, Shield, Star, MapPin, CheckCircle2, Package, Sparkles, Heart, Clock, Quote, Zap, Gift, TrendingUp } from "lucide-react"
+import { ArrowRight, Shield, Star, MapPin, CheckCircle2, Package, Sparkles, Heart, Clock, Quote, Zap, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { db } from "@/lib/db"
@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/products/product-card"
 import { CategoryGrid } from "@/components/products/category-grid"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { VerifiedBadge } from "@/components/public/verified-badge"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ async function getFeaturedProducts() {
     where: {
       status: "ACTIVE",
       featured: true,
-      store: { isActive: true, isVerified: true, deletedAt: null },
+      store: { isActive: true, deletedAt: null },
     },
     include: { store: { select: { name: true, city: true, primaryColor: true } }, category: true },
     take: 8,
@@ -40,7 +41,7 @@ async function getCategories() {
                 where: {
                   status: "ACTIVE",
                   deletedAt: null,
-                  store: { isActive: true, isVerified: true, deletedAt: null },
+                  store: { isActive: true, deletedAt: null },
                 },
               },
         },
@@ -52,7 +53,7 @@ async function getCategories() {
 
 async function getFeaturedStores() {
   return db.store.findMany({
-    where: { isActive: true, isVerified: true, deletedAt: null },
+    where: { isActive: true, deletedAt: null },
     include: {
       city: { select: { name: true } },
       _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
@@ -179,10 +180,6 @@ export default async function HomePage() {
               <span className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" />
                 Entrega el mismo dia
-              </span>
-              <span className="flex items-center gap-2">
-                <Gift className="h-4 w-4 text-primary" />
-                Envio gratis +$50
               </span>
             </div>
           </div>
@@ -336,10 +333,10 @@ export default async function HomePage() {
                         />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="font-bold text-base truncate group-hover:text-primary transition-colors">{store.name}</span>
-                      {store.isVerified && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
-                    </div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="font-bold text-base truncate group-hover:text-primary transition-colors">{store.name}</span>
+                    {store.isVerified && <VerifiedBadge compact className="shrink-0" />}
+                  </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       {store.city ? (
                         <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{store.city.name}</span>

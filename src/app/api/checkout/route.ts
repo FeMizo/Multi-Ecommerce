@@ -23,7 +23,7 @@ const checkoutSchema = z.object({
   storeId: z.string().min(1),
   paymentMethod: z.enum(PAYMENT_METHODS).default("STRIPE"),
   couponCode: z.string().max(32).optional(),
-  shippingAddress: z.object({
+  customerInfo: z.object({
     fullName: z.string().min(3).max(120),
     phone: z.string().min(9).max(30),
     address: z.string().min(5).max(300),
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   const parsed = checkoutSchema.safeParse(await req.json())
   if (!parsed.success) return NextResponse.json({ message: "Carrito o direccion invalidos" }, { status: 422 })
 
-  const { checkoutToken, items, storeId, shippingAddress, paymentMethod, couponCode: rawCouponCode } = parsed.data
+  const { checkoutToken, items, storeId, customerInfo, paymentMethod, couponCode: rawCouponCode } = parsed.data
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   let requestedCouponCode = rawCouponCode ? normalizeCouponCode(rawCouponCode) : null
 
@@ -213,8 +213,8 @@ export async function POST(req: Request) {
             discountAmount,
             paymentMethod,
             transferCode: paymentMethod === "TRANSFER" ? generateTransferCode() : null,
-            shippingAddress: shippingAddress as Prisma.InputJsonValue,
-            notes: shippingAddress.notes || null,
+            customerInfo: customerInfo as Prisma.InputJsonValue,
+            notes: customerInfo.notes || null,
             items: {
               create: items.map((item) => {
                 const product = products.find((candidate) => candidate.id === item.productId)!
@@ -302,7 +302,7 @@ export async function POST(req: Request) {
         id: true,
         total: true,
         transferCode: true,
-        shippingAddress: true,
+        customerInfo: true,
         customer: { select: { email: true } },
         store: {
           select: {
@@ -329,9 +329,9 @@ export async function POST(req: Request) {
       ])
     }
 
-    const shipping = orderForEmail?.shippingAddress as { phone?: string } | undefined
+    const customerInfo = orderForEmail?.customerInfo as { phone?: string } | undefined
     const whatsappResult = await sendWhatsAppText({
-      phone: shipping?.phone,
+      phone: customerInfo?.phone,
       message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${orderForEmail?.store.name ?? "la tienda"} fue recibido.`,
     }).catch(() => null)
     if (whatsappResult?.ok) {
@@ -360,7 +360,7 @@ export async function POST(req: Request) {
         id: true,
         total: true,
         transferCode: true,
-        shippingAddress: true,
+        customerInfo: true,
         customer: { select: { email: true } },
         store: {
           select: {
@@ -395,9 +395,9 @@ export async function POST(req: Request) {
       ])
     }
 
-    const shipping = orderForEmail?.shippingAddress as { phone?: string } | undefined
+    const customerInfo = orderForEmail?.customerInfo as { phone?: string } | undefined
     const whatsappResult = await sendWhatsAppText({
-      phone: shipping?.phone,
+      phone: customerInfo?.phone,
       message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${orderForEmail?.store.name ?? "la tienda"} fue recibido.`,
     }).catch(() => null)
     if (whatsappResult?.ok) {

@@ -52,15 +52,15 @@ async function recordReservedCheckout(session: Stripe.Checkout.Session) {
 async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
   if (session.payment_status !== "paid") return
   const metadata = session.metadata
-  if (!metadata?.userId || !metadata.storeId || !metadata.items || !metadata.shippingAddress) {
+  if (!metadata?.userId || !metadata.storeId || !metadata.items || !metadata.customerInfo) {
     throw new Error("Checkout sin metadatos requeridos")
   }
 
   let items: OrderItemInput[]
-  let shippingAddress: unknown
+  let customerInfo: unknown
   try {
     items = JSON.parse(metadata.items) as OrderItemInput[]
-    shippingAddress = JSON.parse(metadata.shippingAddress)
+    customerInfo = JSON.parse(metadata.customerInfo)
   } catch {
     throw new Error("Metadatos de checkout inválidos")
   }
@@ -99,7 +99,7 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
           subtotal,
           platformFee: Math.round(total * commissionRate * 100) / 100,
           total,
-          shippingAddress: shippingAddress as Prisma.InputJsonValue,
+          customerInfo: customerInfo as Prisma.InputJsonValue,
           stripeSessionId: session.id,
           stripePaymentIntentId: paymentIntentId,
           paidAt: new Date(),
@@ -135,7 +135,7 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
     select: {
       id: true,
       total: true,
-      shippingAddress: true,
+      customerInfo: true,
       customer: { select: { email: true, phone: true } },
       store: {
         select: {
@@ -149,9 +149,9 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
     },
   })
   if (order) {
-    const shipping = order.shippingAddress as { phone?: string }
+    const customerInfo = order.customerInfo as { phone?: string }
     const customerWhatsApp = await sendWhatsAppText({
-      phone: order.customer.phone ?? shipping.phone,
+      phone: order.customer.phone ?? customerInfo.phone,
       message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${order.store.name} fue confirmado.`,
     }).catch(() => null)
     const sellerEmails = order.store.members.map((member) => member.user.email)

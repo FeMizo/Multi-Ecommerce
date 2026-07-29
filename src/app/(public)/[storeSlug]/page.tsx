@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, CheckCircle2, Package, Clock, ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react"
+import { MapPin, Package, Clock, ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/products/product-card"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { VerifiedBadge } from "@/components/public/verified-badge"
 import type { Metadata } from "next"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 
@@ -16,7 +17,7 @@ type SearchParams = { category?: string; page?: string }
 
 async function getStore(slug: string) {
   return db.store.findFirst({
-    where: { slug, isActive: true, isVerified: true, deletedAt: null },
+    where: { slug, isActive: true, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -65,7 +66,7 @@ async function getStoreProducts(storeId: string, categorySlug?: string, page = 1
     storeId,
     status: "ACTIVE" as const,
     deletedAt: null,
-    store: { isActive: true, isVerified: true, deletedAt: null },
+    store: { isActive: true, deletedAt: null },
     ...(categorySlug ? { category: { slug: categorySlug } } : {}),
   }
   const [products, total] = await Promise.all([
@@ -150,12 +151,7 @@ export default async function StorePage({
                   <div>
                     <div className="flex items-center gap-2 flex-wrap mb-2">
                       <h1 className="text-2xl md:text-3xl font-bold">{store.name}</h1>
-                      {store.isVerified && (
-                        <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Verificada
-                        </Badge>
-                      )}
+                      {store.isVerified && <VerifiedBadge compact />}
                       {store.stripeOnboarded && (
                         <Badge variant="outline" className="border-primary/30 text-primary">
                           {PAYMENT_METHOD_LABELS.STRIPE}

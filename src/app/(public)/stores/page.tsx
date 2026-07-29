@@ -1,10 +1,11 @@
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Package, CheckCircle2, Store, ArrowRight, Sparkles } from "lucide-react"
+import { MapPin, Package, Store, ArrowRight, Sparkles } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { VerifiedBadge } from "@/components/public/verified-badge"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -20,7 +21,6 @@ async function getStores(citySlug?: string) {
   return db.store.findMany({
     where: {
       isActive: true,
-      isVerified: true,
       deletedAt: null,
       ...(citySlug ? { city: { slug: citySlug } } : {}),
     },
@@ -119,9 +119,9 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
             {stores.map((store, index) => (
               <Link
                 key={store.id}
-                href={`/${store.slug}`}
-                className="group rounded-2xl border border-border/50 bg-card overflow-hidden hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300"
-              >
+                  href={`/${store.slug}`}
+                  className="group rounded-2xl border border-border/50 bg-card overflow-hidden hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300"
+                >
                 {/* Banner */}
                 <div className="relative h-32 md:h-36 bg-muted/50 overflow-hidden">
                   <Image
@@ -132,12 +132,15 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
                   />
                   
                   {/* Featured Badge */}
-                  {index < 3 && store.isVerified && (
-                    <Badge className="absolute top-3 right-3 bg-primary/90 hover:bg-primary text-primary-foreground text-xs px-2.5 py-1 rounded-full">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      Destacada
-                    </Badge>
-                  )}
+                  <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+                    {index < 3 && (
+                      <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-xs px-2.5 py-1 rounded-full">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Destacada
+                      </Badge>
+                    )}
+                    {store.isVerified && <VerifiedBadge compact className="text-xs px-2.5 py-1 rounded-full" />}
+                  </div>
                 </div>
 
                 <div className="p-5">
@@ -161,9 +164,6 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
                     <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">
                       {store.name}
                     </h3>
-                    {store.isVerified && (
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                    )}
                   </div>
 
                   {/* Stats */}
