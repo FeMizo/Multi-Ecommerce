@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useMemo, useState } from "react"
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
+import { useEffect, useMemo, useState, type DragEvent } from "react"
+import { Minus, Plus, Trash2, ShoppingBag, GripVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/stores/cart"
@@ -13,9 +13,11 @@ import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, resolveCartWhatsAppReci
 import { formatVariantSelection } from "@/lib/product-variants"
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, total } = useCartStore()
+  const { items, updateQuantity, removeItem, moveItemRelative, total } = useCartStore()
   const [whatsappPhone, setWhatsappPhone] = useState<string | null>(null)
   const [whatsappLoading, setWhatsappLoading] = useState(false)
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null)
+  const [dropHint, setDropHint] = useState<{ id: string; position: "before" | "after" } | null>(null)
   const itemGroups = useMemo(() => {
     const groups = new Map<string, { storeId: string; storeName: string; items: typeof items }>()
     for (const item of items) {
@@ -67,6 +69,33 @@ export default function CartPage() {
     window.open(url, "_blank", "noopener,noreferrer")
   }
 
+  function handleDragStart(itemId: string) {
+    setDraggedItemId(itemId)
+  }
+
+  function handleDragEnd() {
+    setDraggedItemId(null)
+    setDropHint(null)
+  }
+
+  function handleDragOver(itemId: string, event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    if (!draggedItemId || draggedItemId === itemId) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after"
+    setDropHint({ id: itemId, position })
+  }
+
+  function handleDrop(itemId: string, event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    if (!draggedItemId || draggedItemId === itemId) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after"
+    moveItemRelative(draggedItemId, itemId, position)
+    setDraggedItemId(null)
+    setDropHint(null)
+  }
+
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -83,6 +112,11 @@ export default function CartPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Carrito ({items.length})</h1>
+      {items.length > 1 && (
+        <div className="mb-4 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+          Ordena los productos con Primero. El checkout tomara solo la tienda del primer producto y dejara los demas en el carrito.
+        </div>
+      )}
       {hasMultipleStores && checkoutStoreName && (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Al pagar ahora solo se procesaran los productos de {checkoutStoreName}. Los demas quedaran en el carrito.
@@ -102,7 +136,19 @@ export default function CartPage() {
                 </p>
               </div>
               {group.items.map((item) => (
-                <div key={item.id} className="flex gap-4 p-4 rounded-xl border bg-card">
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => handleDragStart(item.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(event) => handleDragOver(item.id, event)}
+                  onDrop={(event) => handleDrop(item.id, event)}
+                  className={[
+                    "flex gap-4 p-4 rounded-xl border bg-card transition-colors cursor-grab active:cursor-grabbing",
+                    dropHint?.id === item.id ? "border-primary/60 bg-primary/5" : "",
+                    draggedItemId === item.id ? "opacity-70" : "",
+                  ].join(" ")}
+                >
                   <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-muted shrink-0">
                     <Image
                       src={item.image || DEFAULT_PRODUCT_IMAGE}
@@ -112,7 +158,14 @@ export default function CartPage() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{item.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{item.name}</p>
+                      {items[0]?.id === item.id && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                          Primero
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">{item.storeName}</p>
                     {(item.variantSelection?.length ?? 0) > 0 && (
                       <p className="text-xs text-muted-foreground">{formatVariantSelection(item.variantSelection ?? [])}</p>
@@ -120,9 +173,20 @@ export default function CartPage() {
                     <p className="font-bold mt-1">{formatPrice(item.price)}</p>
                   </div>
                   <div className="flex flex-col items-end justify-between">
-                    <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        draggable={false}
+                        className="text-muted-foreground hover:text-primary"
+                        aria-label="Arrastrar para ordenar"
+                        title="Arrastrar para ordenar"
+                      >
+                        <GripVertical className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                     <div className="flex items-center border rounded-md">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -166,7 +230,7 @@ export default function CartPage() {
             </Button>
             {hasMultipleStores && checkoutStoreName && (
               <p className="text-xs text-muted-foreground text-center">
-                El checkout empezara con {checkoutStoreName} y dejara el resto intacto.
+                El checkout procesara primero {checkoutStoreName}; los demas productos permanecen en tu carrito.
               </p>
             )}
             {whatsappLoading || whatsappPhone ? (

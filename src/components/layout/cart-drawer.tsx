@@ -2,8 +2,8 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
-import { Minus, Plus, ShoppingBag, X, ArrowRight } from "lucide-react"
+import { useEffect, useState, type DragEvent } from "react"
+import { Minus, Plus, ShoppingBag, X, ArrowRight, GripVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -18,9 +18,11 @@ import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, resolveCartWhatsAppReci
 import { formatVariantSelection } from "@/lib/product-variants"
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, updateQuantity, removeItem, total } = useCartStore()
+  const { items, isOpen, closeCart, updateQuantity, removeItem, moveItemRelative, total } = useCartStore()
   const [whatsappPhone, setWhatsappPhone] = useState<string | null>(null)
   const [whatsappLoading, setWhatsappLoading] = useState(false)
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null)
+  const [dropHint, setDropHint] = useState<{ id: string; position: "before" | "after" } | null>(null)
 
   useEffect(() => {
     let active = true
@@ -56,6 +58,33 @@ export function CartDrawer() {
       return
     }
     window.open(url, "_blank", "noopener,noreferrer")
+  }
+
+  function handleDragStart(itemId: string) {
+    setDraggedItemId(itemId)
+  }
+
+  function handleDragEnd() {
+    setDraggedItemId(null)
+    setDropHint(null)
+  }
+
+  function handleDragOver(itemId: string, event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    if (!draggedItemId || draggedItemId === itemId) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after"
+    setDropHint({ id: itemId, position })
+  }
+
+  function handleDrop(itemId: string, event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    if (!draggedItemId || draggedItemId === itemId) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after"
+    moveItemRelative(draggedItemId, itemId, position)
+    setDraggedItemId(null)
+    setDropHint(null)
   }
 
   return (
@@ -95,9 +124,27 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
+            {items.length > 1 && (
+              <div className="mx-6 mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-primary">
+                Pon primero el producto que quieres pedir. El checkout tomara solo la tienda del primer producto.
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="flex gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => handleDragStart(item.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(event) => handleDragOver(item.id, event)}
+                  onDrop={(event) => handleDrop(item.id, event)}
+                  className={[
+                    "flex gap-4 p-3 rounded-xl bg-muted/30 border border-border/50 transition-colors cursor-grab active:cursor-grabbing",
+                    dropHint?.id === item.id && dropHint.position === "before" ? "border-primary/60 bg-primary/5" : "",
+                    dropHint?.id === item.id && dropHint.position === "after" ? "border-primary/60 bg-primary/5" : "",
+                    draggedItemId === item.id ? "opacity-70" : "",
+                  ].join(" ")}
+                >
                   <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-muted shrink-0">
                     <Image
                       src={item.image || DEFAULT_PRODUCT_IMAGE}
@@ -109,7 +156,14 @@ export function CartDrawer() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium text-sm line-clamp-2">{item.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm line-clamp-2">{item.name}</p>
+                          {items[0]?.id === item.id && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                              Primero
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{item.storeName}</p>
                         {(item.variantSelection?.length ?? 0) > 0 && (
                           <p className="text-xs text-muted-foreground mt-1">
@@ -117,13 +171,24 @@ export function CartDrawer() {
                           </p>
                         )}
                       </div>
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-                        aria-label="Eliminar"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          draggable={false}
+                          className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          aria-label="Arrastrar para ordenar"
+                          title="Arrastrar para ordenar"
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                          aria-label="Eliminar"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center rounded-full border border-border/50 bg-background">

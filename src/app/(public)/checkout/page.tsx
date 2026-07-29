@@ -209,6 +209,11 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-2xl font-bold mb-8">Checkout</h1>
+      {items.length > 1 && (
+        <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+          Solo se tomara la tienda del primer producto del carrito. Los demas productos se quedaran guardados.
+        </div>
+      )}
       {hasPendingItems && checkoutStoreName && (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Solo se procesarán los productos de {checkoutStoreName}. Los demás seguirán en tu carrito.

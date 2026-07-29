@@ -21,6 +21,8 @@ interface CartStore {
   addItem: (item: Omit<CartItem, "quantity">) => void
   removeItem: (itemId: string) => void
   updateQuantity: (itemId: string, quantity: number) => void
+  moveItemRelative: (itemId: string, targetId: string, position: "before" | "after") => void
+  moveItemToTop: (itemId: string) => void
   removeStoreItems: (storeId: string) => void
   clearCart: () => void
   openCart: () => void
@@ -64,6 +66,30 @@ export const useCartStore = create<CartStore>()(
               ? state.items.filter((i) => i.id !== itemId)
               : state.items.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
         })),
+      moveItemRelative: (itemId, targetId, position) =>
+        set((state) => {
+          const sourceIndex = state.items.findIndex((item) => item.id === itemId)
+          if (sourceIndex === -1) return state
+
+          const items = [...state.items]
+          const [movedItem] = items.splice(sourceIndex, 1)
+          const targetIndex = items.findIndex((item) => item.id === targetId)
+          if (targetIndex === -1) return state
+
+          const insertIndex = position === "after" ? targetIndex + 1 : targetIndex
+          items.splice(insertIndex, 0, movedItem)
+          return { items }
+        }),
+      moveItemToTop: (itemId) =>
+        set((state) => {
+          const index = state.items.findIndex((item) => item.id === itemId)
+          if (index <= 0) return state
+
+          const items = [...state.items]
+          const [item] = items.splice(index, 1)
+          items.unshift(item)
+          return { items }
+        }),
       removeStoreItems: (storeId) =>
         set((state) => ({ items: state.items.filter((i) => i.storeId !== storeId) })),
       clearCart: () => set({ items: [] }),
