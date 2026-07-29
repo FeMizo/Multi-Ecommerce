@@ -8,6 +8,7 @@ import { checkProductLimit, getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { ProductImportButton } from "@/components/dashboard/product-import-button"
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   ACTIVE: { label: "Activo", variant: "default" },
@@ -83,14 +84,17 @@ export default async function StoreProductsPage({
           <h1 className="text-2xl font-bold">Productos</h1>
           <p className="text-sm text-muted-foreground">{products.length} productos en total</p>
         </div>
-        <NewProductButton
-          storeSlug={storeSlug}
-          productLimitReached={productLimitReached}
-          count={productLimit.count}
-          max={productLimit.max}
-        >
-          Nuevo producto
-        </NewProductButton>
+        <div className="flex flex-wrap gap-2">
+          <ProductImportButton storeSlug={storeSlug} disabled={productLimitReached} />
+          <NewProductButton
+            storeSlug={storeSlug}
+            productLimitReached={productLimitReached}
+            count={productLimit.count}
+            max={productLimit.max}
+          >
+            Nuevo producto
+          </NewProductButton>
+        </div>
       </div>
 
       {productLimitReached && (
@@ -106,14 +110,17 @@ export default async function StoreProductsPage({
           <p className="text-sm text-muted-foreground mb-4">
             Agrega tu primer producto para empezar a vender
           </p>
-          <NewProductButton
-            storeSlug={storeSlug}
-            productLimitReached={productLimitReached}
-            count={productLimit.count}
-            max={productLimit.max}
-          >
-            Crear producto
-          </NewProductButton>
+          <div className="flex flex-wrap gap-2">
+            <ProductImportButton storeSlug={storeSlug} disabled={productLimitReached} />
+            <NewProductButton
+              storeSlug={storeSlug}
+              productLimitReached={productLimitReached}
+              count={productLimit.count}
+              max={productLimit.max}
+            >
+              Crear producto
+            </NewProductButton>
+          </div>
         </div>
       ) : (
         <div className="rounded-xl border overflow-x-auto overflow-hidden">
@@ -151,8 +158,8 @@ export default async function StoreProductsPage({
                       )}
                     </td>
                     <td className="px-4 py-3 text-right hidden sm:table-cell">
-                      <span className={product.stock === 0 ? "text-destructive font-medium" : ""}>
-                        {product.stock}
+                      <span className={product.manageStock && product.stock === 0 ? "text-destructive font-medium" : ""}>
+                        {product.manageStock ? product.stock : "Libre"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
