@@ -50,7 +50,7 @@ export default async function AdminDashboardPage() {
   const cards = [
     { title: "Usuarios", value: stats.totalUsers, icon: Users, desc: "Total registrados" },
     { title: "Tiendas activas", value: stats.totalStores, icon: Store, desc: "" },
-    { title: "Productos activos", value: stats.totalProducts, icon: Package, desc: "" },
+    { title: "Productos totales", value: stats.totalProducts, icon: Package, desc: "Incluye activos e inactivos" },
     { title: "Total pedidos", value: stats.totalOrders, icon: ShoppingBag, desc: "" },
     { title: "Volumen total", value: formatPrice(stats.totalRevenue), icon: TrendingUp, desc: "" },
     { title: "Revenue plataforma", value: formatPrice(stats.platformRevenue), icon: DollarSign, desc: "Comisiones cobradas" },

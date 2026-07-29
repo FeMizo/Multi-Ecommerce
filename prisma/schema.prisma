@@ -105,6 +105,11 @@ model Store {
   isActive         Boolean   @default(true)
   cashOnDeliveryEnabled Boolean @default(true)
   transferEnabled  Boolean   @default(true)
+  transferAccountName String? @db.Text
+  transferAccountNumber String? @db.Text
+  transferBank     String?   @db.Text
+  transferReferencePrefix String? @db.Text
+  transferReferenceExtra String? @db.Text
   transferInstructions String? @db.Text
   isVerified       Boolean   @default(false)
   deletedAt        DateTime?

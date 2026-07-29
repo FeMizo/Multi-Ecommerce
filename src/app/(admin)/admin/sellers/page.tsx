@@ -166,7 +166,11 @@ export default async function AdminSellersPage({
                           stripeAccountId={store.stripeAccountId}
                           cashOnDeliveryEnabled={store.cashOnDeliveryEnabled}
                           transferEnabled={store.transferEnabled}
-                          transferInstructions={store.transferInstructions}
+                          transferAccountName={store.transferAccountName}
+                          transferAccountNumber={store.transferAccountNumber}
+                          transferBank={store.transferBank}
+                          transferReferencePrefix={store.transferReferencePrefix}
+                          transferReferenceExtra={store.transferReferenceExtra}
                           planName={store.subscription?.plan.name ?? null}
                           commissionRate={store.subscription?.plan.commissionRate ?? null}
                           productsCount={store._count.products}

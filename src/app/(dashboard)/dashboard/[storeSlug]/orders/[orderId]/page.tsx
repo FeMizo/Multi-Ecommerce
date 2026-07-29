@@ -13,6 +13,7 @@ import { OrderStatusBadge } from "@/components/shared/order-status-badge"
 import { RefundButton } from "@/components/dashboard/refund-button"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
+import { buildTransferReference } from "@/lib/transfer-details"
 
 type ShippingAddress = {
   name?: string
@@ -43,7 +44,15 @@ export default async function OrderDetailPage({
           include: { product: { select: { name: true, images: true, slug: true } } },
         },
         payment: { select: { status: true, stripePaymentIntentId: true } },
-        store: { select: { transferInstructions: true } },
+        store: {
+          select: {
+            transferAccountName: true,
+            transferAccountNumber: true,
+            transferBank: true,
+            transferReferencePrefix: true,
+            transferReferenceExtra: true,
+          },
+        },
       },
     })
 
@@ -170,9 +179,14 @@ export default async function OrderDetailPage({
               {order.paymentMethod === "STRIPE" && order.payment?.status === "SUCCEEDED" && (
                 <RefundButton storeSlug={storeSlug} orderId={order.id} />
               )}
-              {order.paymentMethod === "TRANSFER" && order.store.transferInstructions && (
-                <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground whitespace-pre-wrap">
-                  {order.store.transferInstructions}
+              {order.paymentMethod === "TRANSFER" && (
+                <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+                  {order.store.transferAccountName && <p><span className="text-foreground">Titular:</span> {order.store.transferAccountName}</p>}
+                  {order.store.transferBank && <p><span className="text-foreground">Banco:</span> {order.store.transferBank}</p>}
+                  {order.store.transferAccountNumber && <p><span className="text-foreground">Cuenta:</span> {order.store.transferAccountNumber}</p>}
+                  {buildTransferReference(order.store.transferReferencePrefix, order.store.transferReferenceExtra) && (
+                    <p><span className="text-foreground">Referencia:</span> {buildTransferReference(order.store.transferReferencePrefix, order.store.transferReferenceExtra)}</p>
+                  )}
                 </div>
               )}
               {order.paidAt && (

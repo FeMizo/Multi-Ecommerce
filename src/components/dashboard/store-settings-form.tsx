@@ -14,20 +14,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ToggleStatusButton } from "@/components/admin/action-buttons"
+import { buildTransferReference, TRANSFER_REFERENCE_LIMIT } from "@/lib/transfer-details"
 
-const schema = z.object({
-  name: z.string().min(2, "Minimo 2 caracteres").max(60, "Maximo 60 caracteres"),
-  description: z.string().max(300, "Maximo 300 caracteres").optional(),
-  logoUrl: z.string().url("URL invalida").or(z.literal("")).optional(),
-  bannerUrl: z.string().url("URL invalida").or(z.literal("")).optional(),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color invalido"),
-  fontFamily: z.string(),
-  cityId: z.string().optional(),
-  customDomain: z.string().max(100).optional(),
-  isActive: z.boolean(),
-  transferEnabled: z.boolean(),
-  transferInstructions: z.string().max(2000).optional(),
-})
+const schema = z
+  .object({
+    name: z.string().min(2, "Minimo 2 caracteres").max(60, "Maximo 60 caracteres"),
+    description: z.string().max(300, "Maximo 300 caracteres").optional(),
+    logoUrl: z.string().url("URL invalida").or(z.literal("")).optional(),
+    bannerUrl: z.string().url("URL invalida").or(z.literal("")).optional(),
+    primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color invalido"),
+    fontFamily: z.string(),
+    cityId: z.string().optional(),
+    customDomain: z.string().max(100).optional(),
+    isActive: z.boolean(),
+    transferEnabled: z.boolean(),
+    transferAccountName: z.string().max(120).optional(),
+    transferAccountNumber: z.string().max(40).optional(),
+    transferBank: z.string().max(80).optional(),
+    transferReferencePrefix: z.string().max(20).optional(),
+    transferReferenceExtra: z.string().max(20).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const reference = buildTransferReference(data.transferReferencePrefix, data.transferReferenceExtra)
+    if (reference.length > TRANSFER_REFERENCE_LIMIT) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["transferReferenceExtra"],
+        message: `La referencia no puede superar ${TRANSFER_REFERENCE_LIMIT} caracteres`,
+      })
+    }
+  })
 
 type FormData = z.infer<typeof schema>
 type City = { id: string; name: string }
@@ -87,13 +103,20 @@ export function StoreSettingsForm({
       customDomain: initialData.customDomain ?? "",
       isActive: initialData.isActive,
       transferEnabled: initialData.transferEnabled,
-      transferInstructions: initialData.transferInstructions ?? "",
+      transferAccountName: initialData.transferAccountName ?? "",
+      transferAccountNumber: initialData.transferAccountNumber ?? "",
+      transferBank: initialData.transferBank ?? "",
+      transferReferencePrefix: initialData.transferReferencePrefix ?? "",
+      transferReferenceExtra: initialData.transferReferenceExtra ?? "",
     },
   })
 
   const primaryColor = useWatch({ control, name: "primaryColor" })
   const isActive = useWatch({ control, name: "isActive" })
   const transferEnabled = useWatch({ control, name: "transferEnabled" })
+  const transferReferencePrefix = useWatch({ control, name: "transferReferencePrefix" })
+  const transferReferenceExtra = useWatch({ control, name: "transferReferenceExtra" })
+  const transferReference = buildTransferReference(transferReferencePrefix, transferReferenceExtra)
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -104,7 +127,11 @@ export function StoreSettingsForm({
       bannerUrl: data.bannerUrl || null,
       cityId: data.cityId || null,
       customDomain: data.customDomain || null,
-      transferInstructions: data.transferInstructions || null,
+      transferAccountName: data.transferAccountName || null,
+      transferAccountNumber: data.transferAccountNumber || null,
+      transferBank: data.transferBank || null,
+      transferReferencePrefix: data.transferReferencePrefix || null,
+      transferReferenceExtra: data.transferReferenceExtra || null,
     }
     const res = await fetch(`/api/stores/${storeSlug}`, {
       method: "PATCH",
@@ -177,7 +204,7 @@ export function StoreSettingsForm({
       formData.append("file", file)
       formData.append("storeSlug", storeSlug)
       const res = await fetch("/api/upload", { method: "POST", body: formData })
-      const data = await res.json().catch(() => ({})) as { message?: string; url?: string }
+      const data = (await res.json().catch(() => ({}))) as { message?: string; url?: string }
       if (!res.ok || !data.url) {
         toast.error(data.message ?? "No se pudo subir la imagen")
         return
@@ -298,7 +325,7 @@ export function StoreSettingsForm({
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                El cliente recibirá un código de referencia al finalizar. La tienda configura sus datos bancarios y asume el riesgo.
+                El cliente recibira un codigo de referencia al finalizar. La tienda configura sus datos bancarios y asume el riesgo.
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -315,19 +342,42 @@ export function StoreSettingsForm({
                   inactiveLabel="Deshabilitado"
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Instrucciones bancarias</Label>
-                <Textarea
-                  rows={4}
-                  className="resize-none"
-                  placeholder="Banco, titular, cuenta o CLABE, y texto que debe incluirse en la transferencia."
-                  {...register("transferInstructions")}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Explica aquí cómo debe transferir el cliente y qué referencia usar.
-                </p>
-                {errors.transferInstructions && <p className="text-xs text-destructive">{errors.transferInstructions.message}</p>}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <Label>Nombre del titular</Label>
+                  <Input placeholder="Nombre legal del titular" {...register("transferAccountName")} />
+                  {errors.transferAccountName && <p className="text-xs text-destructive">{errors.transferAccountName.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label>Banco</Label>
+                  <Input placeholder="Banco receptor" {...register("transferBank")} />
+                  {errors.transferBank && <p className="text-xs text-destructive">{errors.transferBank.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label>Cuenta o CLABE</Label>
+                  <Input placeholder="Cuenta o CLABE" {...register("transferAccountNumber")} />
+                  {errors.transferAccountNumber && <p className="text-xs text-destructive">{errors.transferAccountNumber.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label>Prefijo de referencia</Label>
+                  <Input placeholder="TIENDA123" {...register("transferReferencePrefix")} />
+                  {errors.transferReferencePrefix && <p className="text-xs text-destructive">{errors.transferReferencePrefix.message}</p>}
+                </div>
               </div>
+
+              <div className="space-y-1">
+                <Label>Extra para referencia</Label>
+                <Input placeholder="Opcional" {...register("transferReferenceExtra")} />
+                {errors.transferReferenceExtra && <p className="text-xs text-destructive">{errors.transferReferenceExtra.message}</p>}
+                <p className="text-xs text-muted-foreground">
+                  Referencia: {transferReference || "Sin definir"}
+                </p>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                La referencia combinada no debe pasar de {TRANSFER_REFERENCE_LIMIT} caracteres.
+              </p>
             </CardContent>
           </Card>
 

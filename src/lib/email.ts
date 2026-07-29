@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { formatPrice } from "@/lib/utils"
+import { buildTransferReference, type TransferDetails } from "@/lib/transfer-details"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const emailFrom = process.env.RESEND_FROM_EMAIL ?? process.env.EMAIL_FROM ?? "AionSite <onboarding@resend.dev>"
@@ -127,6 +128,7 @@ export async function sendOrderReceivedEmail({
   total,
   paymentMethodLabel,
   transferCode,
+  transferDetails,
 }: {
   email: string
   orderId: string
@@ -134,7 +136,12 @@ export async function sendOrderReceivedEmail({
   total: number
   paymentMethodLabel: string
   transferCode?: string | null
+  transferDetails?: TransferDetails
 }) {
+  const transferReference = buildTransferReference(
+    transferDetails?.transferReferencePrefix,
+    transferDetails?.transferReferenceExtra
+  )
   const { data, error } = await emailClient().emails.send({
     from: emailFrom,
     to: [email],
@@ -145,6 +152,16 @@ export async function sendOrderReceivedEmail({
         <p>Tu pedido en <strong>${escapeHtml(storeName)}</strong> quedo registrado.</p>
         <p><strong>Metodo de pago:</strong> ${escapeHtml(paymentMethodLabel)}</p>
         <p><strong>Total:</strong> ${formatPrice(total)}</p>
+        ${
+          transferDetails
+            ? `
+              ${transferDetails.transferAccountName ? `<p><strong>Titular:</strong> ${escapeHtml(transferDetails.transferAccountName)}</p>` : ""}
+              ${transferDetails.transferBank ? `<p><strong>Banco:</strong> ${escapeHtml(transferDetails.transferBank)}</p>` : ""}
+              ${transferDetails.transferAccountNumber ? `<p><strong>Cuenta:</strong> ${escapeHtml(transferDetails.transferAccountNumber)}</p>` : ""}
+              ${transferReference ? `<p><strong>Referencia:</strong> ${escapeHtml(transferReference)}</p>` : ""}
+            `
+            : ""
+        }
         ${transferCode ? `<p><strong>Codigo de transferencia:</strong> <span style="font-family: monospace;">${escapeHtml(transferCode)}</span></p>` : ""}
         <p><a href="${appUrl}/account/orders">Ver mis pedidos</a></p>
       </div>

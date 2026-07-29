@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ClearCartOnSuccess } from "@/components/checkout/clear-cart-on-success"
 import { db } from "@/lib/db"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
+import { buildTransferReference } from "@/lib/transfer-details"
 
 type SearchParams = {
   payment_method?: string
@@ -25,7 +26,15 @@ export default async function CheckoutSuccessPage({
           id: true,
           paymentMethod: true,
           transferCode: true,
-          store: { select: { transferInstructions: true } },
+          store: {
+            select: {
+              transferAccountName: true,
+              transferAccountNumber: true,
+              transferBank: true,
+              transferReferencePrefix: true,
+              transferReferenceExtra: true,
+            },
+          },
         },
       })
     : null
@@ -58,10 +67,14 @@ export default async function CheckoutSuccessPage({
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Codigo de transferencia</p>
               <p className="font-mono text-xl font-semibold">{order?.transferCode ?? "Pendiente"}</p>
             </div>
-            {order?.store.transferInstructions && (
-              <div className="space-y-1">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Instrucciones</p>
-                <p className="text-sm whitespace-pre-wrap text-muted-foreground">{order.store.transferInstructions}</p>
+            {(order?.store.transferAccountName || order?.store.transferAccountNumber || order?.store.transferBank || buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra)) && (
+              <div className="space-y-1 text-sm text-muted-foreground">
+                {order?.store.transferAccountName && <p><span className="text-foreground">Titular:</span> {order.store.transferAccountName}</p>}
+                {order?.store.transferBank && <p><span className="text-foreground">Banco:</span> {order.store.transferBank}</p>}
+                {order?.store.transferAccountNumber && <p><span className="text-foreground">Cuenta:</span> {order.store.transferAccountNumber}</p>}
+                {buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra) && (
+                  <p><span className="text-foreground">Referencia:</span> {buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra)}</p>
+                )}
               </div>
             )}
             <p className="text-xs text-muted-foreground">

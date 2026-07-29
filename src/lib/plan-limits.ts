@@ -4,6 +4,7 @@ import { hasPlanEntitlements } from "@/lib/billing-rules"
 
 type DbClient = Prisma.TransactionClient | typeof db
 const PLAN_TIME_ZONE = "America/Mexico_City"
+const COUNTED_PRODUCT_STATUSES = ["ACTIVE", "DRAFT", "PAUSED"] as const
 
 function getTimeZoneOffsetMinutes(date: Date, timeZone: string) {
   const offset = new Intl.DateTimeFormat("en-US", {
@@ -63,7 +64,7 @@ export async function checkProductLimit(storeId: string, client: DbClient = db) 
     where: {
       storeId,
       deletedAt: null,
-      status: { in: ["ACTIVE", "DRAFT", "PAUSED"] },
+      status: { in: [...COUNTED_PRODUCT_STATUSES] },
     },
   })
 

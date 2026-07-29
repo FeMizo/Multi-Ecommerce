@@ -18,7 +18,11 @@ const schema = z.object({
   customDomain: z.string().max(100).optional().nullable(),
   isActive: z.boolean(),
   transferEnabled: z.boolean(),
-  transferInstructions: z.string().max(2000).optional().nullable(),
+  transferAccountName: z.string().max(120).optional().nullable(),
+  transferAccountNumber: z.string().max(40).optional().nullable(),
+  transferBank: z.string().max(80).optional().nullable(),
+  transferReferencePrefix: z.string().max(20).optional().nullable(),
+  transferReferenceExtra: z.string().max(20).optional().nullable(),
 })
 
 export async function PATCH(
@@ -70,7 +74,11 @@ export async function PATCH(
       customDomain: data.customDomain ?? null,
       isActive: data.isActive,
       transferEnabled: data.transferEnabled,
-      transferInstructions: data.transferInstructions ?? null,
+      transferAccountName: data.transferAccountName ?? null,
+      transferAccountNumber: data.transferAccountNumber ?? null,
+      transferBank: data.transferBank ?? null,
+      transferReferencePrefix: data.transferReferencePrefix ?? null,
+      transferReferenceExtra: data.transferReferenceExtra ?? null,
     },
     select: { slug: true, name: true },
   })

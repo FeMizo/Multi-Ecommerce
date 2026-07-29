@@ -39,7 +39,11 @@ export default async function SettingsPage({
             isActive: true,
             cashOnDeliveryEnabled: true,
             transferEnabled: true,
-            transferInstructions: true,
+            transferAccountName: true,
+            transferAccountNumber: true,
+            transferBank: true,
+            transferReferencePrefix: true,
+            transferReferenceExtra: true,
             stripeOnboarded: true,
             subscription: {
               select: {
@@ -92,7 +96,11 @@ export default async function SettingsPage({
           isActive: store.isActive,
           cashOnDeliveryEnabled: store.cashOnDeliveryEnabled,
           transferEnabled: store.transferEnabled,
-          transferInstructions: store.transferInstructions ?? undefined,
+          transferAccountName: store.transferAccountName ?? undefined,
+          transferAccountNumber: store.transferAccountNumber ?? undefined,
+          transferBank: store.transferBank ?? undefined,
+          transferReferencePrefix: store.transferReferencePrefix ?? undefined,
+          transferReferenceExtra: store.transferReferenceExtra ?? undefined,
         }}
       />
       <SubscriptionManager

@@ -9,9 +9,9 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodValue, string> = {
 }
 
 export const PAYMENT_METHOD_DESCRIPTIONS: Record<PaymentMethodValue, string> = {
-  STRIPE: "Pago en línea con tarjeta.",
-  CASH_ON_DELIVERY: "La tienda asume el riesgo y cobrará al recibir el pedido.",
-  TRANSFER: "Te mostraremos el código y las instrucciones para transferir.",
+  STRIPE: "Pago en linea con tarjeta.",
+  CASH_ON_DELIVERY: "La tienda asume el riesgo y cobrara al recibir el pedido.",
+  TRANSFER: "Te mostraremos los datos bancarios y la referencia para transferir.",
 }
 
 export function generateTransferCode() {

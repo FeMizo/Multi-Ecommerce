@@ -27,7 +27,11 @@ export default async function AdminSellerDetailPage({ params }: PageProps) {
       isVerified: true,
       cashOnDeliveryEnabled: true,
       transferEnabled: true,
-      transferInstructions: true,
+      transferAccountName: true,
+      transferAccountNumber: true,
+      transferBank: true,
+      transferReferencePrefix: true,
+      transferReferenceExtra: true,
       stripeOnboarded: true,
       stripeAccountId: true,
       createdAt: true,
@@ -132,12 +136,22 @@ export default async function AdminSellerDetailPage({ params }: PageProps) {
               <p><span className="text-muted-foreground">Transferencia:</span> {store.transferEnabled ? "Si" : "No"}</p>
               <p><span className="text-muted-foreground">Stripe:</span> {store.stripeAccountId ? "Conectado" : "No conectado"}</p>
             </div>
-            {store.transferInstructions && (
+            {(store.transferAccountName || store.transferAccountNumber || store.transferBank || store.transferReferencePrefix || store.transferReferenceExtra) && (
               <>
                 <Separator />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Instrucciones de transferencia</p>
-                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">{store.transferInstructions}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Datos de transferencia</p>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    {store.transferAccountName && <p><span className="text-foreground">Titular:</span> {store.transferAccountName}</p>}
+                    {store.transferBank && <p><span className="text-foreground">Banco:</span> {store.transferBank}</p>}
+                    {store.transferAccountNumber && <p><span className="text-foreground">Cuenta:</span> {store.transferAccountNumber}</p>}
+                    {(store.transferReferencePrefix || store.transferReferenceExtra) && (
+                      <p>
+                        <span className="text-foreground">Referencia:</span>{" "}
+                        {[store.transferReferencePrefix, store.transferReferenceExtra].filter(Boolean).join(" ")}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </>
             )}

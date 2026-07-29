@@ -302,7 +302,16 @@ export async function POST(req: Request) {
         total: true,
         transferCode: true,
         customer: { select: { email: true } },
-        store: { select: { name: true } },
+        store: {
+          select: {
+            name: true,
+            transferAccountName: true,
+            transferAccountNumber: true,
+            transferBank: true,
+            transferReferencePrefix: true,
+            transferReferenceExtra: true,
+          },
+        },
       },
     })
 
@@ -341,7 +350,16 @@ export async function POST(req: Request) {
         total: true,
         transferCode: true,
         customer: { select: { email: true } },
-        store: { select: { name: true } },
+        store: {
+          select: {
+            name: true,
+            transferAccountName: true,
+            transferAccountNumber: true,
+            transferBank: true,
+            transferReferencePrefix: true,
+            transferReferenceExtra: true,
+          },
+        },
       },
     })
 
@@ -354,6 +372,13 @@ export async function POST(req: Request) {
           total: orderForEmail.total,
           paymentMethodLabel: PAYMENT_METHOD_LABELS.TRANSFER,
           transferCode: orderForEmail.transferCode,
+          transferDetails: {
+            transferAccountName: orderForEmail.store.transferAccountName,
+            transferAccountNumber: orderForEmail.store.transferAccountNumber,
+            transferBank: orderForEmail.store.transferBank,
+            transferReferencePrefix: orderForEmail.store.transferReferencePrefix,
+            transferReferenceExtra: orderForEmail.store.transferReferenceExtra,
+          },
         }),
       ])
     }

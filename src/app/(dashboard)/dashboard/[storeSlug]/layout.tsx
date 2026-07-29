@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { SessionProvider } from "next-auth/react"
 import { ResponsiveSidebarShell, type SidebarItem } from "@/components/layout/responsive-sidebar-shell"
+import { SubscriptionRenewalReminder } from "@/components/dashboard/subscription-renewal-reminder"
 
 const navItems: SidebarItem[] = [
   { href: "", label: "Dashboard", iconKey: "LayoutDashboard" },
@@ -31,7 +32,23 @@ export default async function DashboardLayout({
       store: { slug: storeSlug },
       role: { in: ["OWNER", "STAFF"] },
     },
-    include: { store: { select: { name: true, slug: true, primaryColor: true } } },
+    include: {
+      store: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          primaryColor: true,
+          subscription: {
+            select: {
+              status: true,
+              currentPeriodEnd: true,
+              cancelAtPeriodEnd: true,
+            },
+          },
+        },
+      },
+    },
   })
 
   if (!membership) redirect("/dashboard")
@@ -58,6 +75,15 @@ export default async function DashboardLayout({
           style={storeColor ? ({ "--primary": storeColor, "--primary-foreground": "#ffffff" } as React.CSSProperties) : undefined}
           className="min-h-screen"
         >
+          <SubscriptionRenewalReminder
+            storeId={membership.store.id}
+            storeName={membership.store.name}
+            subscription={membership.store.subscription ? {
+              status: membership.store.subscription.status,
+              currentPeriodEnd: membership.store.subscription.currentPeriodEnd?.toISOString() ?? null,
+              cancelAtPeriodEnd: membership.store.subscription.cancelAtPeriodEnd,
+            } : null}
+          />
           {children}
         </div>
       </ResponsiveSidebarShell>

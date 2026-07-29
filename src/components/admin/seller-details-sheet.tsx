@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
 import { PanelRightOpen } from "lucide-react"
+import { buildTransferReference } from "@/lib/transfer-details"
 
 type Member = {
   id: string
@@ -32,7 +33,11 @@ type SellerDetailsSheetProps = {
   stripeAccountId: string | null
   cashOnDeliveryEnabled: boolean
   transferEnabled: boolean
-  transferInstructions: string | null
+  transferAccountName: string | null
+  transferAccountNumber: string | null
+  transferBank: string | null
+  transferReferencePrefix: string | null
+  transferReferenceExtra: string | null
   planName: string | null
   commissionRate: number | null
   productsCount: number
@@ -60,7 +65,11 @@ export function SellerDetailsSheet({
   stripeAccountId,
   cashOnDeliveryEnabled,
   transferEnabled,
-  transferInstructions,
+  transferAccountName,
+  transferAccountNumber,
+  transferBank,
+  transferReferencePrefix,
+  transferReferenceExtra,
   planName,
   commissionRate,
   productsCount,
@@ -168,12 +177,19 @@ export function SellerDetailsSheet({
             <p><span className="text-muted-foreground">Stripe:</span> {stripeAccountId ? "Conectado" : "No conectado"}</p>
           </div>
 
-          {transferInstructions && (
+          {(transferAccountName || transferAccountNumber || transferBank || buildTransferReference(transferReferencePrefix, transferReferenceExtra)) && (
             <>
               <Separator />
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Instrucciones de transferencia</p>
-                <p className="text-sm whitespace-pre-wrap text-muted-foreground">{transferInstructions}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Datos de transferencia</p>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  {transferAccountName && <p><span className="text-foreground">Titular:</span> {transferAccountName}</p>}
+                  {transferBank && <p><span className="text-foreground">Banco:</span> {transferBank}</p>}
+                  {transferAccountNumber && <p><span className="text-foreground">Cuenta:</span> {transferAccountNumber}</p>}
+                  {buildTransferReference(transferReferencePrefix, transferReferenceExtra) && (
+                    <p><span className="text-foreground">Referencia:</span> {buildTransferReference(transferReferencePrefix, transferReferenceExtra)}</p>
+                  )}
+                </div>
               </div>
             </>
           )}

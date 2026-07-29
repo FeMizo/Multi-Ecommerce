@@ -55,6 +55,33 @@ test("permite crear mientras queden espacios en el plan activo", async () => {
   })
 })
 
+test("el limite de productos cuenta borradores y pausados, no solo activos", async () => {
+  let whereQuery: unknown
+  const client = {
+    storeSubscription: {
+      findUnique: async () => ({
+        status: "ACTIVE",
+        plan: { maxProducts: 2 },
+      }),
+    },
+    product: {
+      count: async ({ where }: { where: unknown }) => {
+        whereQuery = where
+        return 2
+      },
+    },
+  } as unknown as PlanLimitClient
+
+  const result = await checkProductLimit("store_1", client)
+
+  assert.deepEqual(result, { ok: false, count: 2, max: 2 })
+  assert.deepEqual(whereQuery, {
+    storeId: "store_1",
+    deletedAt: null,
+    status: { in: ["ACTIVE", "DRAFT", "PAUSED"] },
+  })
+})
+
 test("bloquea la creación al alcanzar el máximo de productos", async () => {
   const { client } = productLimitClient({ subscribedMax: 2, productCount: 2 })
 

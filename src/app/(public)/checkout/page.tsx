@@ -220,7 +220,7 @@ export default function CheckoutPage() {
                     )}
                     {paymentMethod === "TRANSFER" && (
                       <p className="text-xs text-muted-foreground">
-                        Te mostraremos el codigo de transferencia y los datos del vendedor al finalizar.
+                        Te mostraremos los datos bancarios, el codigo de transferencia y la referencia al finalizar.
                       </p>
                     )}
                   </>
