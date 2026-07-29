@@ -7,8 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { withProductPlaceholder } from "@/lib/placeholders"
+import {
+  defaultVariantSelection,
+  normalizeVariantOptions,
+  variantSelectionKey,
+} from "@/lib/product-variants"
 
 type ProductCardProps = {
   product: {
@@ -19,6 +24,7 @@ type ProductCardProps = {
     price: number
     comparePrice?: number | null
     images: string[]
+    variantOptions?: unknown
     store: {
       name: string
       slug?: string
@@ -36,6 +42,9 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const imageSrc = withProductPlaceholder(product.images)
+  const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
+  const defaultSelection = defaultVariantSelection(variantOptions)
+  const variantKey = variantSelectionKey(defaultSelection)
   
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -49,7 +58,9 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
     addItem({
-      id: product.id,
+      id: `${product.id}:${variantKey}`,
+      variantKey,
+      variantSelection: defaultSelection,
       productId: product.id,
       storeId: product.storeId,
       name: product.name,

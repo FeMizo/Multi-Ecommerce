@@ -9,7 +9,11 @@ import { sendWhatsAppText } from "@/lib/whatsapp"
 import { getCurrentPeriodEnd } from "@/lib/billing-rules"
 import { toMinorUnits } from "@/lib/money"
 
-type OrderItemInput = { productId: string; quantity: number }
+type OrderItemInput = {
+  productId: string
+  quantity: number
+  variantSelection?: Array<{ name: string; value: string }>
+}
 
 function webhookError(error: unknown) {
   return error instanceof Error ? error.message.slice(0, 1_000) : "Error desconocido"
@@ -111,7 +115,13 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
                 quantity: item.quantity,
                 unitPrice: product.price,
                 total: product.price * item.quantity,
-                productSnapshot: { name: product.name, price: product.price, images: product.images, sku: product.sku },
+                productSnapshot: {
+                  name: product.name,
+                  price: product.price,
+                  images: product.images,
+                  sku: product.sku,
+                  selectedOptions: item.variantSelection ?? [],
+                },
               }
             }),
           },

@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client"
 import { slugify } from "@/lib/utils"
 import { checkProductLimit } from "@/lib/plan-limits"
 import { positiveMxnSchema } from "@/lib/money"
+import { normalizeVariantOptions } from "@/lib/product-variants"
 
 const schema = z.object({
   name: z.string().min(2).max(120),
@@ -24,6 +25,10 @@ const schema = z.object({
   featured: z.boolean().default(false),
   images: z.array(z.string().url()).max(8).default([]),
   tags: z.array(z.string()).max(10).default([]),
+  variantOptions: z.array(z.object({
+    name: z.string().min(1).max(40),
+    values: z.array(z.string().min(1).max(40)).min(1).max(20),
+  })).max(5).default([]),
 })
 
 async function getMembership(userId: string, storeSlug: string) {
@@ -86,6 +91,7 @@ export async function POST(
           featured: data.featured,
           images: data.images,
           tags: data.tags,
+          variantOptions: normalizeVariantOptions(data.variantOptions),
         },
       })
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })

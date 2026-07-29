@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -114,7 +114,7 @@ export default async function AdminSellerDetailPage({ params }: PageProps) {
               <>
                 <Separator />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Descripcion</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Descripción</p>
                   <p className="whitespace-pre-wrap text-sm text-muted-foreground">{store.description}</p>
                 </div>
               </>
@@ -193,3 +193,5 @@ export default async function AdminSellerDetailPage({ params }: PageProps) {
     </div>
   )
 }
+
+

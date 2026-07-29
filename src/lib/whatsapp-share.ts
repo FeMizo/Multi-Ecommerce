@@ -13,6 +13,7 @@ type CartShareItem = {
   name: string
   quantity: number
   price: number
+  variantSelection?: Array<{ name: string; value: string }>
 }
 
 export function buildCartWhatsAppMessage(items: CartShareItem[], total: number, formatPrice: (value: number) => string) {
@@ -20,7 +21,10 @@ export function buildCartWhatsAppMessage(items: CartShareItem[], total: number, 
     if (!acc[item.storeId]) {
       acc[item.storeId] = { storeName: item.storeName, lines: [] }
     }
-    acc[item.storeId].lines.push(`- ${item.name} x${item.quantity} (${formatPrice(item.price * item.quantity)})`)
+    const variantText = item.variantSelection?.length
+      ? ` - ${item.variantSelection.map((entry) => `${entry.name}: ${entry.value}`).join(" · ")}`
+      : ""
+    acc[item.storeId].lines.push(`- ${item.name}${variantText} x${item.quantity} (${formatPrice(item.price * item.quantity)})`)
     return acc
   }, {})
 

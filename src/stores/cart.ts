@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import type { ProductVariantSelection } from "@/lib/product-variants"
 
 type CartItem = {
   id: string
@@ -10,14 +11,16 @@ type CartItem = {
   image: string
   quantity: number
   storeName: string
+  variantKey: string
+  variantSelection: ProductVariantSelection[]
 }
 
 interface CartStore {
   items: CartItem[]
   isOpen: boolean
   addItem: (item: Omit<CartItem, "quantity">) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  removeItem: (itemId: string) => void
+  updateQuantity: (itemId: string, quantity: number) => void
   clearCart: () => void
   openCart: () => void
   closeCart: () => void
@@ -31,24 +34,34 @@ export const useCartStore = create<CartStore>()(
       isOpen: false,
       addItem: (item) =>
         set((state) => {
-          const existing = state.items.find((i) => i.productId === item.productId)
+          const existing = state.items.find((i) => i.id === item.id)
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.productId === item.productId ? { ...i, quantity: i.quantity + 1 } : i
+                i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
               ),
             }
           }
-          return { items: [...state.items, { ...item, quantity: 1 }] }
+          return {
+            items: [
+              ...state.items,
+              {
+                ...item,
+                variantKey: item.variantKey || item.productId,
+                variantSelection: item.variantSelection ?? [],
+                quantity: 1,
+              },
+            ],
+          }
         }),
-      removeItem: (productId) =>
-        set((state) => ({ items: state.items.filter((i) => i.productId !== productId) })),
-      updateQuantity: (productId, quantity) =>
+      removeItem: (itemId) =>
+        set((state) => ({ items: state.items.filter((i) => i.id !== itemId) })),
+      updateQuantity: (itemId, quantity) =>
         set((state) => ({
           items:
             quantity === 0
-              ? state.items.filter((i) => i.productId !== productId)
-              : state.items.map((i) => (i.productId === productId ? { ...i, quantity } : i)),
+              ? state.items.filter((i) => i.id !== itemId)
+              : state.items.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
         })),
       clearCart: () => set({ items: [] }),
       openCart: () => set({ isOpen: true }),
@@ -57,6 +70,25 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: "cart-store",
+      version: 2,
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<CartStore> & { items?: Partial<CartItem>[] } | undefined
+        return {
+          items: (state?.items ?? []).map((item) => ({
+            id: item.id ?? item.productId ?? crypto.randomUUID(),
+            productId: item.productId ?? item.id ?? crypto.randomUUID(),
+            storeId: item.storeId ?? "",
+            name: item.name ?? "",
+            price: item.price ?? 0,
+            image: item.image ?? "",
+            quantity: item.quantity ?? 1,
+            storeName: item.storeName ?? "",
+            variantKey: item.variantKey ?? item.productId ?? item.id ?? "default",
+            variantSelection: item.variantSelection ?? [],
+          })),
+          isOpen: false,
+        }
+      },
       partialize: (state) => ({ items: state.items }),
     }
   )

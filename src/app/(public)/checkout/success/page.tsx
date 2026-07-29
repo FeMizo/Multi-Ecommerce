@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -55,16 +55,16 @@ export default async function CheckoutSuccessPage({
         {isCashOnDelivery || isTransfer ? "Pedido confirmado" : "Pedido confirmado"}
       </h1>
       <p className="text-muted-foreground mb-3">
-        {isCashOnDelivery && "Tu pedido quedo registrado con pago contra entrega. Te enviamos un correo con el resumen."}
-        {isTransfer && "Tu pedido quedo registrado con pago por transferencia. Te enviamos un correo con el codigo y las instrucciones."}
-        {!isCashOnDelivery && !isTransfer && "Tu pago fue procesado con exito. Recibiras una confirmacion por correo electronico pronto."}
+        {isCashOnDelivery && "Tu pedido quedó registrado con pago contra entrega. Te enviamos un correo con el resumen."}
+        {isTransfer && "Tu pedido quedó registrado con pago por transferencia. Te enviamos un correo con el código y las instrucciones."}
+        {!isCashOnDelivery && !isTransfer && "Tu pago fue procesado con éxito. Recibirás una confirmación por correo electrónico pronto."}
       </p>
 
       {isTransfer && (
         <Card className="mb-6 text-left">
           <CardContent className="pt-6 space-y-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Codigo de transferencia</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Código de transferencia</p>
               <p className="font-mono text-xl font-semibold">{order?.transferCode ?? "Pendiente"}</p>
             </div>
             {(order?.store.transferAccountName || order?.store.transferAccountNumber || order?.store.transferBank || buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra)) && (
@@ -78,7 +78,7 @@ export default async function CheckoutSuccessPage({
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              El vendedor vera este pago como {PAYMENT_METHOD_LABELS.TRANSFER.toLowerCase()} y lo revisara bajo su propio riesgo.
+              El vendedor verá este pago como {PAYMENT_METHOD_LABELS.TRANSFER.toLowerCase()} y lo revisará bajo su propio riesgo.
             </p>
           </CardContent>
         </Card>
@@ -100,3 +100,5 @@ export default async function CheckoutSuccessPage({
     </div>
   )
 }
+
+

@@ -52,6 +52,7 @@ export default async function EditProductPage({
         featured: product.featured,
         images: product.images,
         tags: product.tags,
+        variantOptions: product.variantOptions,
       }}
     />
   )

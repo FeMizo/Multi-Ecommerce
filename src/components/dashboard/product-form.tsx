@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -20,20 +20,21 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { normalizeVariantOptions, type ProductVariantOption } from "@/lib/product-variants"
 
 const schema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres").max(120, "Máximo 120 caracteres"),
+  name: z.string().min(2, "Minimo 2 caracteres").max(120, "Maximo 120 caracteres"),
   slug: z
     .string()
-    .min(2, "Mínimo 2 caracteres")
-    .max(80, "Máximo 80 caracteres")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Solo letras minúsculas, números y guiones"),
+    .min(2, "Minimo 2 caracteres")
+    .max(80, "Maximo 80 caracteres")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Solo letras minusculas, numeros y guiones"),
   description: z.string().max(2000).optional(),
-  price: z.number({ message: "Ingresa un precio válido" }).positive("Debe ser mayor a 0"),
+  price: z.number({ message: "Ingresa un precio valido" }).positive("Debe ser mayor a 0"),
   comparePrice: z.number().positive().optional(),
   stock: z.number().int().min(0, "No puede ser negativo"),
   sku: z.string().max(60).optional(),
-  categoryId: z.string().min(1, "Selecciona una categoría"),
+  categoryId: z.string().min(1, "Selecciona una categoria"),
   status: z.enum(["DRAFT", "ACTIVE", "PAUSED"]),
   featured: z.boolean(),
 })
@@ -42,10 +43,20 @@ type FormData = z.infer<typeof schema>
 
 type Category = { id: string; name: string }
 
+type VariantDraft = {
+  name: string
+  valuesText: string
+}
+
 type Props = {
   storeSlug: string
   categories: Category[]
-  initialData?: Partial<FormData> & { id?: string; images?: string[]; tags?: string[] }
+  initialData?: Partial<FormData> & {
+    id?: string
+    images?: string[]
+    tags?: string[]
+    variantOptions?: unknown
+  }
   mode: "new" | "edit"
 }
 
@@ -53,7 +64,7 @@ function toSlug(value: string) {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
@@ -70,6 +81,12 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? [])
   const [tagInput, setTagInput] = useState("")
+  const [variantDrafts, setVariantDrafts] = useState<VariantDraft[]>(
+    () => normalizeVariantOptions(initialData?.variantOptions ?? []).map((option) => ({
+        name: option.name,
+        valuesText: option.values.join(", "),
+      }))
+  )
 
   const {
     register,
@@ -108,7 +125,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
       setImages((prev) => [...prev, url])
       setImageInput("")
     } catch {
-      toast.error("URL de imagen inválida")
+      toast.error("URL de imagen invalida")
     }
   }
 
@@ -117,6 +134,18 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     if (!tag || tags.includes(tag) || tags.length >= 10) return
     setTags((prev) => [...prev, tag])
     setTagInput("")
+  }
+
+  function addVariantDraft() {
+    setVariantDrafts((prev) => [...prev, { name: "", valuesText: "" }])
+  }
+
+  function updateVariantDraft(index: number, patch: Partial<VariantDraft>) {
+    setVariantDrafts((prev) => prev.map((draft, i) => (i === index ? { ...draft, ...patch } : draft)))
+  }
+
+  function removeVariantDraft(index: number) {
+    setVariantDrafts((prev) => prev.filter((_, i) => i !== index))
   }
 
   async function handleUpload(file: File) {
@@ -141,6 +170,13 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   async function onSubmit(data: FormData) {
     setLoading(true)
 
+    const variantOptions = normalizeVariantOptions(
+      variantDrafts.map((draft) => ({
+        name: draft.name,
+        values: draft.valuesText.split(",").map((value) => value.trim()),
+      }))
+    )
+
     const payload = {
       ...data,
       comparePrice: data.comparePrice ?? null,
@@ -148,6 +184,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
       sku: data.sku || null,
       images,
       tags,
+      variantOptions,
     }
 
     const url =
@@ -175,7 +212,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   }
 
   async function handleDelete() {
-    if (!confirm("¿Eliminar este producto? Esta acción no se puede deshacer.")) return
+    if (!confirm("Eliminar este producto? Esta accion no se puede deshacer.")) return
     setLoading(true)
     await fetch(`/api/stores/${storeSlug}/products/${initialData?.id}`, { method: "DELETE" })
     setLoading(false)
@@ -211,16 +248,15 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Información básica</CardTitle>
+              <CardTitle className="text-base">Informacion basica</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
                 <Label>Nombre *</Label>
-                <Input placeholder="Ej: Camiseta de algodón orgánico" {...register("name")} onChange={handleNameChange} />
+                <Input placeholder="Ej: Camiseta de algodon organico" {...register("name")} onChange={handleNameChange} />
                 {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
               </div>
 
@@ -252,6 +288,54 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                   <p className="text-xs text-destructive">{errors.description.message}</p>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Variantes del producto</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Opcional. Ejemplo: Talla = S, M, L. Color = Azul, Rojo, Verde.
+              </p>
+              <div className="space-y-3">
+                {variantDrafts.map((draft, index) => (
+                  <div key={index} className="grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_2fr_auto]">
+                    <div className="space-y-1">
+                      <Label>Nombre</Label>
+                      <Input
+                        placeholder="Talla"
+                        value={draft.name}
+                        onChange={(e) => updateVariantDraft(index, { name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Valores</Label>
+                      <Input
+                        placeholder="S, M, L"
+                        value={draft.valuesText}
+                        onChange={(e) => updateVariantDraft(index, { valuesText: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeVariantDraft(index)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button type="button" variant="outline" onClick={addVariantDraft}>
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar variante
+              </Button>
             </CardContent>
           </Card>
 
@@ -316,14 +400,13 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Imágenes</CardTitle>
+              <CardTitle className="text-base">Imagenes</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {images.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {images.map((url, i) => (
                     <div key={i} className="relative group w-20 h-20 rounded-lg overflow-hidden border bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={url} alt="" className="w-full h-full object-cover" />
                       <button
                         type="button"
@@ -363,7 +446,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                   e.target.value = ""
                 }}
               />
-              <p className="text-xs text-muted-foreground">{images.length}/8 imágenes. Puedes agregar URLs o subir archivos.</p>
+              <p className="text-xs text-muted-foreground">{images.length}/8 imagenes. Puedes agregar URLs o subir archivos.</p>
             </CardContent>
           </Card>
 
@@ -392,7 +475,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               )}
               <div className="flex gap-2">
                 <Input
-                  placeholder="Ej: ropa, verano, algodón"
+                  placeholder="Ej: ropa, verano, algodon"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
@@ -405,11 +488,10 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Publicación</CardTitle>
+              <CardTitle className="text-base">Publicacion</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
@@ -444,7 +526,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Categoría</CardTitle>
+              <CardTitle className="text-base">Categoria</CardTitle>
             </CardHeader>
             <CardContent>
               <Select
@@ -452,7 +534,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                 onValueChange={(v) => setValue("categoryId", v, { shouldValidate: true })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una categoría" />
+                  <SelectValue placeholder="Selecciona una categoria" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -472,3 +554,5 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     </form>
   )
 }
+
+

@@ -14,6 +14,7 @@ import { RefundButton } from "@/components/dashboard/refund-button"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 import { buildTransferReference } from "@/lib/transfer-details"
+import { formatVariantSelection } from "@/lib/product-variants"
 
 type CustomerInfo = {
   name?: string
@@ -115,6 +116,14 @@ export default async function OrderDetailPage({
                       <p className="text-xs text-muted-foreground">
                         {item.quantity} × {formatPrice(item.unitPrice)}
                       </p>
+                      {(() => {
+                        const snapshot = item.productSnapshot as { selectedOptions?: Array<{ name: string; value: string }> }
+                        return snapshot.selectedOptions?.length ? (
+                          <p className="text-xs text-muted-foreground">
+                            {formatVariantSelection(snapshot.selectedOptions)}
+                          </p>
+                        ) : null
+                      })()}
                     </div>
                     <p className="font-medium text-sm tabular-nums shrink-0">
                       {formatPrice(item.total)}

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -222,7 +222,7 @@ export function StoreSettingsForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Configuracion</h1>
+          <h1 className="text-2xl font-bold">Configuración</h1>
           <p className="text-sm text-muted-foreground">/{initialData.slug}</p>
         </div>
         <Button type="submit" disabled={loading || !isOwner}>
@@ -234,7 +234,7 @@ export function StoreSettingsForm({
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Informacion general</CardTitle>
+              <CardTitle className="text-base">Información general</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
@@ -244,7 +244,7 @@ export function StoreSettingsForm({
               </div>
 
               <div className="space-y-1">
-                <Label>Descripcion</Label>
+                <Label>Descripción</Label>
                 <Textarea
                   placeholder="Describe tu tienda..."
                   rows={3}
@@ -325,7 +325,7 @@ export function StoreSettingsForm({
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                El cliente recibira un codigo de referencia al finalizar. La tienda configura sus datos bancarios y asume el riesgo.
+                El cliente recibirá un código de referencia al finalizar. La tienda configura sus datos bancarios y asume el riesgo.
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -489,3 +489,5 @@ export function StoreSettingsForm({
     </form>
   )
 }
+
+

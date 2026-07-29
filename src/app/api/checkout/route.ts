@@ -30,7 +30,16 @@ const checkoutSchema = z.object({
     city: z.string().min(2).max(100),
     notes: z.string().max(500).optional(),
   }),
-  items: z.array(z.object({ productId: z.string().min(1), quantity: z.number().int().positive().max(99) })).min(1).max(50),
+  items: z.array(z.object({
+    id: z.string().min(1),
+    productId: z.string().min(1),
+    quantity: z.number().int().positive().max(99),
+    variantKey: z.string().min(1).optional(),
+    variantSelection: z.array(z.object({
+      name: z.string().min(1).max(40),
+      value: z.string().min(1).max(40),
+    })).max(10).default([]),
+  })).min(1).max(50),
 })
 
 type CouponData = {
@@ -83,8 +92,8 @@ export async function POST(req: Request) {
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   let requestedCouponCode = rawCouponCode ? normalizeCouponCode(rawCouponCode) : null
 
-  if (new Set(items.map((item) => item.productId)).size !== items.length) {
-    return NextResponse.json({ message: "No repitas productos en el carrito" }, { status: 422 })
+  if (new Set(items.map((item) => item.id)).size !== items.length) {
+    return NextResponse.json({ message: "No repitas la misma variante en el carrito" }, { status: 422 })
   }
 
   let order = await db.order.findUnique({
@@ -224,7 +233,13 @@ export async function POST(req: Request) {
                   quantity: item.quantity,
                   unitPrice,
                   total: fromMinorUnits(toMinorUnits(unitPrice) * item.quantity),
-                  productSnapshot: { name: product.name, price: unitPrice, images: product.images, sku: product.sku },
+                  productSnapshot: {
+                    name: product.name,
+                    price: unitPrice,
+                    images: product.images,
+                    sku: product.sku,
+                    selectedOptions: item.variantSelection,
+                  },
                 }
               }),
             },

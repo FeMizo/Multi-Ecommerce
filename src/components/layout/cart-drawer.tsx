@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
 import Link from "next/link"
@@ -15,6 +15,7 @@ import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
+import { formatVariantSelection } from "@/lib/product-variants"
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, total } = useCartStore()
@@ -82,7 +83,7 @@ export function CartDrawer() {
               <ShoppingBag className="h-10 w-10 text-muted-foreground/40" />
             </div>
             <div>
-              <p className="font-semibold text-lg mb-1">Tu carrito estÃ¡ vacÃ­o</p>
+              <p className="font-semibold text-lg mb-1">Tu carrito está vacío</p>
               <p className="text-sm text-muted-foreground">Explora productos y agrega tus favoritos</p>
             </div>
             <Button className="rounded-full px-6" onClick={closeCart} asChild>
@@ -96,11 +97,11 @@ export function CartDrawer() {
           <>
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {items.map((item) => (
-                <div key={item.productId} className="flex gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+                <div key={item.id} className="flex gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
                   <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-muted shrink-0">
                     <Image
                       src={item.image || DEFAULT_PRODUCT_IMAGE}
-                      alt={item.image ? item.name : `Imagen genÃ©rica de ${item.name}`}
+                      alt={item.image ? item.name : `Imagen genérica de ${item.name}`}
                       fill
                       className="object-cover"
                     />
@@ -110,9 +111,14 @@ export function CartDrawer() {
                       <div>
                         <p className="font-medium text-sm line-clamp-2">{item.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{item.storeName}</p>
+                        {(item.variantSelection?.length ?? 0) > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatVariantSelection(item.variantSelection ?? [])}
+                          </p>
+                        )}
                       </div>
                       <button
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => removeItem(item.id)}
                         className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
                         aria-label="Eliminar"
                       >
@@ -122,7 +128,7 @@ export function CartDrawer() {
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center rounded-full border border-border/50 bg-background">
                         <button
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-l-full transition-colors"
                           aria-label="Disminuir"
                         >
@@ -132,7 +138,7 @@ export function CartDrawer() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-r-full transition-colors"
                           aria-label="Aumentar"
                         >
@@ -192,3 +198,5 @@ export function CartDrawer() {
     </Sheet>
   )
 }
+
+

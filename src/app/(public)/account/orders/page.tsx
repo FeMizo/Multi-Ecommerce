@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/utils"
 import { OrderStatus } from "@prisma/client"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
+import { formatVariantSelection } from "@/lib/product-variants"
 
 const statusConfig: Record<OrderStatus, { label: string; className: string }> = {
   PENDING_PAYMENT: { label: "Pendiente de pago", className: "bg-yellow-100 text-yellow-800" },
@@ -83,14 +84,24 @@ export default async function AccountOrdersPage() {
 
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {order.items.map((item) => (
-                    <div key={item.id} className="shrink-0 h-12 w-12 rounded-md bg-muted overflow-hidden">
-                      <Image
-                        src={item.product.images[0] || DEFAULT_PRODUCT_IMAGE}
-                        alt={item.product.images[0] ? item.product.name : `Imagen genérica de ${item.product.name}`}
-                        width={48}
-                        height={48}
-                        className="h-full w-full object-cover"
-                      />
+                    <div key={item.id} className="shrink-0">
+                      <div className="h-12 w-12 rounded-md bg-muted overflow-hidden">
+                        <Image
+                          src={item.product.images[0] || DEFAULT_PRODUCT_IMAGE}
+                          alt={item.product.images[0] ? item.product.name : `Imagen genérica de ${item.product.name}`}
+                          width={48}
+                          height={48}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      {(() => {
+                        const snapshot = item.productSnapshot as { selectedOptions?: Array<{ name: string; value: string }> }
+                        return snapshot.selectedOptions?.length ? (
+                          <p className="mt-1 w-12 text-[10px] leading-tight text-muted-foreground">
+                            {formatVariantSelection(snapshot.selectedOptions)}
+                          </p>
+                        ) : null
+                      })()}
                     </div>
                   ))}
                 </div>
