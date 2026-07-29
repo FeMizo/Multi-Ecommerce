@@ -36,8 +36,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         brandImageAlt="AionSite"
         brandImageClassName="brightness-0 invert"
         items={navItems}
-        footerHref="/"
-        footerLabel="Volver al marketplace"
+        topFooterHref="/"
+        topFooterLabel="Ir al home"
+        topFooterIconKey="ArrowLeft"
+        footerHref="/dashboard"
+        footerLabel="Ir al dashboard"
         footerIconKey="ArrowLeft"
         variant="admin"
         storageKey="admin-sidebar"

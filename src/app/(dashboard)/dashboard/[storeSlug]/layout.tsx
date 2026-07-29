@@ -62,6 +62,7 @@ export default async function DashboardLayout({
 
   const base = `/dashboard/${storeSlug}`
   const storeColor = membership.store.primaryColor
+  const isPlatformAdmin = session.user.globalRole === "PLATFORM_ADMIN"
 
   return (
     <SessionProvider session={session}>
@@ -74,10 +75,10 @@ export default async function DashboardLayout({
         topFooterHref="/"
         topFooterLabel="Volver al sitio"
         topFooterIconKey="ArrowLeft"
-        footerHref={`/${storeSlug}`}
-        footerLabel="Ver tienda"
-        footerIconKey="ArrowUpRight"
-        footerExternal
+        footerHref={isPlatformAdmin ? "/admin" : `/${storeSlug}`}
+        footerLabel={isPlatformAdmin ? "Ir al admin" : "Ver tienda"}
+        footerIconKey={isPlatformAdmin ? "ArrowLeft" : "ArrowUpRight"}
+        footerExternal={!isPlatformAdmin}
         variant="dashboard"
         storageKey={`dashboard-sidebar:${storeSlug}`}
       >
