@@ -235,6 +235,7 @@ model Product {
   price        Float
   comparePrice Float?
   stock        Int           @default(0)
+  manageStock  Boolean       @default(true)
   sku          String?
   images       String[]
   tags         String[]

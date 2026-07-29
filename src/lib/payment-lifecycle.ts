@@ -10,6 +10,12 @@ export async function releaseOrderReservation(orderId: string) {
   return db.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } })
     if (!order) return false
+    const stockedProducts = new Set(
+      (await tx.product.findMany({
+        where: { id: { in: order.items.map((item) => item.productId) }, manageStock: true },
+        select: { id: true },
+      })).map((product) => product.id)
+    )
 
     const cancelled = await tx.order.updateMany({
       where: { id: orderId, status: "PENDING" },
@@ -18,6 +24,7 @@ export async function releaseOrderReservation(orderId: string) {
     if (cancelled.count !== 1) return false
 
     for (const item of order.items) {
+      if (!stockedProducts.has(item.productId)) continue
       await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } })
     }
     await tx.payment.updateMany({ where: { orderId, status: "PENDING" }, data: { status: "FAILED" } })
@@ -75,6 +82,12 @@ export async function completeFullRefund({
     })
     if (!payment) return false
     if (amountCents !== undefined && !isFullRefund(payment.amount, amountCents)) return false
+    const stockedProducts = new Set(
+      (await tx.product.findMany({
+        where: { id: { in: payment.order.items.map((item) => item.productId) }, manageStock: true },
+        select: { id: true },
+      })).map((product) => product.id)
+    )
 
     const refunded = await tx.payment.updateMany({
       where: { id: payment.id, status: "SUCCEEDED" },
@@ -88,6 +101,7 @@ export async function completeFullRefund({
 
     await tx.order.update({ where: { id: payment.orderId }, data: { status: "REFUNDED", reservationExpiresAt: null } })
     for (const item of payment.order.items) {
+      if (!stockedProducts.has(item.productId)) continue
       await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } })
     }
     return true

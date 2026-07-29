@@ -118,7 +118,7 @@ export default async function AdminProductsPage({
                   </td>
                   <td className="p-4 text-muted-foreground">{product.category.name}</td>
                   <td className="p-4 text-right font-medium">{formatPrice(product.price)}</td>
-                  <td className="p-4 text-center">{product.stock}</td>
+                  <td className="p-4 text-center">{product.manageStock ? product.stock : "Libre"}</td>
                   <td className="p-4 text-center">
                     <Badge variant={STATUS_VARIANTS[product.status] ?? "secondary"}>
                       {STATUS_LABELS[product.status] ?? product.status}

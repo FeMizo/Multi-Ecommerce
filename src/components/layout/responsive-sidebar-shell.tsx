@@ -42,6 +42,7 @@ export type SidebarItem = {
   href: string
   label: string
   iconKey: SidebarIconName
+  exact?: boolean
 }
 
 type ResponsiveSidebarShellProps = {
@@ -203,9 +204,13 @@ export function ResponsiveSidebarShell({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
-          {items.map(({ href, label, iconKey }) => {
+          {items.map(({ href, label, iconKey, exact }) => {
             const Icon = ICONS[iconKey]
-            const active = href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`)
+            const active = exact
+              ? pathname === href
+              : href === "/admin"
+                ? pathname === "/admin"
+                : pathname === href || pathname.startsWith(`${href}/`)
 
             return (
               <Link

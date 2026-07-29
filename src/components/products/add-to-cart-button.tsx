@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { ShoppingCart, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCartStore } from "@/stores/cart"
@@ -20,6 +20,7 @@ type Props = {
     price: number
     images: string[]
     stock: number
+    manageStock: boolean
     storeId: string
     store: { name: string }
     variantOptions?: unknown
@@ -32,18 +33,16 @@ export function AddToCartButton({ product }: Props) {
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
-
-  useEffect(() => {
-    setSelected(defaultVariantSelection(variantOptions))
-  }, [variantOptions])
+  const [initialized] = useState(() => defaultVariantSelection(variantOptions))
+  const currentSelection = selected.length > 0 ? selected : initialized
 
   function handleAdd() {
-    const variantKey = variantSelectionKey(selected)
+    const variantKey = variantSelectionKey(currentSelection)
     for (let i = 0; i < qty; i++) {
       addItem({
         id: `${product.id}:${variantKey}`,
         variantKey,
-        variantSelection: selected,
+        variantSelection: currentSelection,
         productId: product.id,
         storeId: product.storeId,
         name: product.name,
@@ -55,7 +54,7 @@ export function AddToCartButton({ product }: Props) {
     openCart()
   }
 
-  const canAdd = product.stock > 0 && variantOptions.every((option, index) => Boolean(selected[index]?.value))
+  const canAdd = (product.manageStock ? product.stock > 0 : true) && variantOptions.every((option, index) => Boolean(currentSelection[index]?.value))
 
   return (
     <div className="flex flex-col gap-3">
@@ -66,10 +65,10 @@ export function AddToCartButton({ product }: Props) {
               <label className="text-sm font-medium">{option.name}</label>
               <select
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={selected[index]?.value ?? option.values[0] ?? ""}
-                onChange={(event) => {
-                  const value = event.target.value
-                  setSelected((prev) => {
+              value={currentSelection[index]?.value ?? option.values[0] ?? ""}
+              onChange={(event) => {
+                const value = event.target.value
+                setSelected((prev) => {
                     const next = [...prev]
                     next[index] = { name: option.name, value }
                     return next
@@ -105,7 +104,7 @@ export function AddToCartButton({ product }: Props) {
           <span className="h-9 w-10 flex items-center justify-center text-sm font-medium">{qty}</span>
           <button
             type="button"
-            onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
+            onClick={() => setQty((q) => (product.manageStock ? Math.min(product.stock, q + 1) : q + 1))}
             className="h-9 w-9 flex items-center justify-center hover:bg-accent rounded-r-md"
           >
             <Plus className="h-4 w-4" />
@@ -114,7 +113,7 @@ export function AddToCartButton({ product }: Props) {
       </div>
       <Button size="lg" className="w-full" onClick={handleAdd} disabled={!canAdd}>
         <ShoppingCart className="mr-2 h-5 w-5" />
-        {product.stock === 0 ? "Sin stock" : "Agregar al carrito"}
+        {product.manageStock && product.stock === 0 ? "Sin stock" : "Agregar al carrito"}
       </Button>
     </div>
   )

@@ -7,7 +7,7 @@ import { SubscriptionRenewalReminder } from "@/components/dashboard/subscription
 import { PhoneReminderBanner } from "@/components/dashboard/phone-reminder-banner"
 
 const navItems: SidebarItem[] = [
-  { href: "", label: "Dashboard", iconKey: "LayoutDashboard" },
+  { href: "", label: "Dashboard", iconKey: "LayoutDashboard", exact: true },
   { href: "/products", label: "Productos", iconKey: "Package" },
   { href: "/orders", label: "Pedidos", iconKey: "ShoppingBag" },
   { href: "/coupons", label: "Cupones", iconKey: "Tag" },

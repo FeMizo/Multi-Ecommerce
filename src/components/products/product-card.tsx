@@ -24,6 +24,8 @@ type ProductCardProps = {
     price: number
     comparePrice?: number | null
     images: string[]
+    manageStock: boolean
+    stock: number
     variantOptions?: unknown
     store: {
       name: string
@@ -44,6 +46,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
   const defaultSelection = defaultVariantSelection(variantOptions)
   const variantKey = variantSelectionKey(defaultSelection)
+  const canAdd = (product.manageStock ? product.stock > 0 : true) && variantOptions.every((option, index) => Boolean(defaultSelection[index]?.value))
   
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -56,6 +59,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
+    if (!canAdd) return
     addItem({
       id: `${product.id}:${variantKey}`,
       variantKey,
@@ -133,6 +137,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
             <Button
               onClick={handleAddToCart}
               className="w-full h-12 rounded-xl bg-primary text-primary-foreground shadow-xl btn-shine"
+              disabled={!canAdd}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               Agregar al carrito
@@ -169,6 +174,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
               variant="outline"
               className="h-10 w-10 shrink-0 rounded-xl border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-all lg:hidden"
               onClick={handleAddToCart}
+              disabled={!canAdd}
             >
               <ShoppingCart className="h-4 w-4" />
             </Button>

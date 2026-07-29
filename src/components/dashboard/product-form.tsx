@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { normalizeVariantOptions, type ProductVariantOption } from "@/lib/product-variants"
+import { normalizeVariantOptions } from "@/lib/product-variants"
 
 const schema = z.object({
   name: z.string().min(2, "Minimo 2 caracteres").max(120, "Maximo 120 caracteres"),
@@ -33,6 +33,7 @@ const schema = z.object({
   price: z.number({ message: "Ingresa un precio valido" }).positive("Debe ser mayor a 0"),
   comparePrice: z.number().positive().optional(),
   stock: z.number().int().min(0, "No puede ser negativo"),
+  manageStock: z.boolean(),
   sku: z.string().max(60).optional(),
   categoryId: z.string().min(1, "Selecciona una categoria"),
   status: z.enum(["DRAFT", "ACTIVE", "PAUSED"]),
@@ -103,6 +104,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
       price: initialData?.price ?? undefined,
       comparePrice: initialData?.comparePrice ?? undefined,
       stock: initialData?.stock ?? 0,
+      manageStock: initialData?.manageStock ?? true,
       sku: initialData?.sku ?? "",
       categoryId: initialData?.categoryId ?? "",
       status: initialData?.status ?? "DRAFT",
@@ -181,6 +183,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
       ...data,
       comparePrice: data.comparePrice ?? null,
       description: data.description || null,
+      stock: data.manageStock ? data.stock : 0,
       sku: data.sku || null,
       images,
       tags,
@@ -222,6 +225,13 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   }
 
   const slug = useWatch({ control, name: "slug" }) ?? ""
+  const manageStock = useWatch({ control, name: "manageStock" }) ?? true
+
+  useEffect(() => {
+    if (!manageStock) {
+      setValue("stock", 0, { shouldValidate: true })
+    }
+  }, [manageStock, setValue])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -364,7 +374,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                 </div>
 
                 <div className="space-y-1">
-                  <Label>Precio tachado</Label>
+                  <Label>Precio de descuento</Label>
                   <div className="flex items-center">
                     <span className="flex items-center px-3 h-9 text-sm text-muted-foreground bg-muted border border-r-0 rounded-l-md border-input">
                       $
@@ -385,9 +395,27 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label>Stock *</Label>
-                  <Input type="number" min="0" placeholder="0" {...register("stock", { valueAsNumber: true })} />
-                  {errors.stock && <p className="text-xs text-destructive">{errors.stock.message}</p>}
+                  <Label className="flex items-center gap-2">
+                    <input type="checkbox" {...register("manageStock")} />
+                    Manejar stock
+                  </Label>
+
+                  {manageStock && (
+                    <div>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        disabled={!manageStock}
+                        {...register("stock", { valueAsNumber: true })}
+                      />
+                      {errors.stock && <p className="text-xs text-destructive">{errors.stock.message}</p>}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    Desactivalo si el producto no debe agotarse por inventario.
+                  </p>
                 </div>
 
                 <div className="space-y-1">
@@ -554,5 +582,3 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     </form>
   )
 }
-
-

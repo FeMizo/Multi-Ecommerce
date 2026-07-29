@@ -172,6 +172,7 @@ export async function POST(req: Request) {
         const [products, orderLimit, plan] = await Promise.all([
           tx.product.findMany({
             where: { id: { in: items.map((item) => item.productId) }, storeId, status: "ACTIVE", deletedAt: null },
+            select: { id: true, price: true, images: true, sku: true, name: true, manageStock: true, stock: true },
           }),
           checkOrderLimit(storeId, tx),
           getEffectivePlan(storeId, tx),
@@ -193,6 +194,8 @@ export async function POST(req: Request) {
         if (requestedCouponCode && discountAmount === 0) throw new Error("COUPON_INVALID")
 
         for (const item of items) {
+          const product = products.find((candidate) => candidate.id === item.productId)!
+          if (!product.manageStock) continue
           const changed = await tx.product.updateMany({
             where: { id: item.productId, storeId, status: "ACTIVE", deletedAt: null, stock: { gte: item.quantity } },
             data: { stock: { decrement: item.quantity } },

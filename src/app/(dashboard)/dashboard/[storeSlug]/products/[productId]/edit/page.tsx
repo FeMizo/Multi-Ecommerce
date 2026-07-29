@@ -46,6 +46,7 @@ export default async function EditProductPage({
         price: product.price,
         comparePrice: product.comparePrice ?? undefined,
         stock: product.stock,
+        manageStock: product.manageStock,
         sku: product.sku ?? undefined,
         categoryId: product.categoryId,
         status: product.status as "DRAFT" | "ACTIVE" | "PAUSED",

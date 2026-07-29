@@ -72,6 +72,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : null
+  const stockLabel = product.manageStock
+    ? (product.stock > 0 ? `${product.stock} disponibles` : "Sin stock")
+    : "Sin control de stock"
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -130,7 +133,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <div className="flex items-center gap-2 text-sm">
             <Package className="h-4 w-4 text-muted-foreground" />
-            <span>{product.stock > 0 ? `${product.stock} disponibles` : "Sin stock"}</span>
+            <span>{stockLabel}</span>
           </div>
 
           <AddToCartButton product={product} />
