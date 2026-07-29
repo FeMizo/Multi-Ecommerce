@@ -87,8 +87,8 @@ export default async function OrdersPage({
           <p className="font-medium">No hay pedidos{statusFilter ? ` con estado "${ORDER_STATUS_LABELS[statusFilter]}"` : ""}</p>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="border rounded-lg overflow-x-auto overflow-hidden">
+          <table className="min-w-max w-full whitespace-nowrap text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Pedido</th>

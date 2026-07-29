@@ -152,7 +152,7 @@ export default async function HomePage() {
               </p>
               <p className="text-base md:text-lg text-foreground leading-relaxed">
                 AionSite Shop es una aplicacion web de marketplace local en Mexico. Permite a los compradores descubrir tiendas cercanas,
-                comprar productos y seguir sus pedidos, y permite a los vendedores abrir su tienda y administrar su catalogo y ventas.
+                comprar productos, y permite a los vendedores abrir su tienda y administrar su catalogo y ventas.
               </p>
             </div>
             

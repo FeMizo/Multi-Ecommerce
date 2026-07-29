@@ -1,19 +1,7 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { SessionProvider } from "next-auth/react"
-import Link from "next/link"
-import {
-  ArrowLeft,
-  BarChart3,
-  CreditCard,
-  LayoutDashboard,
-  MapPin,
-  Package,
-  ShoppingBag,
-  Store,
-  Users,
-} from "lucide-react"
-import { ResponsiveSidebarShell } from "@/components/layout/responsive-sidebar-shell"
+import { ResponsiveSidebarShell, type SidebarItem } from "@/components/layout/responsive-sidebar-shell"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -23,15 +11,15 @@ export const metadata: Metadata = {
   },
 }
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/users", label: "Usuarios", icon: Users },
-  { href: "/admin/sellers", label: "Vendedores", icon: Store },
-  { href: "/admin/plans", label: "Planes", icon: CreditCard },
-  { href: "/admin/orders", label: "Pedidos", icon: ShoppingBag },
-  { href: "/admin/products", label: "Productos", icon: Package },
-  { href: "/admin/cities", label: "Ciudades", icon: MapPin },
-  { href: "/admin/metrics", label: "Metricas", icon: BarChart3 },
+const navItems: SidebarItem[] = [
+  { href: "/admin", label: "Dashboard", iconKey: "LayoutDashboard" },
+  { href: "/admin/users", label: "Usuarios", iconKey: "Users" },
+  { href: "/admin/sellers", label: "Vendedores", iconKey: "Store" },
+  { href: "/admin/plans", label: "Planes", iconKey: "CreditCard" },
+  { href: "/admin/orders", label: "Pedidos", iconKey: "ShoppingBag" },
+  { href: "/admin/products", label: "Productos", iconKey: "Package" },
+  { href: "/admin/cities", label: "Ciudades", iconKey: "MapPin" },
+  { href: "/admin/metrics", label: "Metricas", iconKey: "BarChart3" },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -47,19 +35,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         brandImageAlt="AionSite"
         brandImageClassName="brightness-0 invert"
         items={navItems}
+        footerHref="/"
+        footerLabel="Volver al marketplace"
+        footerIconKey="ArrowLeft"
         variant="admin"
         storageKey="admin-sidebar"
-        footer={(collapsed) => (
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xs font-medium transition-colors"
-            title="Volver al marketplace"
-            aria-label="Volver al marketplace"
-          >
-            <ArrowLeft className="h-4 w-4 shrink-0" />
-            {!collapsed ? <span>Volver al marketplace</span> : <span className="sr-only">Volver al marketplace</span>}
-          </Link>
-        )}
       >
         {children}
       </ResponsiveSidebarShell>

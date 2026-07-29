@@ -61,7 +61,7 @@ export default async function AdminOrdersPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">Pedidos</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <AdminSearch placeholder="Buscar cliente o tienda..." />
           <p className="text-sm text-muted-foreground shrink-0">{total} encontrados</p>
         </div>
@@ -81,7 +81,7 @@ export default async function AdminOrdersPage({
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-max w-full whitespace-nowrap text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-4 font-medium text-muted-foreground">ID</th>

@@ -77,7 +77,7 @@ export default async function StoreProductsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Productos</h1>
           <p className="text-sm text-muted-foreground">{products.length} productos en total</p>
@@ -115,8 +115,8 @@ export default async function StoreProductsPage({
           </NewProductButton>
         </div>
       ) : (
-        <div className="rounded-xl border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-xl border overflow-x-auto overflow-hidden">
+          <table className="min-w-max w-full whitespace-nowrap text-sm">
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Producto</th>

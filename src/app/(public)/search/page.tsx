@@ -1,8 +1,11 @@
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { buildKeywords } from "@/lib/seo"
 import Link from "next/link"
+import { Search } from "lucide-react"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -79,9 +82,29 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="mb-6 rounded-2xl border bg-card p-4 shadow-sm">
+        <form action="/search" method="get" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              name="q"
+              defaultValue={params.q ?? ""}
+              placeholder="Buscar productos, tiendas..."
+              className="pl-10"
+            />
+          </div>
+          <Button type="submit" className="sm:w-auto">
+            Buscar
+          </Button>
+        </form>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Busca por producto, categoría o ciudad.
+        </p>
+      </div>
+
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar */}
-        <aside className="w-full md:w-56 shrink-0 space-y-6">
+        <aside className="order-2 md:order-1 w-full md:w-56 shrink-0 space-y-6">
           <div>
             <h3 className="font-semibold mb-3">Categorías</h3>
             <div className="flex flex-col gap-1">
@@ -127,7 +150,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           )}
         </aside>
 
-        <div className="flex-1">
+        <div className="order-1 md:order-2 flex-1">
           <div className="mb-6">
             <h1 className="text-xl font-bold">
               {params.q ? `Resultados para "${params.q}"` : "Todos los productos"}

@@ -91,54 +91,54 @@ export function StoreCouponsManager({ storeSlug, coupons: initialCoupons }: Prop
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Nuevo cupón</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={createCoupon} className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1 md:col-span-2">
+        <CardContent className="min-w-0">
+          <form onSubmit={createCoupon} className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="min-w-0 space-y-1 md:col-span-2">
               <Label>Nombre</Label>
-              <Input name="name" placeholder="10% de descuento" required />
+              <Input name="name" placeholder="10% de descuento" required className="w-full min-w-0" />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label>Código</Label>
-              <Input name="code" placeholder="AHORRA10" required />
+              <Input name="code" placeholder="AHORRA10" required className="w-full min-w-0" />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label>Tipo</Label>
               <select
                 name="type"
                 value={type}
                 onChange={(event) => setType(event.target.value as "PERCENTAGE" | "FIXED")}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="PERCENTAGE">Porcentaje</option>
                 <option value="FIXED">Monto fijo</option>
               </select>
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label>Valor</Label>
-              <Input name="value" type="number" min="0" step="0.01" required />
+              <Input name="value" type="number" min="0" step="0.01" required className="w-full min-w-0" />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label>Total mínimo</Label>
-              <Input name="minOrderAmount" type="number" min="0" step="0.01" placeholder="Opcional" />
+              <Input name="minOrderAmount" type="number" min="0" step="0.01" placeholder="Opcional" className="w-full min-w-0" />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label>Usos máximos</Label>
-              <Input name="maxRedemptions" type="number" min="1" step="1" placeholder="Opcional" />
+              <Input name="maxRedemptions" type="number" min="1" step="1" placeholder="Opcional" className="w-full min-w-0" />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label>Inicio</Label>
-              <Input name="startsAt" type="datetime-local" />
+              <Input name="startsAt" type="datetime-local" className="w-full min-w-0" />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label>Fin</Label>
-              <Input name="endsAt" type="datetime-local" />
+              <Input name="endsAt" type="datetime-local" className="w-full min-w-0" />
             </div>
-            <div className="md:col-span-2">
+            <div className="min-w-0 md:col-span-2">
               <Button type="submit" disabled={loading}>
                 {loading ? "Guardando..." : "Crear cupón"}
               </Button>
@@ -151,7 +151,7 @@ export function StoreCouponsManager({ storeSlug, coupons: initialCoupons }: Prop
         {coupons.map((coupon) => (
           <Card key={coupon.id}>
             <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold">{coupon.name}</p>
                   <code className="rounded bg-muted px-2 py-0.5 text-xs">{coupon.code}</code>

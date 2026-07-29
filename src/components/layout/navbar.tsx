@@ -6,6 +6,14 @@ import { signOut } from "next-auth/react"
 import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -97,11 +105,36 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
             {/* Actions */}
             <div className="flex items-center gap-2">
               {/* Search Mobile */}
-              <Button variant="ghost" size="icon" className="md:hidden rounded-full" asChild>
-                <Link href="/search">
-                  <Search className="h-5 w-5" />
-                </Link>
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden rounded-full"
+                    aria-label="Abrir búsqueda"
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="top-[72px] left-4 right-4 translate-x-0 translate-y-0 w-[calc(100%-2rem)] max-w-none rounded-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:slide-in-from-top-2 data-[state=closed]:slide-out-to-top-2 sm:left-auto sm:right-4 sm:w-96 sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Buscar</DialogTitle>
+                    <DialogDescription>Escribe lo que buscas y ve a resultados.</DialogDescription>
+                  </DialogHeader>
+                  <form action="/search" method="get" className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        name="q"
+                        autoFocus
+                        placeholder="Buscar productos, tiendas..."
+                        className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                    </div>
+                    <Button type="submit">Ir</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
               
               {/* Cart */}
               <Button 

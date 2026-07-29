@@ -90,25 +90,25 @@ export function CityManager({ cities }: { cities: City[] }) {
       <Card>
         <CardHeader><CardTitle>Nueva ciudad</CardTitle></CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onAdd)} className="flex flex-wrap gap-3 items-end">
+          <form onSubmit={handleSubmit(onAdd)} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="space-y-1">
               <label className="text-sm font-medium">Nombre</label>
-              <Input {...register("name")} placeholder="Ciudad de México" className="w-40" />
+              <Input {...register("name")} placeholder="Ciudad de México" className="w-full sm:w-40" />
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Slug</label>
-              <Input {...register("slug")} placeholder="cdmx" className="w-36" />
+              <Input {...register("slug")} placeholder="cdmx" className="w-full sm:w-36" />
               {errors.slug && <p className="text-xs text-destructive">{errors.slug.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Estado</label>
-              <Input {...register("state")} placeholder="CDMX" className="w-36" />
+              <Input {...register("state")} placeholder="CDMX" className="w-full sm:w-36" />
               {errors.state && <p className="text-xs text-destructive">{errors.state.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">País</label>
-              <Input {...register("country")} placeholder="MX" className="w-20" />
+              <Input {...register("country")} placeholder="MX" className="w-full sm:w-20" />
             </div>
             <Button type="submit" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
@@ -119,8 +119,8 @@ export function CityManager({ cities }: { cities: City[] }) {
       </Card>
 
       <Card>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="min-w-max w-full whitespace-nowrap text-sm">
             <thead>
               <tr className="border-b">
                 <th className="text-left p-4 font-medium text-muted-foreground">Ciudad</th>

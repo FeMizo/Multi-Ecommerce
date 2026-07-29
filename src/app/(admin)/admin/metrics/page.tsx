@@ -75,8 +75,8 @@ export default async function AdminMetricsPage() {
 
       <Card>
         <CardHeader><CardTitle>Top 10 tiendas por volumen</CardTitle></CardHeader>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="min-w-max w-full whitespace-nowrap text-sm">
             <thead>
               <tr className="border-b">
                 <th className="text-left p-4 font-medium text-muted-foreground">#</th>

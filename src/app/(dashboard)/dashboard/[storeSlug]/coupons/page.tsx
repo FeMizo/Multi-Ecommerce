@@ -32,13 +32,13 @@ export default async function CouponsPage({
   })
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+    <div className="space-y-6 min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <p className="text-sm text-muted-foreground">/{storeSlug}</p>
           <h1 className="text-2xl font-bold">Cupones</h1>
         </div>
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="w-full sm:w-auto">
           <Link href={`/dashboard/${storeSlug}/settings`}>Configuración</Link>
         </Button>
       </div>

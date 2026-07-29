@@ -4,15 +4,44 @@ import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import type { LucideIcon } from "lucide-react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  LayoutDashboard,
+  MapPin,
+  Package,
+  Settings,
+  ShoppingBag,
+  Store,
+  Tag,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-type SidebarItem = {
+type SidebarIconName =
+  | "ArrowLeft"
+  | "ArrowUpRight"
+  | "BarChart3"
+  | "CreditCard"
+  | "LayoutDashboard"
+  | "MapPin"
+  | "Package"
+  | "ShoppingBag"
+  | "Store"
+  | "Settings"
+  | "Tag"
+  | "Users"
+
+export type SidebarItem = {
   href: string
   label: string
-  icon: LucideIcon
+  iconKey: SidebarIconName
 }
 
 type ResponsiveSidebarShellProps = {
@@ -22,13 +51,30 @@ type ResponsiveSidebarShellProps = {
   brandImageAlt: string
   brandImageClassName?: string
   items: SidebarItem[]
-  footer: (collapsed: boolean) => ReactNode
+  footerHref: string
+  footerLabel: string
+  footerIconKey: SidebarIconName
+  footerExternal?: boolean
   variant: "dashboard" | "admin"
   children: ReactNode
   storageKey: string
 }
 
 const DESKTOP_BREAKPOINT = 1280
+const ICONS: Record<SidebarIconName, LucideIcon> = {
+  ArrowLeft,
+  ArrowUpRight,
+  BarChart3,
+  CreditCard,
+  LayoutDashboard,
+  MapPin,
+  Package,
+  ShoppingBag,
+  Store,
+  Settings,
+  Tag,
+  Users,
+}
 
 export function ResponsiveSidebarShell({
   brandHref,
@@ -37,7 +83,10 @@ export function ResponsiveSidebarShell({
   brandImageAlt,
   brandImageClassName,
   items,
-  footer,
+  footerHref,
+  footerLabel,
+  footerIconKey,
+  footerExternal = false,
   variant,
   children,
   storageKey,
@@ -95,6 +144,7 @@ export function ResponsiveSidebarShell({
     variant === "admin"
       ? "text-background hover:bg-background/10 hover:text-background"
       : "text-foreground hover:bg-muted"
+  const FooterIcon = ICONS[footerIconKey]
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
@@ -140,7 +190,8 @@ export function ResponsiveSidebarShell({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
-          {items.map(({ href, label, icon: Icon }) => {
+          {items.map(({ href, label, iconKey }) => {
+            const Icon = ICONS[iconKey]
             const active = href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`)
 
             return (
@@ -163,7 +214,17 @@ export function ResponsiveSidebarShell({
         </nav>
 
         <div className={cn("border-t px-3 py-3", footerTheme)}>
-          {footer(collapsed)}
+          <Link
+            href={footerHref}
+            className={cn("flex items-center gap-2 text-xs font-medium transition-colors", collapsed && "justify-center")}
+            target={footerExternal ? "_blank" : undefined}
+            rel={footerExternal ? "noreferrer" : undefined}
+            title={footerLabel}
+            aria-label={footerLabel}
+          >
+            <FooterIcon className="h-4 w-4 shrink-0" />
+            {!collapsed ? <span>{footerLabel}</span> : <span className="sr-only">{footerLabel}</span>}
+          </Link>
         </div>
       </aside>
 

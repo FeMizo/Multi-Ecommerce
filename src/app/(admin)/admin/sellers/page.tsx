@@ -89,7 +89,7 @@ export default async function AdminSellersPage({
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-max w-full whitespace-nowrap text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-4 font-medium text-muted-foreground">Tienda</th>

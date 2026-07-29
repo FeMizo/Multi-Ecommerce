@@ -2,17 +2,15 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { SessionProvider } from "next-auth/react"
-import Link from "next/link"
-import { ArrowUpRight, BarChart3, LayoutDashboard, Package, Settings, ShoppingBag, Tag } from "lucide-react"
-import { ResponsiveSidebarShell } from "@/components/layout/responsive-sidebar-shell"
+import { ResponsiveSidebarShell, type SidebarItem } from "@/components/layout/responsive-sidebar-shell"
 
-const navItems = [
-  { href: "", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/products", label: "Productos", icon: Package },
-  { href: "/orders", label: "Pedidos", icon: ShoppingBag },
-  { href: "/coupons", label: "Cupones", icon: Tag },
-  { href: "/metrics", label: "Metricas", icon: BarChart3 },
-  { href: "/settings", label: "Configuracion", icon: Settings },
+const navItems: SidebarItem[] = [
+  { href: "", label: "Dashboard", iconKey: "LayoutDashboard" },
+  { href: "/products", label: "Productos", iconKey: "Package" },
+  { href: "/orders", label: "Pedidos", iconKey: "ShoppingBag" },
+  { href: "/coupons", label: "Cupones", iconKey: "Tag" },
+  { href: "/metrics", label: "Metricas", iconKey: "BarChart3" },
+  { href: "/settings", label: "Configuracion", iconKey: "Settings" },
 ]
 
 export default async function DashboardLayout({
@@ -49,21 +47,12 @@ export default async function DashboardLayout({
         brandSubtitle="Dashboard"
         brandImageAlt="AionSite"
         items={navItems.map((item) => ({ ...item, href: `${base}${item.href}` }))}
+        footerHref={`/${storeSlug}`}
+        footerLabel="Ver tienda"
+        footerIconKey="ArrowUpRight"
+        footerExternal
         variant="dashboard"
         storageKey={`dashboard-sidebar:${storeSlug}`}
-        footer={(collapsed) => (
-          <Link
-            href={`/${storeSlug}`}
-            className="flex items-center gap-2 text-xs font-medium transition-colors"
-            target="_blank"
-            rel="noreferrer"
-            title="Ver tienda"
-            aria-label="Ver tienda"
-          >
-            <ArrowUpRight className="h-4 w-4 shrink-0" />
-            {!collapsed ? <span>Ver tienda</span> : <span className="sr-only">Ver tienda</span>}
-          </Link>
-        )}
       >
         <div
           style={storeColor ? ({ "--primary": storeColor, "--primary-foreground": "#ffffff" } as React.CSSProperties) : undefined}
