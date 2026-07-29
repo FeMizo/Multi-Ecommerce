@@ -229,15 +229,16 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
               </Button>
             </div>
           </div>
+
+          <div className="md:hidden border-t border-border/50 py-2">
+            <CitySelector />
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-border/50 bg-background">
             <div className="container mx-auto px-4 py-4 space-y-4">
-              <div className="md:hidden">
-                <CitySelector />
-              </div>
               <nav className="flex flex-col gap-1">
                 <Link 
                   href="/stores" 

@@ -100,7 +100,9 @@ export default async function AdminSellersPage({
                   <th className="text-center p-4 font-medium text-muted-foreground">Pedidos</th>
                   <th className="text-right p-4 font-medium text-muted-foreground">Revenue</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">Estado</th>
-                  <th className="p-4" />
+                  <th className="sticky right-0 z-20 bg-background p-4 text-center shadow-[inset_1px_0_0_0_hsl(var(--border))]">
+                    Detalle
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -152,7 +154,7 @@ export default async function AdminSellersPage({
                           isVerified={store.isVerified}
                         />
                       </td>
-                      <td className="p-4">
+                      <td className="sticky right-0 z-10 bg-background p-4 text-center shadow-[inset_1px_0_0_0_hsl(var(--border))]">
                         <SellerDetailsSheet
                           storeName={store.name}
                           slug={store.slug}
