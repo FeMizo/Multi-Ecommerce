@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useSyncExternalStore } from "react"
 import { withProductPlaceholder } from "@/lib/placeholders"
 import {
   defaultVariantSelection,
@@ -15,6 +15,7 @@ import {
   normalizeVariantOptions,
   variantSelectionKey,
 } from "@/lib/product-variants"
+import { readFavoritesFromStorage, removeFavorite, subscribeToFavorites, upsertFavorite } from "@/lib/favorites"
 
 type ProductCardProps = {
   product: {
@@ -40,7 +41,6 @@ type ProductCardProps = {
 export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
-  const [isLiked, setIsLiked] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const imageSrc = withProductPlaceholder(product.images)
@@ -59,6 +59,8 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const href = storeSlug
     ? `/${storeSlug}/${product.slug}`
     : `/products/${product.slug}`
+  const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => [])
+  const isLiked = favorites.some((favorite) => favorite.id === product.id)
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault()
@@ -81,7 +83,23 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   function handleLike(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    setIsLiked(!isLiked)
+    if (isLiked) {
+      removeFavorite(product.id)
+      return
+    }
+
+    upsertFavorite({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      storeId: product.storeId,
+      storeName: product.store.name,
+      storeSlug: storeSlug ?? product.store.slug ?? null,
+      price: product.price,
+      comparePrice: product.comparePrice ?? null,
+      image: imageSrc,
+      updatedAt: new Date().toISOString(),
+    })
   }
 
   return (
@@ -117,7 +135,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
           
           {/* Discount Badge */}
           {discount && (
-            <Badge className="absolute top-3 left-3 bg-destructive hover:bg-destructive text-destructive-foreground font-bold px-3 py-1.5 rounded-full shadow-lg text-xs">
+            <Badge className="absolute top-3 left-3 bg-destructive hover:bg-destructive text-primary-foreground font-bold px-3 py-1.5 rounded-full shadow-lg text-xs">
               -{discount}%
             </Badge>
           )}
@@ -125,6 +143,8 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
           {/* Like Button */}
           <button
             onClick={handleLike}
+            aria-label={isLiked ? "Quitar de favoritos" : "Agregar a favoritos"}
+            aria-pressed={isLiked}
             className={`absolute top-3 right-3 h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 ${
               isLiked 
                 ? 'bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30' 

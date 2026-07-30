@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { signOut } from "next-auth/react"
-import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard } from "lucide-react"
+import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,7 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useCartStore } from "@/stores/cart"
 import { CartDrawer } from "@/components/layout/cart-drawer"
 import type { Session } from "next-auth"
-import { useEffect, useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus?: boolean; submitLabel?: string }) {
@@ -33,11 +33,8 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
-  const [value, setValue] = useState(searchParams.get("q") ?? "")
-
-  useEffect(() => {
-    setValue(searchParams.get("q") ?? "")
-  }, [searchParams])
+  const inputRef = useRef<HTMLInputElement>(null)
+  const value = searchParams.get("q") ?? ""
 
   function navigate(nextValue: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -63,18 +60,19 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
       className="flex items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault()
-        navigate(value)
+        navigate(inputRef.current?.value ?? value)
       }}
     >
       <div className="relative flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
+          key={value}
+          ref={inputRef}
           name="q"
-          value={value}
+          defaultValue={value}
           onChange={(event) => {
             const nextValue = event.target.value
-            setValue(nextValue)
-            if (!nextValue.trim() && (searchParams.get("q") ?? "")) {
+            if (!nextValue.trim() && value) {
               navigate("")
             }
           }}
@@ -86,7 +84,7 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
           <button
             type="button"
             onClick={() => {
-              setValue("")
+              if (inputRef.current) inputRef.current.value = ""
               navigate("")
             }}
             aria-label="Limpiar búsqueda"
@@ -227,6 +225,12 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                       <Link href="/account/orders" className="flex items-center gap-2">
                         <Package className="h-4 w-4" />
                         Mis pedidos
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/account/favorites" className="flex items-center gap-2">
+                        <Heart className="h-4 w-4" />
+                        Mis favoritos
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
