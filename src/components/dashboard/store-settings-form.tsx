@@ -389,26 +389,30 @@ export function StoreSettingsForm({
             <CardContent className="space-y-4">
               <div className="space-y-1">
                 <Label>URL del logo</Label>
-                <Input placeholder="https://ejemplo.com/logo.png" {...register("logoUrl")} />
-                <Input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  disabled={uploadingAsset !== null}
-                  onChange={(event) => uploadAsset("logoUrl", event.target.files?.[0])}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_0.5fr] gap-4">
+                  <Input placeholder="https://ejemplo.com/logo.png" {...register("logoUrl")} />
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    disabled={uploadingAsset !== null}
+                    onChange={(event) => uploadAsset("logoUrl", event.target.files?.[0])}
+                  />
+                </div>
                 {uploadingAsset === "logoUrl" && <p className="text-xs text-muted-foreground">Subiendo logo...</p>}
                 {errors.logoUrl && <p className="text-xs text-destructive">{errors.logoUrl.message}</p>}
               </div>
 
               <div className="space-y-1">
                 <Label>URL del banner</Label>
-                <Input placeholder="https://ejemplo.com/banner.jpg" {...register("bannerUrl")} />
-                <Input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  disabled={uploadingAsset !== null}
-                  onChange={(event) => uploadAsset("bannerUrl", event.target.files?.[0])}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_0.5fr] gap-4">
+                  <Input placeholder="https://ejemplo.com/banner.jpg" {...register("bannerUrl")} />
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    disabled={uploadingAsset !== null}
+                    onChange={(event) => uploadAsset("bannerUrl", event.target.files?.[0])}
+                  />
+                </div>
                 {uploadingAsset === "bannerUrl" && <p className="text-xs text-muted-foreground">Subiendo banner...</p>}
                 {errors.bannerUrl && <p className="text-xs text-destructive">{errors.bannerUrl.message}</p>}
               </div>
