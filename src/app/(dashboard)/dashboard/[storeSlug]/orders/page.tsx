@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
-import { OrderStatus } from "@prisma/client"
+import { type OrderStatus } from "@/lib/order-status"
 import { OrderDetailsSheet, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet"
 import { PanelRightOpen } from "lucide-react"
 
@@ -181,7 +182,10 @@ export default async function OrdersPage({
                     {formatPrice(order.total)}
                   </td>
                   <td className="px-4 py-3">
-                    <OrderStatusBadge status={order.status} />
+                    <div className="space-y-2">
+                      <OrderStatusBadge status={order.status} />
+                      <OrderStatusUpdater storeSlug={storeSlug} orderId={order.id} currentStatus={order.status} />
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <OrderDetailsSheet

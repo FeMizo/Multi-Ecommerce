@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -10,30 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
-
-type OrderStatus = "PENDING_PAYMENT" | "AWAITING_CONFIRMATION" | "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED"
-
-const statusLabels: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "Pendiente de pago",
-  AWAITING_CONFIRMATION: "Esperando confirmación",
-  PENDING: "Pendiente",
-  PAID: "Pagado",
-  PROCESSING: "Procesando",
-  SHIPPED: "Enviado",
-  DELIVERED: "Entregado",
-  CANCELLED: "Cancelado",
-  REFUNDED: "Reembolsado",
-}
-
-const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
-  PENDING_PAYMENT: "PAID",
-  AWAITING_CONFIRMATION: "PAID",
-  PENDING: "PAID",
-  PAID: "PROCESSING",
-  PROCESSING: "SHIPPED",
-  SHIPPED: "DELIVERED",
-}
+import { ORDER_STATUS_LABELS, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status"
 
 export function OrderStatusUpdater({
   storeSlug,
@@ -47,7 +25,6 @@ export function OrderStatusUpdater({
   const router = useRouter()
   const [status, setStatus] = useState<OrderStatus>(currentStatus)
   const [loading, setLoading] = useState(false)
-  const allowedNext = nextStatus[currentStatus]
 
   async function handleSave() {
     if (status === currentStatus) return
@@ -70,18 +47,18 @@ export function OrderStatusUpdater({
   return (
     <div className="flex items-center gap-2">
       <Select value={status} onValueChange={(v) => setStatus(v as OrderStatus)}>
-        <SelectTrigger className="w-44">
+        <SelectTrigger className="w-52">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {[currentStatus, ...(allowedNext ? [allowedNext] : [])].map((s) => (
+          {ORDER_STATUSES.map((s) => (
             <SelectItem key={s} value={s}>
-              {statusLabels[s]}
+              {ORDER_STATUS_LABELS[s]}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <Button size="sm" onClick={handleSave} disabled={loading || status === currentStatus || !allowedNext}>
+      <Button size="sm" onClick={handleSave} disabled={loading || status === currentStatus}>
         {loading ? "Guardando..." : "Guardar"}
       </Button>
     </div>

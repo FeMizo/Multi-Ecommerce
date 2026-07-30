@@ -2,22 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
-import { OrderStatus } from "@prisma/client"
+import { ORDER_STATUSES, type OrderStatus } from "@/lib/order-status"
 import { sendOrderDeliveredEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 
 const schema = z.object({
-  status: z.enum(["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as [OrderStatus, ...OrderStatus[]]),
+  status: z.enum(ORDER_STATUSES),
 })
-
-const allowedTransitions: Partial<Record<OrderStatus, OrderStatus>> = {
-  PENDING_PAYMENT: "PAID",
-  AWAITING_CONFIRMATION: "PAID",
-  PENDING: "PAID",
-  PAID: "PROCESSING",
-  PROCESSING: "SHIPPED",
-  SHIPPED: "DELIVERED",
-}
 
 async function getMembership(userId: string, storeSlug: string) {
   return db.storeMember.findFirst({
@@ -50,9 +41,6 @@ export async function PATCH(
   if (!parsed.success) {
     return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })
   }
-  if (allowedTransitions[order.status] !== parsed.data.status) {
-    return NextResponse.json({ message: "Transición de estado no permitida" }, { status: 409 })
-  }
 
   const updated = await db.order.update({
     where: { id: orderId },
@@ -67,7 +55,7 @@ export async function PATCH(
     },
   })
 
-  if (updated.status === "DELIVERED") {
+  if ((updated.status as OrderStatus) === "DELIVERED" && order.status !== "DELIVERED") {
     const customerInfo = updated.customerInfo as { phone?: string }
     const customerEmail = updated.customer?.email ?? updated.customerEmail
     const whatsappResult = await sendWhatsAppText({
