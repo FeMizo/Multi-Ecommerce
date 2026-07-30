@@ -90,6 +90,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   const [images, setImages] = useState<string[]>(initialData?.images ?? [])
   const [imageInput, setImageInput] = useState("")
   const [uploading, setUploading] = useState(false)
+  const [importingImage, setImportingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? [])
   const [tagInput, setTagInput] = useState("")
@@ -135,15 +136,27 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     }
   }
 
-  function addImage() {
+  async function addImage() {
     const url = imageInput.trim()
     if (!url || images.includes(url) || images.length >= 8) return
     try {
       new URL(url)
-      setImages((prev) => [...prev, url])
+      setImportingImage(true)
+      const formData = new FormData()
+      formData.append("imageUrl", url)
+      formData.append("storeSlug", storeSlug)
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.message ?? "No se pudo importar la imagen")
+      }
+      const data = await res.json()
+      setImages((prev) => [...prev, data.url])
       setImageInput("")
     } catch {
-      toast.error("URL de imagen invalida")
+      toast.error("No se pudo importar la imagen")
+    } finally {
+      setImportingImage(false)
     }
   }
 
@@ -298,6 +311,19 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   const slug = useWatch({ control, name: "slug" }) ?? ""
   const manageStock = useWatch({ control, name: "manageStock" }) ?? true
   const variantStockMode = manageStock && variantDrafts.some((draft) => draft.values.some((value) => value.quantityEnabled))
+  const nameInputId = "product-name"
+  const slugInputId = "product-slug"
+  const descriptionInputId = "product-description"
+  const manageStockInputId = "product-manage-stock"
+  const stockInputId = "product-stock"
+  const skuInputId = "product-sku"
+  const priceInputId = "product-price"
+  const comparePriceInputId = "product-compare-price"
+  const statusSelectId = "product-status"
+  const featuredInputId = "product-featured"
+  const categorySelectId = "product-category"
+  const tagInputId = "product-tags"
+  const imageFileInputId = "product-image-file"
 
   useEffect(() => {
     if (!manageStock) {
@@ -337,18 +363,18 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <Label>Nombre *</Label>
-                <Input placeholder="Ej: Camiseta de algodon organico" {...register("name")} onChange={handleNameChange} />
+                <Label htmlFor={nameInputId}>Nombre *</Label>
+                <Input id={nameInputId} placeholder="Ej: Camiseta de algodon organico" {...register("name")} onChange={handleNameChange} />
                 {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
               </div>
 
               <div className="space-y-1">
-                <Label>Slug (URL) *</Label>
+                <Label htmlFor={slugInputId}>Slug (URL) *</Label>
                 <div className="flex items-center">
                   <span className="flex items-center px-3 h-9 text-sm text-muted-foreground bg-muted border border-r-0 rounded-l-md border-input whitespace-nowrap">
                     /{storeSlug}/
                   </span>
-                  <Input className="rounded-l-none" placeholder="camiseta-algodon" {...register("slug")} />
+                  <Input id={slugInputId} className="rounded-l-none" placeholder="camiseta-algodon" {...register("slug")} />
                 </div>
                 {slug && !errors.slug && (
                   <p className="text-xs text-muted-foreground">
@@ -359,8 +385,9 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               </div>
 
               <div className="space-y-1">
-                <Label>Descripción</Label>
+                <Label htmlFor={descriptionInputId}>Descripción</Label>
                 <Textarea
+                  id={descriptionInputId}
                   placeholder="Describe tu producto..."
                   rows={4}
                   className="resize-none"
@@ -380,14 +407,16 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="flex items-center gap-2">
-                    <input type="checkbox" {...register("manageStock")} />
+                  <Label htmlFor={manageStockInputId} className="flex items-center gap-2">
+                    <input id={manageStockInputId} type="checkbox" {...register("manageStock")} />
                     Manejar stock
                   </Label>
 
                   {manageStock && !variantStockMode && (
                     <div>
+                      <Label htmlFor={stockInputId}>Stock</Label>
                       <Input
+                        id={stockInputId}
                         type="number"
                         min="0"
                         placeholder="0"
@@ -410,19 +439,20 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                 </div>
 
                 <div className="space-y-1">
-                  <Label>SKU</Label>
-                  <Input placeholder="Ej: CAM-001-BL" {...register("sku")} />
+                  <Label htmlFor={skuInputId}>SKU</Label>
+                  <Input id={skuInputId} placeholder="Ej: CAM-001-BL" {...register("sku")} />
                 </div>
               </div>
 
               <div className={`grid grid-cols-2 gap-4`}>
                 <div className="space-y-1">
-                  <Label>Precio *</Label>
+                  <Label htmlFor={priceInputId}>Precio *</Label>
                   <div className="flex items-center">
                     <span className="flex items-center px-3 h-9 text-sm text-muted-foreground bg-muted border border-r-0 rounded-l-md border-input">
                       $
                     </span>
                     <Input
+                      id={priceInputId}
                       type="number"
                       step="0.01"
                       min="0"
@@ -435,12 +465,13 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                 </div>
 
                 <div className="space-y-1">
-                  <Label>Precio de descuento</Label>
+                  <Label htmlFor={comparePriceInputId}>Precio de descuento</Label>
                   <div className="flex items-center">
                     <span className="flex items-center px-3 h-9 text-sm text-muted-foreground bg-muted border border-r-0 rounded-l-md border-input">
                       $
                     </span>
                     <Input
+                      id={comparePriceInputId}
                       type="number"
                       step="0.01"
                       min="0"
@@ -476,16 +507,18 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                   <div key={index} className="space-y-4 rounded-xl border p-4">
                     <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto]">
                     <div className="space-y-1">
-                      <Label>Nombre</Label>
+                      <Label htmlFor={`variant-name-${index}`}>Nombre</Label>
                       <Input
+                        id={`variant-name-${index}`}
                         placeholder="Talla"
                         value={draft.name}
                         onChange={(e) => updateVariantDraft(index, { name: e.target.value })}
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label>Valores</Label>
+                      <Label htmlFor={`variant-values-${index}`}>Valores</Label>
                       <Input
+                        id={`variant-values-${index}`}
                         placeholder="S, M, L"
                         value={draft.valuesText}
                         onChange={(e) => updateVariantValuesText(index, e.target.value)}
@@ -513,8 +546,9 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                           {draft.values.map((valueDraft, valueIndex) => (
                             <div key={`${valueDraft.value}-${valueIndex}`} className="grid gap-3 md:grid-cols-[1fr_auto_120px] md:items-center">
                               <div className="text-sm font-medium">{valueDraft.value}</div>
-                              <Label className="flex items-center gap-2 text-sm">
+                              <Label htmlFor={`variant-qty-${index}-${valueIndex}`} className="flex items-center gap-2 text-sm">
                                 <input
+                                  id={`variant-qty-${index}-${valueIndex}`}
                                   type="checkbox"
                                   checked={valueDraft.quantityEnabled}
                                   onChange={(e) =>
@@ -558,12 +592,12 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <Label>Estado *</Label>
+                <Label htmlFor={statusSelectId}>Estado *</Label>
                 <Select
                   defaultValue={initialData?.status ?? "DRAFT"}
                   onValueChange={(v) => setValue("status", v as FormData["status"])}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id={statusSelectId}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -577,8 +611,9 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               <Separator />
 
               <div className="flex items-center justify-between">
-                <Label className="cursor-pointer">Destacado</Label>
+                <Label htmlFor={featuredInputId} className="cursor-pointer">Destacado</Label>
                 <input
+                  id={featuredInputId}
                   type="checkbox"
                   className="h-4 w-4 accent-primary cursor-pointer"
                   {...register("featured")}
@@ -609,20 +644,23 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-[1fr_0.3fr] gap-2 sm:flex-row">
+                <Label htmlFor="product-image-url" className="sr-only">Imagen URL</Label>
                 <Input
+                  id="product-image-url"
                   placeholder="https://ejemplo.com/imagen.jpg"
                   value={imageInput}
                   onChange={(e) => setImageInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImage())}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), void addImage())}
                 />
-                <Button type="button" variant="outline" onClick={addImage} disabled={images.length >= 8}>
+                <Button type="button" variant="outline" onClick={() => void addImage()} disabled={images.length >= 8 || importingImage}>
                   <Plus className="h-4 w-4" />
                 </Button>
-                <Button className="sm:col-span-2" type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={images.length >= 8 || uploading}>
-                  {uploading ? "Subiendo..." : "Subir archivo"}
+                <Button className="sm:col-span-2" type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={images.length >= 8 || uploading || importingImage}>
+                  {uploading ? "Subiendo..." : importingImage ? "Importando..." : "Subir archivo"}
                 </Button>
               </div>
               <input
+                id={imageFileInputId}
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
@@ -642,11 +680,12 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               <CardTitle className="text-base">Categoria</CardTitle>
             </CardHeader>
             <CardContent>
+              <Label htmlFor={categorySelectId} className="sr-only">Categoria</Label>
               <Select
                 defaultValue={initialData?.categoryId ?? ""}
                 onValueChange={(v) => setValue("categoryId", v, { shouldValidate: true })}
               >
-                <SelectTrigger>
+                <SelectTrigger id={categorySelectId}>
                   <SelectValue placeholder="Selecciona una categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -687,7 +726,9 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                 </div>
               )}
               <div className="flex gap-2">
+                <Label htmlFor={tagInputId} className="sr-only">Etiqueta</Label>
                 <Input
+                  id={tagInputId}
                   placeholder="Ej: ropa, verano, algodon"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
