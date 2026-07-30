@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ToggleStatusButton } from "@/components/admin/action-buttons"
 import { buildTransferReference, TRANSFER_REFERENCE_LIMIT } from "@/lib/transfer-details"
+import { StoreVerificationCard } from "@/components/dashboard/store-verification-card"
 
 const schema = z
   .object({
@@ -50,7 +51,7 @@ type City = { id: string; name: string }
 
 type Props = {
   storeSlug: string
-  initialData: FormData & { slug: string; cashOnDeliveryEnabled: boolean }
+  initialData: FormData & { slug: string; cashOnDeliveryEnabled: boolean; isVerified: boolean }
   cities: City[]
   isOwner: boolean
   canManageVisibility: boolean
@@ -475,6 +476,8 @@ export function StoreSettingsForm({
             </CardContent>
           </Card>
 
+          <StoreVerificationCard storeSlug={storeSlug} isVerified={initialData.isVerified} />
+
           {!isOwner && (
             <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10">
               <CardContent className="pt-4">
@@ -489,5 +492,3 @@ export function StoreSettingsForm({
     </form>
   )
 }
-
-

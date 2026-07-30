@@ -130,7 +130,12 @@ export function OrderDetailsSheet({ order, trigger, mode = "admin", storeSlug }:
                   <Link href={`/dashboard/${storeSlug}/orders`}>Ver lista</Link>
                 </Button>
               </div>
-              <OrderStatusUpdater storeSlug={storeSlug!} orderId={order.id} currentStatus={order.status} />
+              <OrderStatusUpdater
+                key={`${order.id}-${order.status}`}
+                storeSlug={storeSlug!}
+                orderId={order.id}
+                currentStatus={order.status}
+              />
               {canRefund && <RefundButton storeSlug={storeSlug!} orderId={order.id} />}
             </div>
           )}

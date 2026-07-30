@@ -2,7 +2,6 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { StoreSettingsForm } from "@/components/dashboard/store-settings-form"
-import { StoreVerificationCard } from "@/components/dashboard/store-verification-card"
 
 export default async function SettingsPage({
   params,
@@ -85,9 +84,9 @@ export default async function SettingsPage({
           transferBank: store.transferBank ?? undefined,
           transferReferencePrefix: store.transferReferencePrefix ?? undefined,
           transferReferenceExtra: store.transferReferenceExtra ?? undefined,
+          isVerified: store.isVerified,
         }}
       />
-      <StoreVerificationCard storeSlug={storeSlug} isVerified={store.isVerified} />
     </div>
   )
 }

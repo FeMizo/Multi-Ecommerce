@@ -6,7 +6,7 @@ import { db } from "@/lib/db"
 import { getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
+import { ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
 import { type OrderStatus } from "@/lib/order-status"
 import { OrderDetailsSheet, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet"
 import { PanelRightOpen } from "lucide-react"
@@ -182,10 +182,12 @@ export default async function OrdersPage({
                     {formatPrice(order.total)}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="space-y-2">
-                      <OrderStatusBadge status={order.status} />
-                      <OrderStatusUpdater storeSlug={storeSlug} orderId={order.id} currentStatus={order.status} />
-                    </div>
+                    <OrderStatusUpdater
+                      key={`${order.id}-${order.status}`}
+                      storeSlug={storeSlug}
+                      orderId={order.id}
+                      currentStatus={order.status}
+                    />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <OrderDetailsSheet
