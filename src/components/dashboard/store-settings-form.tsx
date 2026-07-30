@@ -40,7 +40,7 @@ const schema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["transferReferenceExtra"],
-        message: `La referencia no puede superar ${TRANSFER_REFERENCE_LIMIT} caracteres`,
+        message: "La referencia combinada no debe pasar de 10 caracteres.",
       })
     }
   })
@@ -376,7 +376,7 @@ export function StoreSettingsForm({
               </div>
 
               <p className="text-xs text-muted-foreground">
-                La referencia combinada no debe pasar de {TRANSFER_REFERENCE_LIMIT} caracteres.
+                La referencia combinada no debe pasar de 10 caracteres.
               </p>
             </CardContent>
           </Card>

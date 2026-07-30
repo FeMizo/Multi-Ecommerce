@@ -75,6 +75,11 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
 
   const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id
   if (!paymentIntentId) throw new Error("Checkout sin PaymentIntent")
+  const customerEmail =
+    typeof customerInfo === "object" && customerInfo && "email" in customerInfo
+      ? String((customerInfo as { email?: unknown }).email ?? "").trim().toLowerCase()
+      : ""
+  if (!customerEmail) throw new Error("Checkout sin email de cliente")
 
   const products = await db.product.findMany({
     where: { id: { in: items.map((item) => item.productId) }, storeId: metadata.storeId, deletedAt: null },
@@ -103,6 +108,7 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
         data: {
           storeId: metadata.storeId,
           customerId: metadata.userId,
+          customerEmail,
           status: "PAID",
           subtotal,
           platformFee: Math.round(total * commissionRate * 100) / 100,
@@ -153,6 +159,7 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
       discountAmount: true,
       paymentMethod: true,
       customerInfo: true,
+      customerEmail: true,
       items: {
         select: {
           quantity: true,
@@ -197,16 +204,17 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
       logoUrl: order.store.logoUrl,
       primaryColor: order.store.primaryColor,
     }
+    const customerEmail = order.customer?.email ?? order.customerEmail
     const customerWhatsApp = await sendWhatsAppText({
-      phone: order.customer.phone ?? customerInfo.phone,
+      phone: order.customer?.phone ?? customerInfo.phone,
       message: `Tu pedido #${order.id.slice(-8).toUpperCase()} en ${order.store.name} fue confirmado.`,
     }).catch(() => null)
     const sellerEmails = order.store.members.map((member) => member.user.email)
     const sellerPhones = order.store.members.map((member) => member.user.phone).filter(Boolean)
     try {
       await Promise.allSettled([
-        sendOrderConfirmationEmail({
-          email: order.customer.email,
+        ...(customerEmail ? [sendOrderConfirmationEmail({
+          email: customerEmail,
           orderId: order.id,
           store: storeBranding,
           items: orderItems,
@@ -215,7 +223,7 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
           discountAmount: order.discountAmount,
           paymentMethodLabel: PAYMENT_METHOD_LABELS[order.paymentMethod],
           customerInfo: customerInfo,
-        }),
+        })] : []),
         sendSellerNewOrderEmail({
           emails: sellerEmails,
           orderId: order.id,

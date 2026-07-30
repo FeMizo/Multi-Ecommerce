@@ -280,8 +280,9 @@ model Order {
   id                    String      @id @default(cuid())
   storeId               String
   store                 Store       @relation(fields: [storeId], references: [id])
-  customerId            String
-  customer              User        @relation(fields: [customerId], references: [id])
+  customerId            String?
+  customer              User?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerEmail         String?
   status                OrderStatus @default(PENDING)
   subtotal              Float
   platformFee           Float       @default(0)
@@ -309,6 +310,7 @@ model Order {
 
   @@index([storeId])
   @@index([storeId, customerId])
+  @@index([storeId, customerEmail])
   @@index([storeId, status])
   @@index([couponId])
   @@map("orders")

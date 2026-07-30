@@ -1,13 +1,8 @@
-import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { sendStoreVerificationEmail } from "@/lib/email"
-
-function buildVerificationUrl(storeId: string, token: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "http://localhost:1500"
-  return `${appUrl}/api/verification/store?storeId=${encodeURIComponent(storeId)}&token=${encodeURIComponent(token)}`
-}
+import { buildStoreVerificationUrl, createStoreVerificationToken } from "@/lib/store-verification"
 
 export async function POST(
   _req: NextRequest,
@@ -39,10 +34,7 @@ export async function POST(
   if (!owner?.email) return NextResponse.json({ message: "La tienda no tiene un correo de contacto" }, { status: 400 })
   if (store.isVerified) return NextResponse.json({ message: "La tienda ya está verificada" }, { status: 409 })
 
-  const identifier = `store-verification:${store.id}`
-  const token = crypto.randomBytes(32).toString("hex")
-  const tokenHash = crypto.createHash("sha256").update(token).digest("hex")
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24)
+  const { identifier, token, tokenHash, expiresAt } = createStoreVerificationToken(store.id)
 
   await db.verificationToken.deleteMany({ where: { identifier } })
   await db.verificationToken.create({
@@ -58,7 +50,7 @@ export async function POST(
       email: owner.email,
       name: owner.name ?? store.name,
       storeName: store.name,
-      verificationUrl: buildVerificationUrl(store.id, token),
+      verificationUrl: buildStoreVerificationUrl(process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "http://localhost:1500", store.id, token),
     })
   } catch {
     await db.verificationToken.deleteMany({ where: { identifier, token: tokenHash } })

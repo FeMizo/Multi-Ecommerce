@@ -26,7 +26,7 @@ export default async function CouponsPage({
   })
 
   if (!membership) redirect("/dashboard")
-  if (!await getEffectivePlan(membership.store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
+  if (!await getEffectivePlan(membership.store.id)) redirect(`/dashboard/${storeSlug}/planes?billing=required`)
 
   const coupons = await db.storeCoupon.findMany({
     where: { storeId: membership.store.id },

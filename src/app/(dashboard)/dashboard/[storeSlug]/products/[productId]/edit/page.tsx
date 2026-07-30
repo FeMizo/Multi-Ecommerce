@@ -18,7 +18,7 @@ export default async function EditProductPage({
     select: { id: true },
   })
   if (!store) redirect("/dashboard")
-  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/planes?billing=required`)
 
   const [product, categories] = await Promise.all([
     db.product.findFirst({

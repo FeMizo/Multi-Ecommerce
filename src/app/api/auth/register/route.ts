@@ -17,14 +17,20 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ message: "Datos inválidos" }, { status: 400 })
 
   const { name, email, phone, password } = parsed.data
+  const normalizedEmail = email.trim().toLowerCase()
 
-  const existing = await db.user.findUnique({ where: { email } })
+  const existing = await db.user.findUnique({ where: { email: normalizedEmail } })
   if (existing) return NextResponse.json({ message: "El email ya está registrado" }, { status: 409 })
 
   const hashed = await bcrypt.hash(password, 12)
-  await db.user.create({ data: { name, email, phone, password: hashed, globalRole: "USER" } })
+  const user = await db.user.create({ data: { name, email: normalizedEmail, phone, password: hashed, globalRole: "USER" } })
 
-  void sendWelcomeEmail({ email, name }).catch(() => {})
+  await db.order.updateMany({
+    where: { customerEmail: normalizedEmail, customerId: null },
+    data: { customerId: user.id },
+  })
+
+  void sendWelcomeEmail({ email: normalizedEmail, name }).catch(() => {})
 
   return NextResponse.json({ success: true }, { status: 201 })
 }

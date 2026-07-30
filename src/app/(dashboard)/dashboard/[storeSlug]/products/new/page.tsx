@@ -18,7 +18,7 @@ export default async function NewProductPage({
     select: { id: true },
   })
   if (!store) redirect("/dashboard")
-  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/planes?billing=required`)
 
   const productLimit = await checkProductLimit(store.id)
   if (!productLimit.ok) redirect(`/dashboard/${storeSlug}/products`)

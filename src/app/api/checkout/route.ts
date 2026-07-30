@@ -91,33 +91,34 @@ export async function POST(req: Request) {
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   let requestedCouponCode = rawCouponCode ? normalizeCouponCode(rawCouponCode) : null
   const customerEmail = customerInfo.email.trim().toLowerCase()
+  const sessionEmail = session?.user?.email?.trim().toLowerCase() ?? null
 
   if (new Set(items.map((item) => item.id)).size !== items.length) {
     return NextResponse.json({ message: "No repitas la misma variante en el carrito" }, { status: 422 })
   }
 
-  let customerId = session?.user?.id ?? null
-  if (!customerId) {
-    const customer = await db.user.upsert({
-      where: { email: customerEmail },
-      update: {
-        name: customerInfo.fullName,
-        phone: customerInfo.phone,
-      },
-      create: {
-        email: customerEmail,
-        name: customerInfo.fullName,
-        phone: customerInfo.phone,
-      },
-      select: { id: true },
-    })
-    customerId = customer.id
-  }
+  const customerId = session?.user?.id ?? null
 
   let order = await db.order.findUnique({
     where: { checkoutToken },
-    include: {
-      items: true,
+    select: {
+      id: true,
+      customerId: true,
+      customerEmail: true,
+      storeId: true,
+      paymentMethod: true,
+      couponCode: true,
+      stripeSessionId: true,
+      platformFee: true,
+      status: true,
+      items: {
+        select: {
+          quantity: true,
+          unitPrice: true,
+          total: true,
+          productSnapshot: true,
+        },
+      },
       coupon: {
         select: {
           id: true,
@@ -136,7 +137,52 @@ export async function POST(req: Request) {
     },
   })
 
-  if (order && (order.customerId !== customerId || order.storeId !== storeId)) {
+  if (order && order.customerId === null && customerId && sessionEmail && order.customerEmail === sessionEmail) {
+    order = await db.order.update({
+      where: { id: order.id },
+      data: { customerId },
+      select: {
+        id: true,
+        customerId: true,
+        customerEmail: true,
+        storeId: true,
+        paymentMethod: true,
+        couponCode: true,
+        stripeSessionId: true,
+        platformFee: true,
+        status: true,
+        items: {
+          select: {
+            quantity: true,
+            unitPrice: true,
+            total: true,
+            productSnapshot: true,
+          },
+        },
+        coupon: {
+          select: {
+            id: true,
+            code: true,
+            type: true,
+            value: true,
+            minOrderAmount: true,
+            maxRedemptions: true,
+            redeemedCount: true,
+            startsAt: true,
+            endsAt: true,
+            isActive: true,
+            stripeCouponId: true,
+          },
+        },
+      },
+    })
+  }
+
+  if (order && order.customerId !== customerId && order.customerId !== null) {
+    return NextResponse.json({ message: "Token de checkout invalido" }, { status: 409 })
+  }
+
+  if (order && order.storeId !== storeId) {
     return NextResponse.json({ message: "Token de checkout invalido" }, { status: 409 })
   }
 
@@ -227,6 +273,7 @@ export async function POST(req: Request) {
             checkoutToken,
             storeId,
             customerId,
+            customerEmail,
             status: paymentMethod === "CASH_ON_DELIVERY"
               ? "PENDING_PAYMENT"
               : paymentMethod === "TRANSFER"
@@ -275,7 +322,14 @@ export async function POST(req: Request) {
             },
           },
           include: {
-            items: true,
+            items: {
+              select: {
+                quantity: true,
+                unitPrice: true,
+                total: true,
+                productSnapshot: true,
+              },
+            },
             coupon: {
               select: {
                 id: true,
@@ -351,6 +405,7 @@ export async function POST(req: Request) {
           },
         },
         customer: { select: { email: true } },
+        customerEmail: true,
         store: {
           select: {
             name: true,
@@ -371,11 +426,12 @@ export async function POST(req: Request) {
       },
     })
 
-    if (orderForEmail?.customer.email) {
+    if (orderForEmail) {
+      const contactEmail = orderForEmail.customer?.email ?? orderForEmail.customerEmail ?? customerEmail
       const sellerEmails = orderForEmail.store.members.map((member) => member.user.email)
       const results = await Promise.allSettled([
         sendOrderReceivedEmail({
-          email: orderForEmail.customer.email,
+          email: contactEmail,
           orderId: orderForEmail.id,
           store: orderForEmail.store,
           items: orderForEmail.items.map((item) => {
@@ -488,6 +544,7 @@ export async function POST(req: Request) {
           },
         },
         customer: { select: { email: true } },
+        customerEmail: true,
         store: {
           select: {
             name: true,
@@ -508,11 +565,12 @@ export async function POST(req: Request) {
       },
     })
 
-    if (orderForEmail?.customer.email) {
+    if (orderForEmail) {
+      const contactEmail = orderForEmail.customer?.email ?? orderForEmail.customerEmail ?? customerEmail
       const sellerEmails = orderForEmail.store.members.map((member) => member.user.email)
       const results = await Promise.allSettled([
         sendOrderReceivedEmail({
-          email: orderForEmail.customer.email,
+          email: contactEmail,
           orderId: orderForEmail.id,
           store: orderForEmail.store,
           items: orderForEmail.items.map((item) => {
@@ -667,7 +725,8 @@ export async function POST(req: Request) {
     cancel_url: `${origin}/cart`,
     metadata: { orderId: order.id, storeId },
   } as const
-  const idempotencyKey = `checkout:${session!.user.id}:${checkoutToken}`
+  const idempotencyOwner = session?.user?.id ?? customerEmail
+  const idempotencyKey = `checkout:${idempotencyOwner}:${checkoutToken}`
 
   let checkoutSession
   try {

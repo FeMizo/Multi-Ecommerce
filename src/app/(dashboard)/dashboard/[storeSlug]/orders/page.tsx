@@ -7,6 +7,8 @@ import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
 import { OrderStatus } from "@prisma/client"
+import { OrderDetailsSheet, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet"
+import { PanelRightOpen } from "lucide-react"
 
 const ALL_STATUSES = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]
 
@@ -27,7 +29,7 @@ export default async function OrdersPage({
 
   const store = await db.store.findUnique({ where: { slug: storeSlug }, select: { id: true } })
   if (!store) redirect("/dashboard")
-  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/planes?billing=required`)
 
   const take = 20
   const currentPage = Number(page ?? 1)
@@ -43,8 +45,29 @@ export default async function OrdersPage({
     db.order.findMany({
       where,
       include: {
-        customer: { select: { name: true, email: true } },
-        _count: { select: { items: true } },
+        customer: { select: { name: true, email: true, phone: true } },
+        items: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            total: true,
+            productSnapshot: true,
+            product: { select: { name: true, images: true, slug: true } },
+          },
+        },
+        payment: { select: { status: true, stripePaymentIntentId: true, stripeRefundId: true } },
+        store: {
+          select: {
+            name: true,
+            slug: true,
+            transferAccountName: true,
+            transferAccountNumber: true,
+            transferBank: true,
+            transferReferencePrefix: true,
+            transferReferenceExtra: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take,
@@ -54,6 +77,38 @@ export default async function OrdersPage({
   ])
 
   const pages = Math.ceil(total / take)
+
+  const orderDetails = (order: Awaited<typeof orders>[number]): OrderDetailsSheetOrder => ({
+    id: order.id,
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    subtotal: order.subtotal,
+    platformFee: order.platformFee,
+    discountAmount: order.discountAmount,
+    total: order.total,
+    notes: order.notes,
+    transferCode: order.transferCode,
+    createdAtLabel: new Date(order.createdAt).toLocaleString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    paidAtLabel: order.paidAt
+      ? new Date(order.paidAt).toLocaleDateString("es-MX", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : null,
+    store: order.store,
+    customer: order.customer ? order.customer : null,
+    customerEmail: order.customerEmail,
+    customerInfo: order.customerInfo as OrderDetailsSheetOrder["customerInfo"],
+    payment: order.payment,
+    items: order.items,
+  })
 
   function buildUrl(overrides: Record<string, string | undefined>) {
     const p = new URLSearchParams()
@@ -109,8 +164,8 @@ export default async function OrdersPage({
                     #{order.id.slice(-8).toUpperCase()}
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
-                    <div className="font-medium leading-tight">{order.customer.name ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">{order.customer.email}</div>
+                    <div className="font-medium leading-tight">{order.customer?.name ?? order.customerEmail}</div>
+                    <div className="text-xs text-muted-foreground">{order.customer?.email ?? order.customerEmail}</div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell whitespace-nowrap">
                     {new Date(order.createdAt).toLocaleDateString("es-MX", {
@@ -120,7 +175,7 @@ export default async function OrdersPage({
                     })}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
-                    {order._count.items}
+                    {order.items.length}
                   </td>
                   <td className="px-4 py-3 text-right font-medium tabular-nums">
                     {formatPrice(order.total)}
@@ -129,12 +184,17 @@ export default async function OrdersPage({
                     <OrderStatusBadge status={order.status} />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/dashboard/${storeSlug}/orders/${order.id}`}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      Ver
-                    </Link>
+                    <OrderDetailsSheet
+                      mode="dashboard"
+                      storeSlug={storeSlug}
+                      order={orderDetails(order)}
+                      trigger={
+                        <Button variant="ghost" size="sm" className="h-8 gap-1 px-3">
+                          <PanelRightOpen className="h-3.5 w-3.5" />
+                          Ver
+                        </Button>
+                      }
+                    />
                   </td>
                 </tr>
               ))}

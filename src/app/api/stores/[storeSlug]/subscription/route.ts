@@ -54,7 +54,7 @@ export async function POST(req: NextRequest, { params }: RouteContext<"/api/stor
     name: membership.store.name,
   })
   if (input.data.action === "portal") {
-    const portal = await stripe.billingPortal.sessions.create({ customer: customerId, return_url: `${origin}/dashboard/${storeSlug}/settings` })
+    const portal = await stripe.billingPortal.sessions.create({ customer: customerId, return_url: `${origin}/dashboard/${storeSlug}/planes` })
     return NextResponse.json({ url: portal.url })
   }
 
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, { params }: RouteContext<"/api/stor
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription", customer: customerId, client_reference_id: membership.store.id,
     line_items: [{ price: plan.stripePriceId, quantity: 1 }], locale: "es",
-    success_url: `${origin}/dashboard/${storeSlug}/settings?subscription=success`, cancel_url: `${origin}/dashboard/${storeSlug}/settings?subscription=cancelled`,
+    success_url: `${origin}/dashboard/${storeSlug}/planes?subscription=success`, cancel_url: `${origin}/dashboard/${storeSlug}/planes?subscription=cancelled`,
     metadata: { storeId: membership.store.id, requestedPlanId: plan.id },
     subscription_data: { metadata: { storeId: membership.store.id } },
   }, { idempotencyKey: `subscription-checkout:${membership.store.id}:${plan.id}:${input.data.checkoutToken}` })

@@ -11,6 +11,7 @@ const navItems: SidebarItem[] = [
   { href: "/products", label: "Productos", iconKey: "Package" },
   { href: "/orders", label: "Pedidos", iconKey: "ShoppingBag" },
   { href: "/coupons", label: "Cupones", iconKey: "Tag" },
+  { href: "/planes", label: "Planes", iconKey: "CreditCard" },
   { href: "/metrics", label: "Metricas", iconKey: "BarChart3" },
   { href: "/settings", label: "Configuracion", iconKey: "Settings" },
 ]

@@ -154,7 +154,7 @@ function renderEmailTemplate({
   const accent = safeColor(store.primaryColor)
   const logoMarkup = store.logoUrl
     ? `<div style="width: 56px; height: 56px; flex: 0 0 56px; border-radius: 16px; background: rgba(255,255,255,0.14); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;"><img src="${escapeHtml(store.logoUrl)}" alt="${escapeHtml(store.name)}" style="width: 100%; height: 100%; object-fit: contain; display: block;" /></div>`
-    : `<div style="width: 56px; height: 56px; flex: 0 0 56px; border-radius: 16px; background: rgba(255,255,255,0.18); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; font-weight: 800; box-sizing: border-box;">${escapeHtml(store.name.slice(0, 1).toUpperCase())}</div>`
+    : `<div style="width: 56px; height: 56px; flex: 0 0 56px; border-radius: 16px; background: rgba(255,255,255,0.18); color: #fff; text-align: center; font-size: 20px; line-height: 56px; font-weight: 800; box-sizing: border-box;">${escapeHtml(store.name.slice(0, 1).toUpperCase())}</div>`
 
   return `
     <div style="margin: 0; padding: 0; background: #f3f4f6;">
@@ -364,7 +364,7 @@ export async function sendOrderConfirmationEmail({
       summaryRows,
       infoBlocks: buildPaymentDetails({ paymentMethodLabel, transferCode, transferDetails, customerInfo }),
       ctaLabel: "Ver mis pedidos",
-      ctaHref: `${appUrl}/account/orders`,
+      ctaHref: `${appUrl}/orders?id=${orderId}`,
       footerNote: "Gracias por comprar con nosotros.",
     }),
   }, { idempotencyKey: `order-confirmation/${orderId}` })
@@ -419,7 +419,7 @@ export async function sendOrderReceivedEmail({
       summaryRows,
       infoBlocks: buildPaymentDetails({ paymentMethodLabel, transferCode, transferDetails, customerInfo }),
       ctaLabel: "Ver mis pedidos",
-      ctaHref: `${appUrl}/account/orders`,
+      ctaHref: `${appUrl}/orders?id=${orderId}`,
       footerNote: "Si necesitas ayuda, responde este correo o contacta a la tienda.",
     }),
   }, { idempotencyKey: `order-received/${orderId}` })
@@ -507,7 +507,7 @@ export async function sendOrderDeliveredEmail({
         <p>Gracias por comprar con nosotros.</p>
       `,
       ctaLabel: "Ver mis pedidos",
-      ctaHref: `${appUrl}/account/orders`,
+      ctaHref: `${appUrl}/orders?id=${orderId}`,
     }),
   }, { idempotencyKey: `order-delivered/${orderId}` })
   if (error) throw new Error(error.message)

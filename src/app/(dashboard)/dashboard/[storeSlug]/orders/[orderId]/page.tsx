@@ -35,27 +35,27 @@ export default async function OrderDetailPage({
 
   const store = await db.store.findUnique({ where: { slug: storeSlug }, select: { id: true } })
   if (!store) redirect("/dashboard")
-  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/planes?billing=required`)
 
   const order = await db.order.findFirst({
     where: { id: orderId, storeId: store.id, deletedAt: null },
-      include: {
-        customer: { select: { name: true, email: true, phone: true } },
-        items: {
-          include: { product: { select: { name: true, images: true, slug: true } } },
-        },
-        payment: { select: { status: true, stripePaymentIntentId: true } },
-        store: {
-          select: {
-            transferAccountName: true,
-            transferAccountNumber: true,
-            transferBank: true,
-            transferReferencePrefix: true,
-            transferReferenceExtra: true,
-          },
+    include: {
+      customer: { select: { name: true, email: true, phone: true } },
+      items: {
+        include: { product: { select: { name: true, images: true, slug: true } } },
+      },
+      payment: { select: { status: true, stripePaymentIntentId: true } },
+      store: {
+        select: {
+          transferAccountName: true,
+          transferAccountNumber: true,
+          transferBank: true,
+          transferReferencePrefix: true,
+          transferReferenceExtra: true,
         },
       },
-    })
+    },
+  })
 
   if (!order) notFound()
 
@@ -216,10 +216,10 @@ export default async function OrderDetailPage({
               <CardTitle className="text-base">Cliente</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
-              <p className="font-medium">{order.customer.name ?? "—"}</p>
-              <p className="text-muted-foreground">{order.customer.email}</p>
-              {order.customer.phone && (
-                <p className="text-muted-foreground">{order.customer.phone}</p>
+              <p className="font-medium">{order.customer?.name ?? customerInfo.name ?? "—"}</p>
+              <p className="text-muted-foreground">{order.customer?.email ?? order.customerEmail}</p>
+              {(order.customer?.phone ?? customerInfo.phone) && (
+                <p className="text-muted-foreground">{order.customer?.phone ?? customerInfo.phone}</p>
               )}
             </CardContent>
           </Card>

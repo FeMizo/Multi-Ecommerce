@@ -1,12 +1,8 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { StoreSettingsForm } from "@/components/dashboard/store-settings-form"
-import { SubscriptionManager } from "@/components/dashboard/subscription-manager"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { StoreVerificationCard } from "@/components/dashboard/store-verification-card"
 
 export default async function SettingsPage({
   params,
@@ -17,7 +13,7 @@ export default async function SettingsPage({
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  const [membership, cities, plans] = await Promise.all([
+  const [membership, cities] = await Promise.all([
     db.storeMember.findFirst({
       where: {
         userId: session.user.id,
@@ -47,15 +43,6 @@ export default async function SettingsPage({
             transferReferencePrefix: true,
             transferReferenceExtra: true,
             stripeOnboarded: true,
-            subscription: {
-              select: {
-                planId: true,
-                status: true,
-                currentPeriodEnd: true,
-                cancelAtPeriodEnd: true,
-                stripeSubscriptionId: true,
-              },
-            },
           },
         },
       },
@@ -64,11 +51,6 @@ export default async function SettingsPage({
       where: { active: true },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
-    }),
-    db.plan.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, priceMonthly: true, commissionRate: true, maxProducts: true, maxOrdersMonth: true, stripePriceId: true },
-      orderBy: { priceMonthly: "asc" },
     }),
   ])
 
@@ -105,44 +87,7 @@ export default async function SettingsPage({
           transferReferenceExtra: store.transferReferenceExtra ?? undefined,
         }}
       />
-      <SubscriptionManager
-        storeSlug={storeSlug}
-        isOwner={membership.role === "OWNER"}
-        plans={plans.map(({ stripePriceId, ...plan }) => ({ ...plan, availableInStripe: Boolean(stripePriceId) }))}
-        subscription={store.subscription ? {
-          ...store.subscription,
-          currentPeriodEnd: store.subscription.currentPeriodEnd?.toISOString() ?? null,
-        } : null}
-      />
-      <Card id="verificacion" className={!store.isVerified ? "border-amber-200 bg-amber-50 dark:bg-amber-950/20" : undefined}>
-        <CardContent className="space-y-3 pt-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="font-semibold">Verificación</p>
-              <p className="text-sm text-muted-foreground">
-                {store.isVerified ? "Tu cuenta ya está verificada." : "Tu cuenta aún no está verificada."}
-              </p>
-            </div>
-            <Badge variant={store.isVerified ? "secondary" : "outline"}>
-              {store.isVerified ? "Verificada" : "Pendiente"}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            La verificación se completa con un enlace enviado por correo a la cuenta del propietario.
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4">
-          <div>
-            <p className="font-semibold">Cupones de la tienda</p>
-            <p className="text-sm text-muted-foreground">Crea descuentos exclusivos para esta tienda.</p>
-          </div>
-          <Button asChild>
-            <Link href={`/dashboard/${storeSlug}/coupons`}>Administrar cupones</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <StoreVerificationCard storeSlug={storeSlug} isVerified={store.isVerified} />
     </div>
   )
 }

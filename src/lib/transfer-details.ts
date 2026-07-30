@@ -1,4 +1,4 @@
-export const TRANSFER_REFERENCE_LIMIT = 30
+export const TRANSFER_REFERENCE_LIMIT = 10
 
 function normalizePart(value?: string | null) {
   return value?.trim() ?? ""

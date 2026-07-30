@@ -17,7 +17,7 @@ export default async function MetricsPage({
 
   const store = await db.store.findUnique({ where: { slug: storeSlug }, select: { id: true } })
   if (!store) redirect("/dashboard")
-  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/planes?billing=required`)
 
   const now = new Date()
   const thirtyDaysAgo = subDays(now, 29)

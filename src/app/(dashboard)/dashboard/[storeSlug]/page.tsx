@@ -75,7 +75,7 @@ export default async function StoreDashboardPage({
     select: { id: true, name: true, isVerified: true },
   })
   if (!store) redirect("/dashboard")
-  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/settings?billing=required`)
+  if (!await getEffectivePlan(store.id)) redirect(`/dashboard/${storeSlug}/planes?billing=required`)
 
   const metrics = await getStoreMetrics(store.id)
 
@@ -186,7 +186,7 @@ export default async function StoreDashboardPage({
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {order.customer.name ?? order.customer.email}
+                      {order.customer?.name ?? order.customer?.email ?? order.customerEmail}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {order.items.length} producto{order.items.length !== 1 ? "s" : ""}
