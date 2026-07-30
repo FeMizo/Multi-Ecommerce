@@ -110,46 +110,51 @@ export async function publishSocialPost(post: {
   }
 
   const result: PublishResult = {}
-  let failureMessage: string | null = null
+  const failures: string[] = []
 
-  try {
-    if (post.channels.includes("FACEBOOK")) {
+  if (post.channels.includes("FACEBOOK")) {
+    try {
       const facebook = await publishFacebookPagePost(post)
       result.facebookPostId = facebook.facebookPostId ?? null
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : "No se pudo publicar en Facebook")
     }
-    if (post.channels.includes("INSTAGRAM")) {
-      const instagram = await publishInstagramPost(post)
-      result.instagramMediaId = instagram.instagramMediaId ?? null
-    }
-  } catch (error) {
-    failureMessage = error instanceof Error ? error.message : "No se pudo publicar"
   }
 
-  if (failureMessage) {
+  if (post.channels.includes("INSTAGRAM")) {
+    try {
+      const instagram = await publishInstagramPost(post)
+      result.instagramMediaId = instagram.instagramMediaId ?? null
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : "No se pudo publicar en Instagram")
+    }
+  }
+
+  if (result.facebookPostId || result.instagramMediaId) {
     await db.socialPost.update({
       where: { id: post.id },
       data: {
-        status: "FAILED",
+        status: "PUBLISHED",
+        publishedAt: new Date(),
         facebookPostId: result.facebookPostId ?? undefined,
         instagramMediaId: result.instagramMediaId ?? undefined,
-        lastError: failureMessage,
+        lastError: null,
       },
     })
-    throw new Error(failureMessage)
+    return result
   }
 
   await db.socialPost.update({
     where: { id: post.id },
     data: {
-      status: "PUBLISHED",
-      publishedAt: new Date(),
+      status: "FAILED",
       facebookPostId: result.facebookPostId ?? undefined,
       instagramMediaId: result.instagramMediaId ?? undefined,
-      lastError: null,
+      lastError: failures.join(" | ") || "No se pudo publicar",
     },
   })
 
-  return result
+  throw new Error(failures.join(" | ") || "No se pudo publicar")
 }
 
 export async function publishDueSocialPosts(limit = 25) {
