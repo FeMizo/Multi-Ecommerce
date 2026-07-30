@@ -44,7 +44,7 @@ export function FavoritesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {favorites.map((product) => (
             <div key={product.id} className="overflow-hidden rounded-2xl border border-border/60 bg-card">
               <Link href={product.storeSlug ? `/${product.storeSlug}/${product.slug}` : `/products/${product.slug}`} className="block">

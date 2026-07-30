@@ -245,7 +245,7 @@ export default async function StoreProductPage({
             <h2 className="text-xl font-bold mb-6">
               Reseñas ({product._count.reviews})
             </h2>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               {product.reviews.map((review) => (
                 <div key={review.id} className="rounded-xl border p-4">
                   <div className="flex items-center gap-3 mb-2">

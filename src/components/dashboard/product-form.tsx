@@ -405,7 +405,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               <CardTitle className="text-base">Precios e inventario</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                 <div className="space-y-1">
                   <Label htmlFor={manageStockInputId} className="flex items-center gap-2">
                     <input id={manageStockInputId} type="checkbox" {...register("manageStock")} />

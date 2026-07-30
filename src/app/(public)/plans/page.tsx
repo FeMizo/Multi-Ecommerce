@@ -45,7 +45,7 @@ export default async function PlansPage() {
         </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => {
           const href = membership
             ? `/dashboard/${membership.store.slug}/planes`

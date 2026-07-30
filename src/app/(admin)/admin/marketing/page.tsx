@@ -96,7 +96,7 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -147,7 +147,7 @@ export default function MarketingPage() {
           <Megaphone className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-semibold">Copys listos para publicar</h2>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Grupos locales</h3>
@@ -174,7 +174,7 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">

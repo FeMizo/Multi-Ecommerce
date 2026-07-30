@@ -59,7 +59,7 @@ export default function Loading() {
         <Skeleton className="h-20 w-full rounded-xl" />
         <div>
           <Skeleton className="h-8 w-44" />
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2">
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />

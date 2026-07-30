@@ -72,7 +72,7 @@ export function SubscriptionManager({
           </Button>
         )}
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <CardContent className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
           const hasPaidEntitlements = subscription && ["ACTIVE", "TRIALING"].includes(subscription.status)
           const current = hasPaidEntitlements ? subscription.planId === plan.id : false

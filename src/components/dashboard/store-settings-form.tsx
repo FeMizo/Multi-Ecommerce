@@ -344,7 +344,7 @@ export function StoreSettingsForm({
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                 <div className="space-y-1">
                   <Label>Nombre del titular</Label>
                   <Input placeholder="Nombre legal del titular" {...register("transferAccountName")} />

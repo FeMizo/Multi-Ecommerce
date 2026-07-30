@@ -5,7 +5,7 @@ export default function Loading() {
     <div className="container mx-auto px-4 py-8">
       <Skeleton className="mb-6 h-5 w-40" />
 
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-10 grid-cols-1 lg:grid-cols-2">
         <section className="space-y-3">
           <Skeleton className="aspect-square w-full rounded-xl" />
           <div className="grid grid-cols-4 gap-2">
@@ -61,7 +61,7 @@ export default function Loading() {
         <Skeleton className="h-20 w-full rounded-xl" />
         <div>
           <Skeleton className="h-8 w-44" />
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2">
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
