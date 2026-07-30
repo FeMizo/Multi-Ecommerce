@@ -9,6 +9,7 @@ import { sendOrderConfirmationEmail, sendSellerNewOrderEmail } from "@/lib/email
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { getCurrentPeriodEnd } from "@/lib/billing-rules"
 import { toMinorUnits } from "@/lib/money"
+import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
 
 type OrderItemInput = {
   productId: string
@@ -83,7 +84,7 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
 
   const products = await db.product.findMany({
     where: { id: { in: items.map((item) => item.productId) }, storeId: metadata.storeId, deletedAt: null },
-    select: { id: true, price: true, images: true, sku: true, name: true, manageStock: true, stock: true },
+    select: { id: true, price: true, images: true, sku: true, name: true, manageStock: true, stock: true, variantOptions: true },
   })
   if (products.length !== items.length) throw new Error("Productos de checkout no encontrados")
 
@@ -97,6 +98,10 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
       for (const item of items) {
         const product = products.find((candidate) => candidate.id === item.productId)!
         if (!product.manageStock) continue
+        const variantOptions = normalizeVariantOptions(product.variantOptions ?? [])
+        const variantLimit = getVariantQuantityLimit(variantOptions, item.variantSelection ?? [])
+        const stockLimit = variantOptions.length > 0 && variantLimit !== null ? variantLimit : product.stock
+        if (stockLimit < item.quantity) throw new Error("Stock insuficiente al confirmar el pago")
         const changed = await tx.product.updateMany({
           where: { id: item.productId, storeId: metadata.storeId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } },

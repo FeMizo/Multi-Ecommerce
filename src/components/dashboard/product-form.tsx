@@ -20,7 +20,11 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { normalizeVariantOptions } from "@/lib/product-variants"
+import {
+  getDuplicateVariantNames,
+  normalizeVariantOptions,
+  sumVariantQuantities,
+} from "@/lib/product-variants"
 
 const schema = z.object({
   name: z.string().min(2, "Minimo 2 caracteres").max(120, "Maximo 120 caracteres"),
@@ -44,9 +48,16 @@ type FormData = z.infer<typeof schema>
 
 type Category = { id: string; name: string }
 
+type VariantValueDraft = {
+  value: string
+  quantityEnabled: boolean
+  quantityText: string
+}
+
 type VariantDraft = {
   name: string
   valuesText: string
+  values: VariantValueDraft[]
 }
 
 type Props = {
@@ -84,9 +95,14 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   const [tagInput, setTagInput] = useState("")
   const [variantDrafts, setVariantDrafts] = useState<VariantDraft[]>(
     () => normalizeVariantOptions(initialData?.variantOptions ?? []).map((option) => ({
-        name: option.name,
-        valuesText: option.values.join(", "),
-      }))
+      name: option.name,
+      valuesText: option.values.map((value) => value.value).join(", "),
+      values: option.values.map((value) => ({
+        value: value.value,
+        quantityEnabled: typeof value.quantity === "number" && value.quantity > 0,
+        quantityText: typeof value.quantity === "number" && value.quantity > 0 ? String(value.quantity) : "",
+      })),
+    }))
   )
 
   const {
@@ -139,11 +155,38 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   }
 
   function addVariantDraft() {
-    setVariantDrafts((prev) => [...prev, { name: "", valuesText: "" }])
+    setVariantDrafts((prev) => [...prev, { name: "", valuesText: "", values: [] }])
   }
 
   function updateVariantDraft(index: number, patch: Partial<VariantDraft>) {
     setVariantDrafts((prev) => prev.map((draft, i) => (i === index ? { ...draft, ...patch } : draft)))
+  }
+
+  function updateVariantValuesText(index: number, valuesText: string) {
+    setVariantDrafts((prev) => prev.map((draft, i) => {
+      if (i !== index) return draft
+      const existingValues = new Map(draft.values.map((entry) => [entry.value.trim().toLowerCase(), entry]))
+      const values = valuesText
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => existingValues.get(value.toLowerCase()) ?? {
+          value,
+          quantityEnabled: true,
+          quantityText: "1",
+        })
+      return { ...draft, valuesText, values }
+    }))
+  }
+
+  function updateVariantValueDraft(index: number, valueIndex: number, patch: Partial<VariantValueDraft>) {
+    setVariantDrafts((prev) => prev.map((draft, i) => {
+      if (i !== index) return draft
+      return {
+        ...draft,
+        values: draft.values.map((entry, j) => (j === valueIndex ? { ...entry, ...patch } : entry)),
+      }
+    }))
   }
 
   function removeVariantDraft(index: number) {
@@ -172,18 +215,41 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
   async function onSubmit(data: FormData) {
     setLoading(true)
 
-    const variantOptions = normalizeVariantOptions(
-      variantDrafts.map((draft) => ({
-        name: draft.name,
-        values: draft.valuesText.split(",").map((value) => value.trim()),
-      }))
+    const rawVariantOptions = variantDrafts.map((draft) => ({
+      name: draft.name,
+      values: draft.values.map((entry) => ({
+        value: entry.value,
+        quantity: entry.quantityEnabled ? Number(entry.quantityText) : null,
+      })),
+    }))
+
+    const duplicateVariantNames = getDuplicateVariantNames(normalizeVariantOptions(rawVariantOptions))
+    if (duplicateVariantNames.length) {
+      setLoading(false)
+      toast.error("No puedes tener dos variantes con el mismo nombre")
+      return
+    }
+
+    const invalidQuantity = rawVariantOptions.find((option) =>
+      option.values.some((value) => value.quantity !== null && (!Number.isInteger(value.quantity) || value.quantity < 1))
     )
+    if (invalidQuantity) {
+      setLoading(false)
+      toast.error("La qty de cada variante debe ser un numero entero mayor a 0")
+      return
+    }
+
+    const variantOptions = normalizeVariantOptions(rawVariantOptions)
+    const hasVariantQty = variantOptions.some((option) => option.values.some((value) => typeof value.quantity === "number" && value.quantity > 0))
+    const stock = data.manageStock
+      ? (variantOptions.length > 0 && hasVariantQty ? sumVariantQuantities(variantOptions) : data.stock)
+      : 0
 
     const payload = {
       ...data,
       comparePrice: data.comparePrice ?? null,
       description: data.description || null,
-      stock: data.manageStock ? data.stock : 0,
+      stock,
       sku: data.sku || null,
       images,
       tags,
@@ -224,8 +290,14 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
     router.refresh()
   }
 
+  function handleCancel() {
+    toast.info("No se ha modificado el producto")
+    router.push(`/dashboard/${storeSlug}/products`)
+  }
+
   const slug = useWatch({ control, name: "slug" }) ?? ""
   const manageStock = useWatch({ control, name: "manageStock" }) ?? true
+  const variantStockMode = manageStock && variantDrafts.some((draft) => draft.values.some((value) => value.quantityEnabled))
 
   useEffect(() => {
     if (!manageStock) {
@@ -248,7 +320,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               Eliminar
             </Button>
           )}
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
+          <Button type="button" variant="outline" onClick={handleCancel} disabled={loading}>
             Cancelar
           </Button>
           <Button type="submit" disabled={loading}>
@@ -300,61 +372,50 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Variantes del producto</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Opcional. Ejemplo: Talla = S, M, L. Color = Azul, Rojo, Verde.
-              </p>
-              <div className="space-y-3">
-                {variantDrafts.map((draft, index) => (
-                  <div key={index} className="grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_2fr_auto]">
-                    <div className="space-y-1">
-                      <Label>Nombre</Label>
-                      <Input
-                        placeholder="Talla"
-                        value={draft.name}
-                        onChange={(e) => updateVariantDraft(index, { name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Valores</Label>
-                      <Input
-                        placeholder="S, M, L"
-                        value={draft.valuesText}
-                        onChange={(e) => updateVariantDraft(index, { valuesText: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeVariantDraft(index)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button type="button" variant="outline" onClick={addVariantDraft}>
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar variante
-              </Button>
-            </CardContent>
-          </Card>
-
+          
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Precios e inventario</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-2">
+                    <input type="checkbox" {...register("manageStock")} />
+                    Manejar stock
+                  </Label>
+
+                  {manageStock && !variantStockMode && (
+                    <div>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        disabled={!manageStock}
+                        {...register("stock", { valueAsNumber: true })}
+                      />
+                      {errors.stock && <p className="text-xs text-destructive">{errors.stock.message}</p>}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    Desactivalo si el producto no debe agotarse por inventario.
+                  </p>
+
+                  {variantStockMode && (
+                    <p className="text-xs text-muted-foreground">
+                      El stock se captura por variante.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <Label>SKU</Label>
+                  <Input placeholder="Ej: CAM-001-BL" {...register("sku")} />
+                </div>
+              </div>
+
+              <div className={`grid grid-cols-2 gap-4`}>
                 <div className="space-y-1">
                   <Label>Precio *</Label>
                   <div className="flex items-center">
@@ -392,126 +453,100 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="flex items-center gap-2">
-                    <input type="checkbox" {...register("manageStock")} />
-                    Manejar stock
-                  </Label>
-
-                  {manageStock && (
-                    <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Variantes del producto <span className="text-xs text-muted-foreground">(Opcional)</span> </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Ejemplo: <br/>
+                Nombre: “Talla” en el primer campo y agrega Valores: “S, M, L” como opciones.<br/>
+                Nombre: “Color” y agrega Valores: “Azul, Rojo, Verde.”
+              </p>
+              {variantStockMode && (
+                <p className="text-xs text-muted-foreground">
+                  Si activas qty en una variante, el stock se manejará por esa variante.
+                </p>
+              )}
+              <div className="space-y-3">
+                {variantDrafts.map((draft, index) => (
+                  <div key={index} className="space-y-4 rounded-xl border p-4">
+                    <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto]">
+                    <div className="space-y-1">
+                      <Label>Nombre</Label>
                       <Input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        disabled={!manageStock}
-                        {...register("stock", { valueAsNumber: true })}
+                        placeholder="Talla"
+                        value={draft.name}
+                        onChange={(e) => updateVariantDraft(index, { name: e.target.value })}
                       />
-                      {errors.stock && <p className="text-xs text-destructive">{errors.stock.message}</p>}
                     </div>
-                  )}
-
-                  <p className="text-xs text-muted-foreground">
-                    Desactivalo si el producto no debe agotarse por inventario.
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <Label>SKU</Label>
-                  <Input placeholder="Ej: CAM-001-BL" {...register("sku")} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Imagenes</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {images.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {images.map((url, i) => (
-                    <div key={i} className="relative group w-20 h-20 rounded-lg overflow-hidden border bg-muted">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setImages((prev) => prev.filter((_, j) => j !== i))}
-                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                    <div className="space-y-1">
+                      <Label>Valores</Label>
+                      <Input
+                        placeholder="S, M, L"
+                        value={draft.valuesText}
+                        onChange={(e) => updateVariantValuesText(index, e.target.value)}
+                      />
                     </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  value={imageInput}
-                  onChange={(e) => setImageInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImage())}
-                />
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={addImage} disabled={images.length >= 8}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={images.length >= 8 || uploading}>
-                    {uploading ? "Subiendo..." : "Subir archivo"}
-                  </Button>
-                </div>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleUpload(file)
-                  e.target.value = ""
-                }}
-              />
-              <p className="text-xs text-muted-foreground">{images.length}/8 imagenes. Puedes agregar URLs o subir archivos.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Etiquetas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full"
-                    >
-                      {tag}
-                      <button
+                    <div className="flex items-end">
+                      <Button
                         type="button"
-                        onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeVariantDraft(index)}
+                        className="text-destructive hover:text-destructive"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ej: ropa, verano, algodon"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                />
-                <Button type="button" variant="outline" onClick={addTag} disabled={tags.length >= 10}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    </div>
+
+                    {draft.values.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Valores y qty
+                        </p>
+                        <div className="grid gap-3">
+                          {draft.values.map((valueDraft, valueIndex) => (
+                            <div key={`${valueDraft.value}-${valueIndex}`} className="grid gap-3 md:grid-cols-[1fr_auto_120px] md:items-center">
+                              <div className="text-sm font-medium">{valueDraft.value}</div>
+                              <Label className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={valueDraft.quantityEnabled}
+                                  onChange={(e) =>
+                                    updateVariantValueDraft(index, valueIndex, {
+                                      quantityEnabled: e.target.checked,
+                                      quantityText: e.target.checked ? (valueDraft.quantityText || "1") : "",
+                                    })
+                                  }
+                                  disabled={!manageStock}
+                                />
+                                Qty
+                              </Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                placeholder="0"
+                                value={valueDraft.quantityText}
+                                onChange={(e) => updateVariantValueDraft(index, valueIndex, { quantityText: e.target.value })}
+                                disabled={!manageStock || !valueDraft.quantityEnabled}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
+              <Button type="button" variant="outline" onClick={addVariantDraft}>
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar variante
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -551,6 +586,56 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               </div>
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Imagenes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {images.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {images.map((url, i) => (
+                    <div key={i} className="relative group w-20 h-20 rounded-lg overflow-hidden border bg-muted">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setImages((prev) => prev.filter((_, j) => j !== i))}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_0.3fr] gap-2 sm:flex-row">
+                <Input
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  value={imageInput}
+                  onChange={(e) => setImageInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImage())}
+                />
+                <Button type="button" variant="outline" onClick={addImage} disabled={images.length >= 8}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button className="sm:col-span-2" type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={images.length >= 8 || uploading}>
+                  {uploading ? "Subiendo..." : "Subir archivo"}
+                </Button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleUpload(file)
+                  e.target.value = ""
+                }}
+              />
+              <p className="text-xs text-muted-foreground">{images.length}/8 imagenes. Puedes agregar URLs o subir archivos.</p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -575,6 +660,43 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
               {errors.categoryId && (
                 <p className="text-xs text-destructive mt-1">{errors.categoryId.message}</p>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Etiquetas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ej: ropa, verano, algodon"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                />
+                <Button type="button" variant="outline" onClick={addTag} disabled={tags.length >= 10}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

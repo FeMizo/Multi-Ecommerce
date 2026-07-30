@@ -11,6 +11,7 @@ import { useMemo, useState } from "react"
 import { withProductPlaceholder } from "@/lib/placeholders"
 import {
   defaultVariantSelection,
+  getVariantQuantityLimit,
   normalizeVariantOptions,
   variantSelectionKey,
 } from "@/lib/product-variants"
@@ -46,7 +47,10 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
   const defaultSelection = defaultVariantSelection(variantOptions)
   const variantKey = variantSelectionKey(defaultSelection)
-  const canAdd = (product.manageStock ? product.stock > 0 : true) && variantOptions.every((option, index) => Boolean(defaultSelection[index]?.value))
+  const stockLimit = product.manageStock
+    ? (getVariantQuantityLimit(variantOptions, defaultSelection) ?? product.stock)
+    : 30
+  const canAdd = (product.manageStock ? stockLimit > 0 : true) && variantOptions.every((option, index) => Boolean(defaultSelection[index]?.value))
   
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)

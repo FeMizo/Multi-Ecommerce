@@ -6,7 +6,11 @@ import { Prisma } from "@prisma/client"
 import { slugify } from "@/lib/utils"
 import { checkProductLimit } from "@/lib/plan-limits"
 import { positiveMxnSchema } from "@/lib/money"
-import { normalizeVariantOptions } from "@/lib/product-variants"
+import {
+  getDuplicateVariantNames,
+  normalizeVariantOptions,
+  sumVariantQuantities,
+} from "@/lib/product-variants"
 
 const schema = z.object({
   name: z.string().min(2).max(120),
@@ -28,7 +32,10 @@ const schema = z.object({
   tags: z.array(z.string()).max(10).default([]),
   variantOptions: z.array(z.object({
     name: z.string().min(1).max(40),
-    values: z.array(z.string().min(1).max(40)).min(1).max(20),
+    values: z.array(z.object({
+      value: z.string().min(1).max(40),
+      quantity: z.number().int().positive().optional().nullable(),
+    })).min(1).max(20),
   })).max(5).default([]),
 })
 
@@ -62,6 +69,17 @@ export async function POST(
 
   const storeId = membership.store.id
   const data = parsed.data
+  const duplicateVariantNames = getDuplicateVariantNames(data.variantOptions)
+  if (duplicateVariantNames.length) {
+    return NextResponse.json({ message: "No puedes tener dos variantes con el mismo nombre" }, { status: 422 })
+  }
+  const normalizedVariantOptions = normalizeVariantOptions(data.variantOptions)
+  const hasVariantQty = normalizedVariantOptions.some((option) =>
+    option.values.some((value) => typeof value.quantity === "number" && value.quantity > 0)
+  )
+  const resolvedStock = data.manageStock
+    ? (normalizedVariantOptions.length > 0 && hasVariantQty ? sumVariantQuantities(normalizedVariantOptions) : data.stock)
+    : 0
 
   try {
     const product = await db.$transaction(async (tx) => {
@@ -85,7 +103,7 @@ export async function POST(
           description: data.description ?? null,
           price: data.price,
           comparePrice: data.comparePrice ?? null,
-          stock: data.stock,
+          stock: resolvedStock,
           manageStock: data.manageStock,
           sku: data.sku ?? null,
           categoryId: data.categoryId,
@@ -93,7 +111,7 @@ export async function POST(
           featured: data.featured,
           images: data.images,
           tags: data.tags,
-          variantOptions: normalizeVariantOptions(data.variantOptions),
+          variantOptions: normalizedVariantOptions,
         },
       })
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })

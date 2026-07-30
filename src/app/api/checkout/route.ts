@@ -17,6 +17,7 @@ import { generateTransferCode, PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/
 import { sendOrderReceivedEmail, sendSellerNewOrderEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from "@/lib/store-coupons"
+import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
 
 const checkoutSchema = z.object({
   checkoutToken: z.string().uuid(),
@@ -218,7 +219,7 @@ export async function POST(req: Request) {
         const [products, orderLimit, plan] = await Promise.all([
           tx.product.findMany({
             where: { id: { in: items.map((item) => item.productId) }, storeId, status: "ACTIVE", deletedAt: null },
-            select: { id: true, price: true, images: true, sku: true, name: true, manageStock: true, stock: true },
+            select: { id: true, price: true, images: true, sku: true, name: true, manageStock: true, stock: true, variantOptions: true },
           }),
           checkOrderLimit(storeId, tx),
           getEffectivePlan(storeId, tx),
@@ -242,6 +243,10 @@ export async function POST(req: Request) {
         for (const item of items) {
           const product = products.find((candidate) => candidate.id === item.productId)!
           if (!product.manageStock) continue
+          const variantOptions = normalizeVariantOptions(product.variantOptions ?? [])
+          const variantLimit = getVariantQuantityLimit(variantOptions, item.variantSelection ?? [])
+          const stockLimit = variantOptions.length > 0 && variantLimit !== null ? variantLimit : product.stock
+          if (stockLimit < item.quantity) throw new Error("STOCK_UNAVAILABLE")
           const changed = await tx.product.updateMany({
             where: { id: item.productId, storeId, status: "ACTIVE", deletedAt: null, stock: { gte: item.quantity } },
             data: { stock: { decrement: item.quantity } },

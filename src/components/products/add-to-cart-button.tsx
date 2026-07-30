@@ -8,6 +8,7 @@ import { withProductPlaceholder } from "@/lib/placeholders"
 import {
   defaultVariantSelection,
   formatVariantSelection,
+  getVariantQuantityLimit,
   normalizeVariantOptions,
   variantSelectionKey,
   type ProductVariantSelection,
@@ -35,7 +36,10 @@ export function AddToCartButton({ product }: Props) {
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
   const [initialized] = useState(() => defaultVariantSelection(variantOptions))
   const currentSelection = selected.length > 0 ? selected : initialized
-  const maxQty = product.manageStock ? product.stock : 30
+  const stockLimit = product.manageStock
+    ? (getVariantQuantityLimit(variantOptions, currentSelection) ?? product.stock)
+    : 30
+  const maxQty = stockLimit
 
   function handleAdd() {
     if (qty < 1) return
@@ -56,7 +60,7 @@ export function AddToCartButton({ product }: Props) {
     openCart()
   }
 
-  const canAdd = (product.manageStock ? product.stock > 0 : true) && variantOptions.every((option, index) => Boolean(currentSelection[index]?.value))
+  const canAdd = (product.manageStock ? stockLimit > 0 : true) && variantOptions.every((option, index) => Boolean(currentSelection[index]?.value))
 
   return (
     <div className="flex flex-col gap-3">
@@ -67,10 +71,10 @@ export function AddToCartButton({ product }: Props) {
               <label className="text-sm font-medium">{option.name}</label>
               <select
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={currentSelection[index]?.value ?? option.values[0] ?? ""}
-              onChange={(event) => {
-                const value = event.target.value
-                setSelected((prev) => {
+                value={currentSelection[index]?.value ?? option.values[0]?.value ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value
+                  setSelected((prev) => {
                     const next = [...prev]
                     next[index] = { name: option.name, value }
                     return next
@@ -78,8 +82,8 @@ export function AddToCartButton({ product }: Props) {
                 }}
               >
                 {option.values.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
+                  <option key={value.value} value={value.value}>
+                    {value.value}
                   </option>
                 ))}
               </select>
@@ -117,7 +121,7 @@ export function AddToCartButton({ product }: Props) {
       </div>
       <Button size="lg" className="w-full" onClick={handleAdd} disabled={!canAdd || qty < 1}>
         <ShoppingCart className="mr-2 h-5 w-5" />
-        {product.manageStock && product.stock === 0 ? "Sin stock" : "Agregar al carrito"}
+        {product.manageStock && stockLimit === 0 ? "Sin stock" : "Agregar al carrito"}
       </Button>
     </div>
   )
