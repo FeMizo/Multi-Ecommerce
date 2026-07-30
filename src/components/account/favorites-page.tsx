@@ -10,8 +10,10 @@ import { formatPrice } from "@/lib/utils"
 import { removeFavorite, readFavoritesFromStorage, subscribeToFavorites, type FavoriteProduct } from "@/lib/favorites"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 
+const EMPTY_FAVORITES: readonly FavoriteProduct[] = []
+
 export function FavoritesPage() {
-  const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => [] as FavoriteProduct[])
+  const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => EMPTY_FAVORITES)
 
   function handleRemove(productId: string) {
     removeFavorite(productId)

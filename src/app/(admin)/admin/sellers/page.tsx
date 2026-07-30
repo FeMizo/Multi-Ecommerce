@@ -46,12 +46,29 @@ export default async function AdminSellersPage({
           : {}),
       },
       orderBy: { createdAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        cityId: true,
+        createdAt: true,
+        isActive: true,
+        isVerified: true,
+        stripeOnboarded: true,
+        stripeAccountId: true,
+        cashOnDeliveryEnabled: true,
+        transferEnabled: true,
+        transferAccountName: true,
+        transferAccountNumber: true,
+        transferBank: true,
+        transferReferencePrefix: true,
+        transferReferenceExtra: true,
         city: { select: { id: true, name: true } },
-        subscription: { include: { plan: { select: { id: true, name: true, commissionRate: true } } } },
+        subscription: { select: { plan: { select: { id: true, name: true, commissionRate: true } } } },
         members: {
           where: { role: "OWNER" },
-          include: { user: { select: { name: true, email: true, phone: true } } },
+          select: { id: true, role: true, user: { select: { name: true, email: true, phone: true } } },
           take: 1,
         },
         _count: {
@@ -60,6 +77,7 @@ export default async function AdminSellersPage({
             orders: true,
           },
         },
+        featuredPosition: true,
       },
     }),
     db.plan.findMany({
@@ -128,6 +146,11 @@ export default async function AdminSellersPage({
                               Verificada
                             </Badge>
                           )}
+                          {store.featuredPosition !== null && (
+                            <Badge variant="secondary" className="text-xs">
+                              Pos. {store.featuredPosition}
+                            </Badge>
+                          )}
                         </div>
                       </td>
                       <td className="py-2 px-3">
@@ -170,6 +193,7 @@ export default async function AdminSellersPage({
                           cities={cities}
                           isActive={store.isActive}
                           isVerified={store.isVerified}
+                          featuredPosition={store.featuredPosition}
                           stripeOnboarded={store.stripeOnboarded}
                           stripeAccountId={store.stripeAccountId}
                           cashOnDeliveryEnabled={store.cashOnDeliveryEnabled}

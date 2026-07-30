@@ -19,6 +19,8 @@ import {
 } from "@/lib/product-variants"
 import { readFavoritesFromStorage, removeFavorite, subscribeToFavorites, upsertFavorite } from "@/lib/favorites"
 
+const EMPTY_FAVORITES: readonly [] = []
+
 type ProductCardProps = {
   product: {
     id: string
@@ -60,7 +62,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
     : null
 
   const href = storeSlug ? `/${storeSlug}/${product.slug}` : `/products/${product.slug}`
-  const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => [])
+  const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => EMPTY_FAVORITES)
   const isLiked = favorites.some((favorite) => favorite.id === product.id)
   const canUseFavorites = Boolean(session?.user)
 

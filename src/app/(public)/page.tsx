@@ -52,16 +52,34 @@ async function getCategories() {
 }
 
 async function getFeaturedStores() {
-  const [stores, orders] = await Promise.all([
+  const [stores, productCounts, orders] = await Promise.all([
     db.store.findMany({
       where: {
         isActive: true,
         deletedAt: null,
+        featuredPosition: { not: null },
       },
-      include: {
-        _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        bannerUrl: true,
+        logoUrl: true,
+        primaryColor: true,
+        isVerified: true,
+        featuredPosition: true,
+        createdAt: true,
       },
-      orderBy: [{ createdAt: "desc" }],
+      orderBy: [{ featuredPosition: "asc" }, { createdAt: "desc" }],
+    }),
+    db.product.groupBy({
+      by: ["storeId"],
+      where: {
+        status: "ACTIVE",
+        deletedAt: null,
+        store: { isActive: true, deletedAt: null },
+      },
+      _count: { _all: true },
     }),
     db.order.groupBy({
       by: ["storeId"],
@@ -70,19 +88,15 @@ async function getFeaturedStores() {
     }),
   ])
 
+  const productCountMap = new Map(productCounts.map((product) => [product.storeId, product._count._all]))
   const orderCountMap = new Map(orders.map((order) => [order.storeId, order._count._all]))
 
   return stores
-    .filter((store) => store._count.products > 0)
-    .sort((a, b) => {
-      const aOrders = orderCountMap.get(a.id) ?? 0
-      const bOrders = orderCountMap.get(b.id) ?? 0
-      if (bOrders !== aOrders) return bOrders - aOrders
-      return b.createdAt.getTime() - a.createdAt.getTime()
-    })
+    .filter((store) => (productCountMap.get(store.id) ?? 0) > 0)
     .slice(0, 8)
     .map((store) => ({
       ...store,
+      productCount: productCountMap.get(store.id) ?? 0,
       orderCount: orderCountMap.get(store.id) ?? 0,
     }))
 }
@@ -388,13 +402,18 @@ export default async function HomePage() {
                         />
                       </div>
                     </div>
-                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex items-center gap-2 mb-1.5">
                     <span className="font-bold text-base truncate group-hover:text-primary transition-colors">{store.name}</span>
                     {store.isVerified && <VerifiedBadge compact className="shrink-0" />}
+                    {store.featuredPosition !== null && (
+                      <Badge variant="secondary" className="shrink-0 text-[10px]">
+                        Pos. {store.featuredPosition}
+                      </Badge>
+                    )}
                   </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1 font-medium"><Package className="h-3 w-3" />{store._count.products} productos</span>
-                      <span className="text-right font-medium">{store.orderCount} compras</span>
+                      <span className="flex items-center gap-1 font-medium"><Package className="h-3 w-3" />{store.productCount} productos</span>
+                      <span className="text-right font-medium">{store.orderCount} ventas</span>
                     </div>
                   </div>
                 </Link>

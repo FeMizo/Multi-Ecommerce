@@ -112,6 +112,7 @@ model Store {
   transferReferenceExtra String? @db.Text
   transferInstructions String? @db.Text
   isVerified       Boolean   @default(false)
+  featuredPosition Int?     @unique
   deletedAt        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -436,4 +437,34 @@ enum PaymentMethod {
 enum CouponType {
   PERCENTAGE
   FIXED
+}
+
+model SocialPost {
+  id               String           @id @default(cuid())
+  title            String
+  topic            String
+  channels         String[]
+  caption          String           @db.Text
+  imageUrl         String?
+  destinationUrl   String           @default("https://shop.aionsite.com.mx")
+  scheduledAt      DateTime
+  status           SocialPostStatus @default(SCHEDULED)
+  publishedAt      DateTime?
+  facebookPostId   String?
+  instagramMediaId String?
+  lastError        String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([publishedAt])
+  @@map("social_posts")
+}
+
+enum SocialPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
 }

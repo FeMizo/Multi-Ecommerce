@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
 
 const schema = z.object({
   cityId: z.string().nullable().optional(),
+  featuredPosition: z.coerce.number().int().min(1).nullable().optional(),
 })
 
 export async function PATCH(
@@ -29,11 +31,21 @@ export async function PATCH(
     }
   }
 
-  const store = await db.store.update({
-    where: { id: storeId },
-    data: { cityId: parsed.data.cityId ?? null },
-    select: { id: true, cityId: true },
-  })
+  try {
+    const store = await db.store.update({
+      where: { id: storeId },
+      data: {
+        cityId: parsed.data.cityId ?? null,
+        featuredPosition: parsed.data.featuredPosition ?? null,
+      },
+      select: { id: true, cityId: true, featuredPosition: true },
+    })
 
-  return NextResponse.json(store)
+    return NextResponse.json(store)
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ message: "Esa posición ya está ocupada" }, { status: 409 })
+    }
+    throw error
+  }
 }
