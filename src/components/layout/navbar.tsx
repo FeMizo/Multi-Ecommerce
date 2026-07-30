@@ -25,7 +25,83 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useCartStore } from "@/stores/cart"
 import { CartDrawer } from "@/components/layout/cart-drawer"
 import type { Session } from "next-auth"
-import { useState } from "react"
+import { useEffect, useState, useTransition } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+
+function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus?: boolean; submitLabel?: string }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [, startTransition] = useTransition()
+  const [value, setValue] = useState(searchParams.get("q") ?? "")
+
+  useEffect(() => {
+    setValue(searchParams.get("q") ?? "")
+  }, [searchParams])
+
+  function navigate(nextValue: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    const q = nextValue.trim()
+
+    if (q) {
+      params.set("q", q)
+    } else {
+      params.delete("q")
+    }
+    params.delete("page")
+
+    startTransition(() => {
+      const qs = params.toString()
+      router.replace(`${pathname}${qs ? `?${qs}` : ""}`)
+    })
+  }
+
+  return (
+    <form
+      action="/search"
+      method="get"
+      className="flex items-center gap-2"
+      onSubmit={(event) => {
+        event.preventDefault()
+        navigate(value)
+      }}
+    >
+      <div className="relative flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          name="q"
+          value={value}
+          onChange={(event) => {
+            const nextValue = event.target.value
+            setValue(nextValue)
+            if (!nextValue.trim() && (searchParams.get("q") ?? "")) {
+              navigate("")
+            }
+          }}
+          autoFocus={autoFocus}
+          placeholder="Buscar productos, tiendas..."
+          className="w-full h-10 rounded-full border border-input bg-muted/50 pl-10 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => {
+              setValue("")
+              navigate("")
+            }}
+            aria-label="Limpiar búsqueda"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      <Button type="submit" className="shrink-0">
+        {submitLabel}
+      </Button>
+    </form>
+  )
+}
 
 type NavbarProps = {
   session: Session | null
@@ -70,14 +146,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
 
             {/* Search - Desktop */}
             <div className="flex-1 max-w-xl hidden md:block">
-              <form action="/search" className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  name="q"
-                  placeholder="Buscar productos, tiendas..."
-                  className="w-full h-10 rounded-full border border-input bg-muted/50 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </form>
+              <NavbarSearch submitLabel="Buscar" />
             </div>
 
             {/* Nav Links - Desktop */}
@@ -117,18 +186,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                     <DialogTitle>Buscar</DialogTitle>
                     <DialogDescription>Escribe lo que buscas y ve a resultados.</DialogDescription>
                   </DialogHeader>
-                  <form action="/search" method="get" className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <input
-                        name="q"
-                        autoFocus
-                        placeholder="Buscar productos, tiendas..."
-                        className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      />
-                    </div>
-                    <Button type="submit">Ir</Button>
-                  </form>
+                  <NavbarSearch autoFocus submitLabel="Ir" />
                 </DialogContent>
               </Dialog>
               

@@ -19,12 +19,12 @@ export function ProductImportButton({ storeSlug, disabled }: Props) {
   function downloadDemoCsv() {
     const csv = [
       [
-        "titulo",
-        "precio",
+        "titulo*",
+        "precio*",
         "sku",
         "stock",
         "descripcion",
-        "categoria",
+        "categoria*",
         "estado",
         "imagenes",
         "etiquetas",
@@ -34,10 +34,10 @@ export function ProductImportButton({ storeSlug, disabled }: Props) {
         "299.99",
         "CAM-001",
         "25",
-        '"Camiseta de algodon para uso diario"',
+        '"Camiseta de algodon para uso diario. Tela suave, corte clasico y disponible en varias tallas."',
         '"Ropa"',
         "ACTIVE",
-        '"https://example.com/imagen-1.jpg;https://example.com/imagen-2.jpg"',
+        '"https://example.com/imagen-1.jpg;https://example.com/imagen-2.jpg;https://example.com/imagen-3.jpg"',
         '"ropa;verano;algodon"',
       ].join(","),
     ].join("\n")
@@ -90,7 +90,7 @@ export function ProductImportButton({ storeSlug, disabled }: Props) {
     <div className="flex flex-wrap gap-2">
       <Button type="button" variant="secondary" onClick={downloadDemoCsv} disabled={disabled}>
         <Download className="h-4 w-4 mr-2" />
-        Descargar demo CSV
+        Descargar demo tipo excel
       </Button>
       <Button
         type="button"
@@ -99,7 +99,7 @@ export function ProductImportButton({ storeSlug, disabled }: Props) {
         disabled={disabled || loading}
       >
         <Upload className="h-4 w-4 mr-2" />
-        {loading ? "Importando..." : "Importar CSV"}
+        {loading ? "Importando..." : "Importar productos"}
       </Button>
       <input
         ref={inputRef}
@@ -108,6 +108,9 @@ export function ProductImportButton({ storeSlug, disabled }: Props) {
         className="hidden"
         onChange={(event) => handleFile(event.target.files?.[0])}
       />
+      <p className="w-full text-xs text-muted-foreground">
+        Las columnas con * son las únicas obligatorias.
+      </p>
     </div>
   )
 }

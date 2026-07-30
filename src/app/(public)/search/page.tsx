@@ -1,11 +1,9 @@
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { buildKeywords } from "@/lib/seo"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { SearchForm } from "@/components/public/search-form"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -75,20 +73,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 rounded-2xl border bg-card p-4 shadow-sm">
-        <form action="/search" method="get" className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              name="q"
-              defaultValue={params.q ?? ""}
-              placeholder="Buscar productos, tiendas..."
-              className="pl-10"
-            />
-          </div>
-          <Button type="submit" className="sm:w-auto">
-            Buscar
-          </Button>
-        </form>
+        <SearchForm initialParams={params} />
         <p className="mt-3 text-xs text-muted-foreground">
           Busca por producto o categoria.
         </p>

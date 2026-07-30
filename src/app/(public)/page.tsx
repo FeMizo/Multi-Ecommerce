@@ -196,7 +196,7 @@ export default async function HomePage() {
               </Badge>
             </div>
             <p className="animate-fade-in-up delay-50 mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-              Marketplace local en Mexico
+              Marketplace local en Ciudad del Carmen
             </p>
             
             <h1 className="animate-fade-in-up delay-100 text-4xl md:text-5xl lg:text-[4rem] font-bold tracking-tight mb-6 text-balance leading-[1.1]">
@@ -213,7 +213,7 @@ export default async function HomePage() {
 
             <div className="animate-fade-in-up delay-250 mx-auto mb-10 max-w-3xl rounded-3xl border border-border/60 bg-background/80 p-6 text-left shadow-sm backdrop-blur-sm">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary mb-3">
-                Que hace esta app
+                Que hace este Sitio Web
               </p>
               <p className="text-base md:text-lg text-foreground leading-relaxed">
                 AionSite Shop es una aplicacion web de marketplace local en Mexico. Permite a los compradores descubrir tiendas locales,
@@ -274,8 +274,8 @@ export default async function HomePage() {
               <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
               Ventajas
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Por que elegirnos?</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto text-lg">Una experiencia de compra disenada para ti y tu comunidad</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Por qué elegirnos?</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto text-lg">Una experiencia de compra diseñada para ti y tu comunidad</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
@@ -501,7 +501,7 @@ export default async function HomePage() {
                 Listo para vender tus productos?
               </h2>
               <p className="text-background/70 mb-10 max-w-lg mx-auto text-lg text-balance">
-                Unete a cientos de emprendedores que ya venden en nuestra plataforma. Configuracion en minutos, sin costos ocultos.
+                Unete a cientos de emprendedores que ya venden en nuestra plataforma. Configuración en minutos, sin costos ocultos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="h-14 px-10 text-base rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30 btn-shine" asChild>

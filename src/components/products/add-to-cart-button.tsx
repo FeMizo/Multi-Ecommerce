@@ -35,8 +35,10 @@ export function AddToCartButton({ product }: Props) {
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
   const [initialized] = useState(() => defaultVariantSelection(variantOptions))
   const currentSelection = selected.length > 0 ? selected : initialized
+  const maxQty = product.manageStock ? product.stock : 30
 
   function handleAdd() {
+    if (qty < 1) return
     const variantKey = variantSelectionKey(currentSelection)
     for (let i = 0; i < qty; i++) {
       addItem({
@@ -96,22 +98,24 @@ export function AddToCartButton({ product }: Props) {
         <div className="flex items-center border rounded-md">
           <button
             type="button"
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            onClick={() => setQty((q) => Math.max(0, q - 1))}
             className="h-9 w-9 flex items-center justify-center hover:bg-accent rounded-l-md"
+            aria-label="Disminuir cantidad"
           >
             <Minus className="h-4 w-4" />
           </button>
           <span className="h-9 w-10 flex items-center justify-center text-sm font-medium">{qty}</span>
           <button
             type="button"
-            onClick={() => setQty((q) => (product.manageStock ? Math.min(product.stock, q + 1) : q + 1))}
+            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
             className="h-9 w-9 flex items-center justify-center hover:bg-accent rounded-r-md"
+            aria-label="Aumentar cantidad"
           >
             <Plus className="h-4 w-4" />
           </button>
         </div>
       </div>
-      <Button size="lg" className="w-full" onClick={handleAdd} disabled={!canAdd}>
+      <Button size="lg" className="w-full" onClick={handleAdd} disabled={!canAdd || qty < 1}>
         <ShoppingCart className="mr-2 h-5 w-5" />
         {product.manageStock && product.stock === 0 ? "Sin stock" : "Agregar al carrito"}
       </Button>
