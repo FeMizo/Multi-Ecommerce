@@ -1,39 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { z } from "zod"
-import {
-  getDuplicateVariantNames,
-  normalizeVariantOptions,
-  sumVariantQuantities,
-} from "@/lib/product-variants"
-
-const schema = z.object({
-  name: z.string().min(2).max(120),
-  slug: z
-    .string()
-    .min(2)
-    .max(80)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  description: z.string().max(2000).optional().nullable(),
-  price: z.number().positive(),
-  comparePrice: z.number().positive().optional().nullable(),
-  stock: z.number().int().min(0),
-  manageStock: z.boolean(),
-  sku: z.string().max(60).optional().nullable(),
-  categoryId: z.string().min(1),
-  status: z.enum(["DRAFT", "ACTIVE", "PAUSED"]),
-  featured: z.boolean(),
-  images: z.array(z.string().url()).max(8),
-  tags: z.array(z.string()).max(10),
-  variantOptions: z.array(z.object({
-    name: z.string().min(1).max(40),
-    values: z.array(z.object({
-      value: z.string().min(1).max(40),
-      quantity: z.number().int().positive().optional().nullable(),
-    })).min(1).max(20),
-  })).max(5).default([]),
-})
+import { getDuplicateVariantNames, normalizeVariantOptions, sumVariantQuantities } from "@/lib/product-variants"
+import { productUpdateSchema } from "@/lib/schemas"
 
 async function getMembership(userId: string, storeSlug: string) {
   return db.storeMember.findFirst({
@@ -63,7 +32,7 @@ export async function PATCH(
   if (!product) return NextResponse.json({ message: "Producto no encontrado" }, { status: 404 })
 
   const body = await req.json()
-  const parsed = schema.safeParse(body)
+  const parsed = productUpdateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })
   }
@@ -86,7 +55,7 @@ export async function PATCH(
       where: { storeId, slug: data.slug, id: { not: productId } },
     })
     if (conflict) {
-      return NextResponse.json({ message: "Ese slug ya está en uso" }, { status: 409 })
+      return NextResponse.json({ message: "Ese slug ya esta en uso" }, { status: 409 })
     }
   }
 

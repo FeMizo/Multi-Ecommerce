@@ -32,7 +32,11 @@ export default function robots(): MetadataRoute.Robots {
         "/seller/",
       ],
     },
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: [
+      `${siteUrl}/sitemap_index.xml`,
+      `${siteUrl}/sitemap_tiendas.xml`,
+      `${siteUrl}/sitemap_productos.xml`,
+    ],
     host: siteUrl,
   }
 }

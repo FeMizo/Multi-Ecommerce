@@ -1,29 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { z } from "zod"
-
-const schema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres").max(60, "Máximo 60 caracteres"),
-  description: z.string().max(300, "Máximo 300 caracteres").optional().nullable(),
-  logoUrl: z.string().url("URL inválida").optional().nullable(),
-  bannerUrl: z.string().url("URL inválida").optional().nullable(),
-  primaryColor: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/, "Color inválido")
-    .optional()
-    .nullable(),
-  fontFamily: z.string().max(60).optional().nullable(),
-  cityId: z.string().optional().nullable(),
-  customDomain: z.string().max(100).optional().nullable(),
-  isActive: z.boolean(),
-  transferEnabled: z.boolean(),
-  transferAccountName: z.string().max(120).optional().nullable(),
-  transferAccountNumber: z.string().max(40).optional().nullable(),
-  transferBank: z.string().max(80).optional().nullable(),
-  transferReferencePrefix: z.string().max(20).optional().nullable(),
-  transferReferenceExtra: z.string().max(20).optional().nullable(),
-})
+import { storeUpdateSchema } from "@/lib/schemas"
 
 export async function PATCH(
   req: NextRequest,
@@ -45,7 +23,7 @@ export async function PATCH(
   if (!membership) return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
 
   const body = await req.json()
-  const parsed = schema.safeParse(body)
+  const parsed = storeUpdateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })
   }
@@ -57,7 +35,7 @@ export async function PATCH(
       where: { customDomain: data.customDomain, id: { not: membership.store.id } },
     })
     if (conflict) {
-      return NextResponse.json({ message: "Ese dominio ya está en uso" }, { status: 409 })
+      return NextResponse.json({ message: "Ese dominio ya esta en uso" }, { status: 409 })
     }
   }
 

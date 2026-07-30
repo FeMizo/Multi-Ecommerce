@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { z } from "zod"
+import { RESERVED_STORE_SLUGS, storeCreateSchema } from "@/lib/schemas"
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -30,22 +30,6 @@ export async function GET(req: Request) {
   return NextResponse.json(store)
 }
 
-const RESERVED_SLUGS = new Set([
-  "admin", "dashboard", "api", "login", "register", "seller",
-  "cart", "checkout", "products", "search", "account", "stores",
-])
-
-const schema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres").max(60),
-  slug: z
-    .string()
-    .min(2)
-    .max(40)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Solo letras, números y guiones"),
-  description: z.string().max(300).optional(),
-  cityId: z.string().optional(),
-})
-
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -53,20 +37,20 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-  const parsed = schema.safeParse(body)
+  const parsed = storeCreateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 })
   }
 
   const { name, slug, description, cityId } = parsed.data
 
-  if (RESERVED_SLUGS.has(slug)) {
-    return NextResponse.json({ message: "Ese slug está reservado por el sistema" }, { status: 409 })
+  if (RESERVED_STORE_SLUGS.has(slug)) {
+    return NextResponse.json({ message: "Ese slug esta reservado por el sistema" }, { status: 409 })
   }
 
   const existing = await db.store.findUnique({ where: { slug } })
   if (existing) {
-    return NextResponse.json({ message: "Ese nombre de tienda ya está en uso" }, { status: 409 })
+    return NextResponse.json({ message: "Ese nombre de tienda ya esta en uso" }, { status: 409 })
   }
 
   const store = await db.$transaction(async (tx) => {
