@@ -7,15 +7,8 @@ import { db } from "@/lib/db"
 import { checkProductLimit, getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ProductImportButton } from "@/components/dashboard/product-import-button"
-
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-  ACTIVE: { label: "Activo", variant: "default" },
-  DRAFT: { label: "Borrador", variant: "secondary" },
-  PAUSED: { label: "Pausado", variant: "outline" },
-  DELETED: { label: "Eliminado", variant: "destructive" },
-}
+import { ProductStatusUpdater } from "@/components/dashboard/product-status-updater"
 
 function NewProductButton({
   storeSlug,
@@ -137,7 +130,6 @@ export default async function StoreProductsPage({
             </thead>
             <tbody className="divide-y">
               {products.map((product) => {
-                const status = statusConfig[product.status] ?? { label: product.status, variant: "secondary" as const }
                 return (
                   <tr key={product.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
@@ -163,7 +155,12 @@ export default async function StoreProductsPage({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant={status.variant}>{status.label}</Badge>
+                      <ProductStatusUpdater
+                        key={`${product.id}-${product.status}`}
+                        storeSlug={storeSlug}
+                        productId={product.id}
+                        currentStatus={product.status as "DRAFT" | "ACTIVE" | "PAUSED" | "DELETED"}
+                      />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button variant="ghost" size="sm" asChild>
