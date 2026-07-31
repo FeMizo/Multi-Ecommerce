@@ -8,14 +8,30 @@ import { ProductCard } from "@/components/products/product-card"
 import { CategoryGrid } from "@/components/products/category-grid"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { absoluteUrl } from "@/lib/site-url"
 import { VerifiedBadge } from "@/components/public/verified-badge"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "AionSite Shop",
+  title: { absolute: "AionSite Shop" },
   description: "AionSite Shop es un marketplace local para descubrir productos unicos de tu comunidad y comprar a vendedores locales en Mexico.",
   keywords: buildKeywords("AionSite Shop", ["marketplace mexicano", "productos locales", "comprar en linea"]),
   alternates: { canonical: "/" },
+  openGraph: {
+    title: "AionSite Shop",
+    description: "AionSite Shop es un marketplace local para descubrir productos unicos de tu comunidad y comprar a vendedores locales en Mexico.",
+    url: "/",
+    siteName: "AionSite Shop",
+    locale: "es_MX",
+    type: "website",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AionSite Shop",
+    description: "AionSite Shop es un marketplace local para descubrir productos unicos de tu comunidad y comprar a vendedores locales en Mexico.",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
 }
 
 async function getFeaturedProducts() {

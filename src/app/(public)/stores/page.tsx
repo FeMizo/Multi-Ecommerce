@@ -5,6 +5,8 @@ import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo-jsonld"
+import { absoluteUrl } from "@/lib/site-url"
 import { VerifiedBadge } from "@/components/public/verified-badge"
 import type { Metadata } from "next"
 
@@ -13,6 +15,20 @@ export const metadata: Metadata = {
   description: "Directorio de tiendas locales activas en AionSite Shop.",
   keywords: buildKeywords("Tiendas", ["tiendas locales", "tiendas activas", "directorio de vendedores"]),
   alternates: { canonical: "/stores" },
+  openGraph: {
+    title: "Tiendas | AionSite Shop",
+    description: "Directorio de tiendas locales activas en AionSite Shop.",
+    url: "/stores",
+    siteName: "AionSite Shop",
+    type: "website",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tiendas | AionSite Shop",
+    description: "Directorio de tiendas locales activas en AionSite Shop.",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
 }
 
 async function getStores() {
@@ -30,9 +46,14 @@ async function getStores() {
 
 export default async function StoresPage() {
   const stores = await getStores()
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Inicio", url: "https://shop.aionsite.com.mx" },
+    { name: "Tiendas", url: "https://shop.aionsite.com.mx/stores" },
+  ])
 
   return (
     <div className="min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbs) }} />
       <div className="bg-card border-b border-border/50">
         <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="max-w-2xl">

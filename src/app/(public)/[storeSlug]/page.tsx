@@ -8,14 +8,16 @@ import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/products/product-card"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo-jsonld"
 import { VerifiedBadge } from "@/components/public/verified-badge"
 import type { Metadata } from "next"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
+import { cache } from "react"
 
 type Params = { storeSlug: string }
 type SearchParams = { category?: string; page?: string }
 
-async function getStore(slug: string) {
+const getStore = cache(async (slug: string) => {
   return db.store.findFirst({
     where: { slug, isActive: true, deletedAt: null },
       select: {
@@ -23,6 +25,7 @@ async function getStore(slug: string) {
         name: true,
         slug: true,
         description: true,
+        city: { select: { name: true, state: true } },
         logoUrl: true,
         bannerUrl: true,
         primaryColor: true,
@@ -33,21 +36,31 @@ async function getStore(slug: string) {
         _count: { select: { products: { where: { status: "ACTIVE", deletedAt: null } } } },
       },
   })
-}
+})
 
-export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>
+  searchParams: Promise<SearchParams>
+}): Promise<Metadata> {
   const { storeSlug } = await params
+  const { category, page } = await searchParams
   const store = await getStore(storeSlug)
   if (!store) return { title: "Tienda no encontrada" }
+  const location = store.city ? [store.city.name, store.city.state].filter(Boolean).join(", ") : ""
 
   const description = store.description
-    ?? `${store.name} en AionSite Shop. Explora sus productos disponibles.`
+    ?? `${store.name}${location ? ` en ${location}` : ""} en AionSite Shop. Explora sus productos disponibles.`
+  const hasFilters = Boolean(category || (page && page !== "1"))
 
     return {
       title: store.name,
       description,
       keywords: buildKeywords(store.name, ["tienda local", "vendedores locales"]),
       alternates: { canonical: `/${store.slug}` },
+      robots: hasFilters ? { index: false, follow: true } : { index: true, follow: true },
       openGraph: {
         title: store.name,
       description,
@@ -109,9 +122,14 @@ export default async function StorePage({
   ])
 
   const currentPage = Number(page ?? 1)
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Inicio", url: "https://shop.aionsite.com.mx" },
+    { name: store.name, url: `https://shop.aionsite.com.mx/${store.slug}` },
+  ])
 
   return (
     <div className="min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbs) }} />
       {/* Hero Banner */}
       <div className="relative h-48 md:h-64 lg:h-80 bg-muted overflow-hidden">
         <Image

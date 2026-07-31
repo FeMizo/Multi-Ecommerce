@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart"
 import { withProductPlaceholder } from "@/lib/placeholders"
+import type { FavoriteProduct } from "@/lib/favorites"
 import {
   defaultVariantSelection,
   getVariantQuantityLimit,
@@ -19,7 +20,7 @@ import {
 } from "@/lib/product-variants"
 import { readFavoritesFromStorage, removeFavorite, subscribeToFavorites, upsertFavorite } from "@/lib/favorites"
 
-const EMPTY_FAVORITES: readonly [] = []
+const EMPTY_FAVORITES: readonly FavoriteProduct[] = []
 
 type ProductCardProps = {
   product: {

@@ -11,10 +11,13 @@ import { ReviewForm } from "@/components/products/review-form"
 import { auth } from "@/lib/auth"
 import { DEFAULT_PRODUCT_IMAGE, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { breadcrumbJsonLd, jsonLdScript, productJsonLd } from "@/lib/seo-jsonld"
+import { siteUrl } from "@/lib/site-url"
 import type { Metadata } from "next"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
+import { cache } from "react"
 
-async function getProduct(storeSlug: string, productSlug: string) {
+const getProduct = cache(async (storeSlug: string, productSlug: string) => {
   return db.product.findFirst({
     where: {
       slug: productSlug,
@@ -23,7 +26,7 @@ async function getProduct(storeSlug: string, productSlug: string) {
       store: { slug: storeSlug, isActive: true, deletedAt: null },
     },
     include: {
-      store: true,
+      store: { include: { city: { select: { name: true, state: true } } } },
       category: true,
       reviews: {
         include: { user: { select: { name: true, image: true } } },
@@ -33,7 +36,7 @@ async function getProduct(storeSlug: string, productSlug: string) {
       _count: { select: { reviews: true } },
     },
   })
-}
+})
 
 export async function generateMetadata({
   params,
@@ -44,21 +47,29 @@ export async function generateMetadata({
   const product = await getProduct(storeSlug, productSlug)
   if (!product) return { title: "Producto no encontrado" }
 
+  const location = product.store.city ? [product.store.city.name, product.store.city.state].filter(Boolean).join(", ") : ""
   const description = product.description
-    ?? `${product.name} de ${product.store.name}, disponible en AionSite Shop.`
+    ?? `${product.name} de ${product.category.name} en ${product.store.name}${location ? `, ${location}` : ""}. Disponible en AionSite Shop.`
   const canonical = `/${product.store.slug}/${product.slug}`
+  const primaryImage = product.images[0] || DEFAULT_PRODUCT_IMAGE
+  const imageUrl = /^https?:\/\//i.test(primaryImage) ? primaryImage : `${siteUrl}${primaryImage.startsWith("/") ? primaryImage : `/${primaryImage}`}`
 
-    return {
-      title: product.name,
-      description,
-      keywords: buildKeywords(product.name, [product.category.name, product.store.name, "producto local", "tienda online"]),
-      alternates: { canonical },
-      openGraph: {
-        title: product.name,
+  return {
+    title: `${product.name} | ${product.store.name}`,
+    description,
+    keywords: buildKeywords(product.name, [product.category.name, product.store.name, "producto local", "tienda online"]),
+    alternates: { canonical },
+    openGraph: {
+      title: `${product.name} | ${product.store.name}`,
       description,
       url: canonical,
-      type: "website",
-      images: [product.images[0] || DEFAULT_PRODUCT_IMAGE],
+      images: [imageUrl],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | ${product.store.name}`,
+      description,
+      images: [imageUrl],
     },
   }
 }
@@ -87,9 +98,35 @@ export default async function StoreProductPage({
   const stockLabel = product.manageStock
     ? (product.stock > 0 ? `${product.stock} disponibles` : "Sin stock")
     : "Sin control de stock"
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Inicio", url: "https://shop.aionsite.com.mx" },
+    { name: product.store.name, url: `https://shop.aionsite.com.mx/${product.store.slug}` },
+    { name: product.name, url: `https://shop.aionsite.com.mx/${product.store.slug}/${product.slug}` },
+  ])
+  const availability = product.manageStock && product.stock <= 0 ? "OutOfStock" : "InStock"
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbs) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScript(
+            productJsonLd({
+              name: product.name,
+              description: product.description ?? `${product.name} de ${product.category.name} en ${product.store.name}.`,
+              images: product.images.length > 0 ? product.images : [DEFAULT_PRODUCT_IMAGE],
+              sku: product.sku ?? null,
+              price: product.price,
+              availability,
+              url: `https://shop.aionsite.com.mx/${product.store.slug}/${product.slug}`,
+              categoryName: product.category.name,
+              storeName: product.store.name,
+              storeUrl: `https://shop.aionsite.com.mx/${product.store.slug}`,
+            }),
+          ),
+        }}
+      />
       <Link
         href={`/${storeSlug}`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-6"
