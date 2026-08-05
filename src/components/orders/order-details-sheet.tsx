@@ -24,6 +24,7 @@ import { buildTransferReference } from "@/lib/transfer-details"
 import { formatVariantSelection } from "@/lib/product-variants"
 import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
 import { RefundButton } from "@/components/dashboard/refund-button"
+import { DELIVERY_STATUS_LABELS, DRIVER_STATUS_LABELS } from "@/lib/delivery"
 
 type CustomerInfo = {
   name?: string
@@ -75,6 +76,21 @@ export type OrderDetailsSheetOrder = {
     status: string
     stripePaymentIntentId: string | null
     stripeRefundId: string | null
+  } | null
+  delivery?: {
+    status: string
+    method: string
+    formattedAddress: string | null
+    lat: number | null
+    lng: number | null
+    notes: string | null
+    driver: {
+      name: string
+      phone: string | null
+      plate: string
+      licenseNumber: string
+      status: string
+    } | null
   } | null
   items: OrderDetailsItem[]
 }
@@ -253,6 +269,30 @@ export function OrderDetailsSheet({ order, trigger, mode = "admin", storeSlug }:
               </div>
             </div>
           </div>
+
+          {order.delivery && (
+            <div className="rounded-2xl border bg-card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Delivery</p>
+                <div className="flex gap-2">
+                  <Badge variant="outline">{DELIVERY_STATUS_LABELS[order.delivery.status as keyof typeof DELIVERY_STATUS_LABELS] ?? order.delivery.status}</Badge>
+                  <Badge variant="secondary">{order.delivery.method}</Badge>
+                </div>
+              </div>
+              <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                {order.delivery.formattedAddress && <p>{order.delivery.formattedAddress}</p>}
+                {order.delivery.notes && <p>{order.delivery.notes}</p>}
+                {order.delivery.driver && (
+                  <p>
+                    Repartidor: {order.delivery.driver.name} · {DRIVER_STATUS_LABELS[order.delivery.driver.status as keyof typeof DRIVER_STATUS_LABELS] ?? order.delivery.driver.status}
+                  </p>
+                )}
+                {order.delivery.driver?.phone && <p>{order.delivery.driver.phone}</p>}
+                {order.delivery.driver?.plate && <p>Placa: {order.delivery.driver.plate}</p>}
+                {order.delivery.driver?.licenseNumber && <p>Licencia: {order.delivery.driver.licenseNumber}</p>}
+              </div>
+            </div>
+          )}
 
           {order.notes && (
             <div className="rounded-2xl border bg-card p-4">

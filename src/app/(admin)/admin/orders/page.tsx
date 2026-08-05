@@ -68,6 +68,25 @@ export default async function AdminOrdersPage({
           },
         },
         payment: { select: { status: true, stripePaymentIntentId: true, stripeRefundId: true } },
+        delivery: {
+          select: {
+            status: true,
+            method: true,
+            formattedAddress: true,
+            lat: true,
+            lng: true,
+            notes: true,
+            driver: {
+              select: {
+                name: true,
+                phone: true,
+                plate: true,
+                licenseNumber: true,
+                status: true,
+              },
+            },
+          },
+        },
       },
     }),
     db.order.count({ where }),
@@ -109,6 +128,7 @@ export default async function AdminOrdersPage({
     customerEmail: order.customerEmail,
     customerInfo: order.customerInfo as OrderDetailsSheetOrder["customerInfo"],
     payment: order.payment,
+    delivery: order.delivery,
     items: order.items,
   })
 

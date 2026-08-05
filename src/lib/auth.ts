@@ -5,6 +5,7 @@ import Google from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { fetchGooglePhoneNumber } from "@/lib/google-people"
+import { normalizeDriverPhone } from "@/lib/delivery"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -27,10 +28,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
     Credentials({
       async authorize(credentials) {
-        const { email, password } = credentials as { email: string; password: string }
-        if (!email || !password) return null
+        const { identifier, password } = credentials as { identifier?: string; password?: string }
+        const login = identifier?.trim()
+        if (!login || !password) return null
+        const normalizedPhone = login.includes("@") ? null : normalizeDriverPhone(login)
 
-        const user = await db.user.findUnique({ where: { email } })
+        const user = await db.user.findFirst({
+          where: {
+            OR: [
+              { email: login.toLowerCase() },
+              { phone: normalizedPhone ?? login },
+            ],
+          },
+        })
         if (!user || !user.password) return null
 
         const valid = await bcrypt.compare(password, user.password)

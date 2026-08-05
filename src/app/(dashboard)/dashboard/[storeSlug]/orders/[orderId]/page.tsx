@@ -45,6 +45,25 @@ export default async function OrderDetailPage({
         include: { product: { select: { name: true, images: true, slug: true } } },
       },
       payment: { select: { status: true, stripePaymentIntentId: true } },
+      delivery: {
+        select: {
+          status: true,
+          method: true,
+          formattedAddress: true,
+          lat: true,
+          lng: true,
+          notes: true,
+            driver: {
+              select: {
+                name: true,
+                phone: true,
+                plate: true,
+                licenseNumber: true,
+                status: true,
+              },
+            },
+        },
+      },
       store: {
         select: {
           transferAccountName: true,
@@ -154,7 +173,22 @@ export default async function OrderDetailPage({
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+
+          {order.delivery && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Delivery</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 text-sm text-muted-foreground">
+                <p>Estado: {order.delivery.status}</p>
+                <p>Metodo: {order.delivery.method}</p>
+                {order.delivery.formattedAddress && <p>{order.delivery.formattedAddress}</p>}
+                {order.delivery.notes && <p>{order.delivery.notes}</p>}
+                {order.delivery.driver && <p>Repartidor: {order.delivery.driver.name}</p>}
+              </CardContent>
+            </Card>
+          )}
 
           {order.notes && (
             <Card>

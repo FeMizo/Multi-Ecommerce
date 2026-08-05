@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 
 const schema = z.object({
-  email: z.string().email("Email inválido"),
+  identifier: z.string().min(1, "Requerido"),
   password: z.string().min(1, "Requerido"),
 })
 type FormData = z.infer<typeof schema>
@@ -106,21 +106,21 @@ export default function LoginPage() {
               <div className="relative">
                 <Separator />
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">
-                  o con email
+                  o con email o teléfono
                 </span>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="identifier">Email o teléfono</Label>
                   <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="tu@email.com" 
+                    id="identifier" 
+                    type="text" 
+                    placeholder="tu@email.com o 5512345678" 
                     className="h-12 rounded-xl"
-                    {...register("email")} 
+                    {...register("identifier")} 
                   />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                  {errors.identifier && <p className="text-xs text-destructive">{errors.identifier.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
