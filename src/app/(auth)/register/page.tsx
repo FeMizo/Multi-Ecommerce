@@ -5,12 +5,12 @@ import { RegisterForm } from "./register-form"
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ planId?: string }>
+  searchParams: Promise<{ planId?: string; role?: string }>
 }) {
-  const { planId } = await searchParams
+  const { planId, role } = await searchParams
   const session = await auth()
 
   if (session?.user) redirect("/dashboard")
 
-  return <RegisterForm planId={planId ?? null} />
+  return <RegisterForm planId={planId ?? null} role={role ?? null} />
 }

@@ -19,6 +19,7 @@ import {
   Store,
   Tag,
   Users,
+  Truck,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -37,6 +38,7 @@ type SidebarIconName =
   | "Settings"
   | "Tag"
   | "Users"
+  | "Truck"
 
 export type SidebarItem = {
   href: string
@@ -79,6 +81,7 @@ const ICONS: Record<SidebarIconName, LucideIcon> = {
   Settings,
   Tag,
   Users,
+  Truck,
 }
 
 export function ResponsiveSidebarShell({

@@ -27,6 +27,11 @@ export default async function CheckoutSuccessPage({
           storeId: true,
           paymentMethod: true,
           transferCode: true,
+          delivery: {
+            select: {
+              method: true,
+            },
+          },
           store: {
             select: {
               transferAccountName: true,
@@ -46,6 +51,11 @@ export default async function CheckoutSuccessPage({
             storeId: true,
             paymentMethod: true,
             transferCode: true,
+            delivery: {
+              select: {
+                method: true,
+              },
+            },
             store: {
               select: {
                 transferAccountName: true,
@@ -60,8 +70,11 @@ export default async function CheckoutSuccessPage({
     : null
 
   const effectiveMethod = order?.paymentMethod ?? paymentMethod?.toUpperCase()
+  const deliveryMethod = order?.delivery?.method ?? null
   const isCashOnDelivery = effectiveMethod === "CASH_ON_DELIVERY"
   const isTransfer = effectiveMethod === "TRANSFER"
+  const isPickup = deliveryMethod === "PICKUP"
+  const isLocalDelivery = deliveryMethod === "LOCAL_DELIVERY"
 
   return (
     <div className="container mx-auto px-4 py-20 max-w-lg text-center">
@@ -79,6 +92,17 @@ export default async function CheckoutSuccessPage({
         {isTransfer && "Tu pedido quedó registrado con pago por transferencia. Te enviamos un correo con el código y las instrucciones."}
         {!isCashOnDelivery && !isTransfer && "Tu pago fue procesado con éxito. Recibirás una confirmación por correo electrónico pronto."}
       </p>
+
+      {isPickup && (
+        <p className="mb-6 text-sm text-muted-foreground">
+          Elegiste recoger en tienda. No se guardó dirección de entrega.
+        </p>
+      )}
+      {isLocalDelivery && (
+        <p className="mb-6 text-sm text-muted-foreground">
+          Elegiste entrega local. La ubicación quedó guardada para el vendedor.
+        </p>
+      )}
 
       {isTransfer && (
         <Card className="mb-6 text-left">
