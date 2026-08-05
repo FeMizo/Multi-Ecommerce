@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/internal/checkout-reservations?task=social-publish-due",
+      "path": "/api/internal/social-publish-due",
       "schedule": "0 17 * * 2,4"
     }
   ]
