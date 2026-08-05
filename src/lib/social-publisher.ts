@@ -130,68 +130,30 @@ export async function publishSocialPost(post: {
     }
   }
 
-  if (result.facebookPostId || result.instagramMediaId) {
-    await db.socialPost.update({
-      where: { id: post.id },
-      data: {
-        status: "PUBLISHED",
-        publishedAt: new Date(),
-        facebookPostId: result.facebookPostId ?? undefined,
-        instagramMediaId: result.instagramMediaId ?? undefined,
-        lastError: null,
-      },
-    })
-    return result
-  }
+  const hasSuccess = Boolean(result.facebookPostId || result.instagramMediaId)
+  const lastError = failures.length > 0 ? failures.join(" | ") : null
 
   await db.socialPost.update({
     where: { id: post.id },
-    data: {
-      status: "FAILED",
-      facebookPostId: result.facebookPostId ?? undefined,
-      instagramMediaId: result.instagramMediaId ?? undefined,
-      lastError: failures.join(" | ") || "No se pudo publicar",
-    },
+    data: hasSuccess
+      ? {
+          status: "PUBLISHED",
+          publishedAt: new Date(),
+          facebookPostId: result.facebookPostId ?? undefined,
+          instagramMediaId: result.instagramMediaId ?? undefined,
+          lastError,
+        }
+      : {
+          status: "FAILED",
+          facebookPostId: result.facebookPostId ?? undefined,
+          instagramMediaId: result.instagramMediaId ?? undefined,
+          lastError: lastError ?? "No se pudo publicar",
+        },
   })
 
-  throw new Error(failures.join(" | ") || "No se pudo publicar")
-}
-
-export async function publishDueSocialPosts(limit = 25) {
-  const now = new Date()
-  const duePosts = await db.socialPost.findMany({
-    where: {
-      status: "SCHEDULED",
-      scheduledAt: { lte: now },
-    },
-    orderBy: { scheduledAt: "asc" },
-    take: limit,
-  })
-
-  const results: Array<{ id: string; ok: boolean; error?: string }> = []
-  for (const post of duePosts) {
-    try {
-      await db.socialPost.update({
-        where: { id: post.id },
-        data: { status: "PUBLISHING", lastError: null },
-      })
-      await publishSocialPost({
-        id: post.id,
-        caption: post.caption,
-        channels: post.channels as SocialChannel[],
-        imageUrl: post.imageUrl,
-        destinationUrl: post.destinationUrl,
-      })
-      results.push({ id: post.id, ok: true })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "No se pudo publicar"
-      await db.socialPost.update({
-        where: { id: post.id },
-        data: { status: "FAILED", lastError: message },
-      })
-      results.push({ id: post.id, ok: false, error: message })
-    }
+  if (!hasSuccess) {
+    throw new Error(lastError ?? "No se pudo publicar")
   }
 
-  return results
+  return result
 }

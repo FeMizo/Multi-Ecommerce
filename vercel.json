@@ -1,12 +1,8 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
   "crons": [
     {
-      "path": "/api/internal/checkout-reservations",
-      "schedule": "0 8 * * *"
+      "path": "/api/internal/checkout-reservations?task=social-publish-due",
+      "schedule": "0 17 * * 2,4"
     }
   ]
 }
