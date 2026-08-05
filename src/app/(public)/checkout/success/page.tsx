@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -27,6 +27,11 @@ export default async function CheckoutSuccessPage({
           storeId: true,
           paymentMethod: true,
           transferCode: true,
+          delivery: {
+            select: {
+              method: true,
+            },
+          },
           store: {
             select: {
               transferAccountName: true,
@@ -46,6 +51,11 @@ export default async function CheckoutSuccessPage({
             storeId: true,
             paymentMethod: true,
             transferCode: true,
+            delivery: {
+              select: {
+                method: true,
+              },
+            },
             store: {
               select: {
                 transferAccountName: true,
@@ -57,12 +67,14 @@ export default async function CheckoutSuccessPage({
             },
           },
         })
-      : null
+    : null
 
   const effectiveMethod = order?.paymentMethod ?? paymentMethod?.toUpperCase()
-  const isCashOnDelivery = effectiveMethod === "CASH_ON_DELIVERY" || effectiveMethod === "COD"
+  const deliveryMethod = order?.delivery?.method ?? null
+  const isCashOnDelivery = effectiveMethod === "CASH_ON_DELIVERY"
   const isTransfer = effectiveMethod === "TRANSFER"
-  const transferReference = buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra)
+  const isPickup = deliveryMethod === "PICKUP"
+  const isLocalDelivery = deliveryMethod === "LOCAL_DELIVERY"
 
   return (
     <div className="container mx-auto px-4 py-20 max-w-lg text-center">
@@ -72,32 +84,45 @@ export default async function CheckoutSuccessPage({
           <CheckCircle2 className="h-10 w-10 text-green-600" />
         </div>
       </div>
-      <h1 className="text-2xl font-bold mb-2">Pedido confirmado</h1>
+      <h1 className="text-2xl font-bold mb-2">
+        {isCashOnDelivery || isTransfer ? "Pedido confirmado" : "Pedido confirmado"}
+      </h1>
       <p className="text-muted-foreground mb-3">
-        {isCashOnDelivery && "Tu pedido quedo registrado con pago contra entrega. Te enviamos un correo con el resumen."}
-        {isTransfer && "Tu pedido quedo registrado con pago por transferencia. Te enviamos un correo con el codigo y las instrucciones."}
-        {!isCashOnDelivery && !isTransfer && "Tu pago fue procesado con exito. Recibiras una confirmacion por correo electronico pronto."}
+        {isCashOnDelivery && "Tu pedido quedó registrado con pago contra entrega. Te enviamos un correo con el resumen."}
+        {isTransfer && "Tu pedido quedó registrado con pago por transferencia. Te enviamos un correo con el código y las instrucciones."}
+        {!isCashOnDelivery && !isTransfer && "Tu pago fue procesado con éxito. Recibirás una confirmación por correo electrónico pronto."}
       </p>
+
+      {isPickup && (
+        <p className="mb-6 text-sm text-muted-foreground">
+          Elegiste recoger en tienda. No se guardó dirección de entrega.
+        </p>
+      )}
+      {isLocalDelivery && (
+        <p className="mb-6 text-sm text-muted-foreground">
+          Elegiste entrega local. La ubicación quedó guardada para el vendedor.
+        </p>
+      )}
 
       {isTransfer && (
         <Card className="mb-6 text-left">
           <CardContent className="pt-6 space-y-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Codigo de transferencia</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Código de transferencia</p>
               <p className="font-mono text-xl font-semibold">{order?.transferCode ?? "Pendiente"}</p>
             </div>
-            {(order?.store.transferAccountName || order?.store.transferAccountNumber || order?.store.transferBank || transferReference) && (
+            {(order?.store.transferAccountName || order?.store.transferAccountNumber || order?.store.transferBank || buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra)) && (
               <div className="space-y-1 text-sm text-muted-foreground">
                 {order?.store.transferAccountName && <p><span className="text-foreground">Titular:</span> {order.store.transferAccountName}</p>}
                 {order?.store.transferBank && <p><span className="text-foreground">Banco:</span> {order.store.transferBank}</p>}
                 {order?.store.transferAccountNumber && <p><span className="text-foreground">Cuenta:</span> {order.store.transferAccountNumber}</p>}
-                {transferReference && (
-                  <p><span className="text-foreground">Referencia:</span> {transferReference}</p>
+                {buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra) && (
+                  <p><span className="text-foreground">Referencia:</span> {buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra)}</p>
                 )}
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              El vendedor vera este pago como {PAYMENT_METHOD_LABELS.TRANSFER.toLowerCase()} y lo revisara bajo su propio riesgo.
+              El vendedor verá este pago como {PAYMENT_METHOD_LABELS.TRANSFER.toLowerCase()} y lo revisará bajo su propio riesgo.
             </p>
           </CardContent>
         </Card>
@@ -119,3 +144,5 @@ export default async function CheckoutSuccessPage({
     </div>
   )
 }
+
+

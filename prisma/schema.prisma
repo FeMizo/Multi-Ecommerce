@@ -124,6 +124,8 @@ model Store {
   products     Product[]
   orders       Order[]
   cartItems    CartItem[]
+  drivers      Driver[]
+  deliveries   Delivery[]
   subscription StoreSubscription?
 
   @@map("stores")
@@ -380,6 +382,7 @@ model Order {
 
   items    OrderItem[]
   payment  Payment?
+  delivery Delivery?
 
   @@index([storeId])
   @@index([storeId, customerId])
@@ -451,6 +454,51 @@ model Review {
 
   @@unique([userId, productId])
   @@map("reviews")
+}
+
+// ─── Delivery ──────────────────────────────────────────────────────────────
+
+model Driver {
+  id            String       @id @default(cuid())
+  storeId       String?
+  store         Store?       @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  name          String
+  email         String       @unique
+  phone         String       @default("")
+  plate         String       @default("")
+  licenseNumber String       @default("")
+  notes         String?      @db.Text
+  status        DriverStatus @default(AVAILABLE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  deliveries Delivery[]
+
+  @@index([storeId, status])
+  @@map("drivers")
+}
+
+model Delivery {
+  id               String         @id @default(cuid())
+  storeId          String
+  store            Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId          String         @unique
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driverId         String?
+  driver           Driver?        @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  method           DeliveryMethod
+  status           DeliveryStatus @default(PENDING)
+  formattedAddress String?        @db.Text
+  lat              Float?
+  lng              Float?
+  notes            String?        @db.Text
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([storeId, method])
+  @@index([storeId, status])
+  @@index([driverId])
+  @@map("deliveries")
 }
 
 model SocialPost {
@@ -581,6 +629,20 @@ enum PaymentMethod {
   TRANSFER
 }
 
+enum DeliveryMethod {
+  PICKUP
+  LOCAL_DELIVERY
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum DriverStatus {
   AVAILABLE
   OFFLINE
 }

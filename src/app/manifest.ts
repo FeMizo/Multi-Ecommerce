@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AionSite Shop",
-    short_name: "AionSite",
-    description: "Marketplace local para comprar y vender en Mexico.",
-    start_url: "/",
+    name: "Delivery Rider",
+    short_name: "Rider",
+    description: "Panel del repartidor para gestionar pedidos y estados de entrega.",
+    start_url: "/rider",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#111827",
