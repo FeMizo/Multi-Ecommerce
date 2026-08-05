@@ -20,12 +20,14 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  storeMembers StoreMember[]
-  orders       Order[]
-  reviews      Review[]
-  cartItems    CartItem[]
+  accounts           Account[]
+  sessions           Session[]
+  storeMembers       StoreMember[]
+  orders             Order[]
+  reviews            Review[]
+  cartItems          CartItem[]
+  assignedProspects  Prospect[]         @relation("ProspectAssignee")
+  prospectActivities ProspectActivity[] @relation("ProspectActivityActor")
 
   @@map("users")
 }
@@ -88,39 +90,41 @@ model City {
 // ─── Stores (Tenants) ────────────────────────────────────────────────────────
 
 model Store {
-  id               String    @id @default(cuid())
-  slug             String    @unique
-  name             String
-  description      String?   @db.Text
-  logoUrl          String?
-  bannerUrl        String?
-  primaryColor     String?   @default("#000000")
-  fontFamily       String?   @default("Inter")
-  cityId           String?
-  city             City?     @relation(fields: [cityId], references: [id])
-  stripeAccountId  String?
-  stripeCustomerId String?
-  stripeOnboarded  Boolean   @default(false)
-  customDomain     String?   @unique
-  isActive         Boolean   @default(true)
-  cashOnDeliveryEnabled Boolean @default(true)
-  transferEnabled  Boolean   @default(true)
-  transferAccountName String? @db.Text
-  transferAccountNumber String? @db.Text
-  transferBank     String?   @db.Text
-  transferReferencePrefix String? @db.Text
-  transferReferenceExtra String? @db.Text
-  transferInstructions String? @db.Text
-  isVerified       Boolean   @default(false)
-  deletedAt        DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                      String    @id @default(cuid())
+  slug                    String    @unique
+  name                    String
+  description             String?   @db.Text
+  logoUrl                 String?
+  bannerUrl               String?
+  primaryColor            String?   @default("#000000")
+  fontFamily              String?   @default("Inter")
+  cityId                  String?
+  city                    City?     @relation(fields: [cityId], references: [id])
+  stripeAccountId         String?
+  stripeCustomerId        String?
+  stripeOnboarded         Boolean   @default(false)
+  customDomain            String?   @unique
+  isActive                Boolean   @default(true)
+  cashOnDeliveryEnabled   Boolean   @default(true)
+  transferEnabled         Boolean   @default(true)
+  transferAccountName     String?   @db.Text
+  transferAccountNumber   String?   @db.Text
+  transferBank            String?   @db.Text
+  transferReferencePrefix String?   @db.Text
+  transferReferenceExtra  String?   @db.Text
+  transferInstructions    String?   @db.Text
+  isVerified              Boolean   @default(false)
+  deletedAt               DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   members      StoreMember[]
   coupons      StoreCoupon[]
   products     Product[]
   orders       Order[]
   cartItems    CartItem[]
+  drivers      Driver[]
+  deliveries   Delivery[]
   subscription StoreSubscription?
 
   @@map("stores")
@@ -140,23 +144,93 @@ model StoreMember {
   @@map("store_members")
 }
 
+model Prospect {
+  id                      String           @id @default(cuid())
+  businessName            String
+  businessNameNormalized  String
+  slug                    String?          @unique
+  contactName             String?
+  phone                   String?
+  phoneNormalized         String?
+  email                   String?
+  emailNormalized         String?
+  website                 String?
+  websiteNormalized       String?
+  facebookUrl             String?
+  facebookUrlNormalized   String?
+  instagramUrl            String?
+  instagramUrlNormalized  String?
+  googleMapsUrl           String?
+  googleMapsUrlNormalized String?
+  address                 String?
+  city                    String
+  category                String?
+  notes                   String?          @db.Text
+  source                  ProspectSource   @default(MANUAL)
+  status                  ProspectStatus   @default(NEW)
+  priority                ProspectPriority @default(MEDIUM)
+  assignedToId            String?
+  assignedTo              User?            @relation("ProspectAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  lastContactAt           DateTime?
+  nextFollowUpAt          DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  activities ProspectActivity[]
+
+  @@index([businessNameNormalized])
+  @@index([phoneNormalized])
+  @@index([emailNormalized])
+  @@index([websiteNormalized])
+  @@index([googleMapsUrlNormalized])
+  @@index([facebookUrlNormalized])
+  @@index([instagramUrlNormalized])
+  @@index([city])
+  @@index([status])
+  @@index([priority])
+  @@index([assignedToId])
+  @@index([nextFollowUpAt])
+  @@map("prospects")
+}
+
+model ProspectActivity {
+  id             String                 @id @default(cuid())
+  prospectId     String
+  prospect       Prospect               @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  channel        ProspectContactChannel @default(OTHER)
+  activityType   ProspectActivityType
+  comment        String?                @db.Text
+  occurredAt     DateTime               @default(now())
+  performedById  String
+  performedBy    User                   @relation("ProspectActivityActor", fields: [performedById], references: [id], onDelete: Restrict)
+  result         String?
+  nextFollowUpAt DateTime?
+  createdAt      DateTime               @default(now())
+
+  @@index([prospectId, occurredAt])
+  @@index([performedById])
+  @@index([activityType])
+  @@index([channel])
+  @@map("prospect_activities")
+}
+
 model StoreCoupon {
-  id              String      @id @default(cuid())
-  storeId         String
-  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  code            String
-  name            String
-  type            CouponType
-  value           Float
-  minOrderAmount  Float?
-  maxRedemptions  Int?
-  redeemedCount   Int         @default(0)
-  isActive        Boolean     @default(true)
-  startsAt        DateTime?
-  endsAt          DateTime?
-  stripeCouponId  String?     @unique
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id             String     @id @default(cuid())
+  storeId        String
+  store          Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  code           String
+  name           String
+  type           CouponType
+  value          Float
+  minOrderAmount Float?
+  maxRedemptions Int?
+  redeemedCount  Int        @default(0)
+  isActive       Boolean    @default(true)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  stripeCouponId String?    @unique
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   orders Order[]
 
@@ -224,28 +298,28 @@ model Category {
 // ─── Products ────────────────────────────────────────────────────────────────
 
 model Product {
-  id           String        @id @default(cuid())
-  storeId      String
-  store        Store         @relation(fields: [storeId], references: [id])
-  categoryId   String
-  category     Category      @relation(fields: [categoryId], references: [id])
-  name         String
-  slug         String
-  description  String?       @db.Text
-  price        Float
-  comparePrice Float?
-  stock        Int           @default(0)
-  manageStock  Boolean       @default(true)
-  sku          String?
-  images       String[]
-  tags         String[]
+  id             String        @id @default(cuid())
+  storeId        String
+  store          Store         @relation(fields: [storeId], references: [id])
+  categoryId     String
+  category       Category      @relation(fields: [categoryId], references: [id])
+  name           String
+  slug           String
+  description    String?       @db.Text
+  price          Float
+  comparePrice   Float?
+  stock          Int           @default(0)
+  manageStock    Boolean       @default(true)
+  sku            String?
+  images         String[]
+  tags           String[]
   variantOptions Json?
-  status       ProductStatus @default(DRAFT)
-  featured     Boolean       @default(false)
-  views        Int           @default(0)
-  deletedAt    DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  status         ProductStatus @default(DRAFT)
+  featured       Boolean       @default(false)
+  views          Int           @default(0)
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   orderItems OrderItem[]
   cartItems  CartItem[]
@@ -277,36 +351,37 @@ model CartItem {
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 model Order {
-  id                    String      @id @default(cuid())
+  id                    String        @id @default(cuid())
   storeId               String
-  store                 Store       @relation(fields: [storeId], references: [id])
+  store                 Store         @relation(fields: [storeId], references: [id])
   customerId            String?
-  customer              User?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customer              User?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerEmail         String?
-  status                OrderStatus @default(PENDING)
+  status                OrderStatus   @default(PENDING)
   subtotal              Float
-  platformFee           Float       @default(0)
+  platformFee           Float         @default(0)
   total                 Float
   couponId              String?
-  coupon                StoreCoupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  couponCode           String?
-  discountAmount       Float       @default(0)
-  customerInfo          Json      @map("shippingAddress")
-  notes                 String?     @db.Text
-  checkoutToken         String?     @unique
+  coupon                StoreCoupon?  @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponCode            String?
+  discountAmount        Float         @default(0)
+  customerInfo          Json          @map("shippingAddress")
+  notes                 String?       @db.Text
+  checkoutToken         String?       @unique
   paymentMethod         PaymentMethod @default(STRIPE)
-  transferCode          String?     @unique
+  transferCode          String?       @unique
   stripePaymentIntentId String?
-  stripeSessionId       String?     @unique
+  stripeSessionId       String?       @unique
   reservationExpiresAt  DateTime?
   paidAt                DateTime?
   whatsappNotifiedAt    DateTime?
   deletedAt             DateTime?
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
-  items   OrderItem[]
-  payment Payment?
+  items    OrderItem[]
+  payment  Payment?
+  delivery Delivery?
 
   @@index([storeId])
   @@index([storeId, customerId])
@@ -380,7 +455,74 @@ model Review {
   @@map("reviews")
 }
 
+// ─── Delivery ──────────────────────────────────────────────────────────────
+
+model Driver {
+  id            String       @id @default(cuid())
+  storeId       String?
+  store         Store?       @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  name          String
+  email         String       @unique
+  phone         String       @default("")
+  plate         String       @default("")
+  licenseNumber String       @default("")
+  notes         String?      @db.Text
+  status        DriverStatus @default(AVAILABLE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  deliveries Delivery[]
+
+  @@index([storeId, status])
+  @@map("drivers")
+}
+
+model Delivery {
+  id               String         @id @default(cuid())
+  storeId          String
+  store            Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId          String         @unique
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driverId         String?
+  driver           Driver?        @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  method           DeliveryMethod
+  status           DeliveryStatus @default(PENDING)
+  formattedAddress String?        @db.Text
+  lat              Float?
+  lng              Float?
+  notes            String?        @db.Text
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([storeId, method])
+  @@index([storeId, status])
+  @@index([driverId])
+  @@map("deliveries")
+}
+
 // ─── Enums ───────────────────────────────────────────────────────────────────
+
+model SocialPost {
+  id               String           @id @default(cuid())
+  title            String
+  topic            String
+  channels         String[]
+  caption          String           @db.Text
+  imageUrl         String?
+  destinationUrl   String           @default("https://shop.aionsite.com.mx")
+  scheduledAt      DateTime
+  status           SocialPostStatus @default(SCHEDULED)
+  publishedAt      DateTime?
+  facebookPostId   String?
+  instagramMediaId String?
+  lastError        String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([publishedAt])
+  @@map("social_posts")
+}
 
 enum GlobalRole {
   USER
@@ -391,6 +533,61 @@ enum StoreRole {
   OWNER
   STAFF
   CUSTOMER
+}
+
+enum ProspectSource {
+  MANUAL
+  GOOGLE_MAPS
+  FACEBOOK
+  INSTAGRAM
+  REFERRAL
+  OTHER
+}
+
+enum ProspectContactChannel {
+  IN_PERSON
+  EMAIL
+  PHONE
+  WHATSAPP
+  FACEBOOK
+  INSTAGRAM
+  OTHER
+}
+
+enum ProspectStatus {
+  NEW
+  PENDING_CONTACT
+  CONTACTED
+  REPLIED
+  FOLLOW_UP
+  SECOND_MESSAGE
+  MEETING_SCHEDULED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  NO_RESPONSE
+  DISCARDED
+}
+
+enum ProspectPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ProspectActivityType {
+  CREATED
+  CONTACT_ATTEMPT
+  MESSAGE_SENT
+  EMAIL_SENT
+  IN_PERSON_VISIT
+  PHONE_CALL
+  RESPONSE_RECEIVED
+  FOLLOW_UP
+  MEETING
+  PROPOSAL_SENT
+  STATUS_CHANGED
+  NOTE_ADDED
 }
 
 enum SubscriptionStatus {
@@ -433,7 +630,33 @@ enum PaymentMethod {
   TRANSFER
 }
 
+enum DeliveryMethod {
+  PICKUP
+  LOCAL_DELIVERY
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum DriverStatus {
+  AVAILABLE
+  OFFLINE
+}
+
 enum CouponType {
   PERCENTAGE
   FIXED
+}
+
+enum SocialPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
 }
