@@ -1,4 +1,3 @@
-import sharp from "sharp"
 import { siteUrl } from "@/lib/site-url"
 
 export const SOCIAL_CHANNELS = ["FACEBOOK", "INSTAGRAM"] as const
@@ -237,9 +236,4 @@ export function buildSocialImageSvg(campaign: SocialCampaign) {
       <text x="104" y="1184" fill="#FFF7EE" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${escapeXml(campaign.imageFooter)}</text>
     </svg>
   `.trim()
-}
-
-export async function renderSocialImageBuffer(campaign: SocialCampaign) {
-  const svg = buildSocialImageSvg(campaign)
-  return sharp(Buffer.from(svg)).png().toBuffer()
 }

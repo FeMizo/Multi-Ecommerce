@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { buildSocialCopy, normalizeChannels, SOCIAL_CHANNELS } from "@/lib/social-marketing"
-import { publishDueSocialPosts, publishSocialPost } from "@/lib/social-publisher"
+import { publishDueSocialPosts } from "@/lib/social-cron"
+import { publishSocialPost } from "@/lib/social-publisher"
 import type { SocialPostRecord } from "@/components/admin/social-marketing-board"
 
 export type SocialPostActionInput = {

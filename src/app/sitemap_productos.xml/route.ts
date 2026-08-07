@@ -6,16 +6,26 @@ import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 export const revalidate = 3600
 
 export async function GET() {
-  const products = await db.product.findMany({
-    where: { status: "ACTIVE", deletedAt: null, store: { isActive: true, deletedAt: null } },
-    select: {
-      slug: true,
-      updatedAt: true,
-      images: true,
-      store: { select: { slug: true } },
-    },
-    orderBy: [{ storeId: "asc" }, { slug: "asc" }],
-  })
+  let products: Array<{
+    slug: string
+    updatedAt: Date
+    images: string[]
+    store: { slug: string }
+  }> = []
+  try {
+    products = await db.product.findMany({
+      where: { status: "ACTIVE", deletedAt: null, store: { isActive: true, deletedAt: null } },
+      select: {
+        slug: true,
+        updatedAt: true,
+        images: true,
+        store: { select: { slug: true } },
+      },
+      orderBy: [{ storeId: "asc" }, { slug: "asc" }],
+    })
+  } catch {
+    // Return an empty product sitemap when the database is unavailable during build.
+  }
 
   return new Response(
     renderUrlSet(

@@ -14,6 +14,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 })
   }
 
+  const userId = session?.user?.id
+  if (!userId) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+  }
+
   const body = await req.json()
   const parsed = prospectCreateSchema.safeParse(body)
   if (!parsed.success) {
@@ -119,7 +124,7 @@ export async function POST(req: NextRequest) {
           comment: initialActivity.comment ?? null,
           result: initialActivity.result ?? null,
           nextFollowUpAt: initialActivity.nextFollowUpAt ? new Date(initialActivity.nextFollowUpAt) : null,
-          performedById: session.user!.id,
+          performedById: userId,
         },
       })
 

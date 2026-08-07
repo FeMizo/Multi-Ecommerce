@@ -33,7 +33,7 @@ import {
   type ProspectStatusValue,
 } from "@/lib/prospects"
 
-type ProspectFormValues = z.infer<typeof prospectCreateSchema>
+type ProspectFormValues = z.input<typeof prospectCreateSchema>
 
 type ProspectDuplicate = {
   id: string
@@ -83,7 +83,7 @@ export function ProspectEditorForm({
   const schema = useMemo(() => prospectCreateSchema, [])
   const endpoint = mode === "create" ? "/api/admin/prospects" : `/api/admin/prospects/${prospectId}`
   const { register, handleSubmit, control, formState: { errors }, setValue } = useForm<ProspectFormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       businessName: "",
       city: "",

@@ -39,11 +39,12 @@ async function getOrCreateCustomer({
 
 export async function POST(req: NextRequest, { params }: RouteContext<"/api/stores/[storeSlug]/subscription">) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
   const { storeSlug } = await params
   const input = schema.safeParse(await req.json())
   if (!input.success) return NextResponse.json({ message: "Solicitud inválida" }, { status: 422 })
-  const membership = await db.storeMember.findFirst({ where: { userId: session.user.id, role: "OWNER", store: { slug: storeSlug } }, include: { store: true } })
+  const membership = await db.storeMember.findFirst({ where: { userId, role: "OWNER", store: { slug: storeSlug } }, include: { store: true } })
   if (!membership) return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin
 

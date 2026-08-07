@@ -17,6 +17,8 @@ export async function GET(
   }
 
   const { prospectId } = await params
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
   const prospect = await db.prospect.findUnique({
     where: { id: prospectId },
     include: {
@@ -49,6 +51,8 @@ export async function PATCH(
   }
 
   const { prospectId } = await params
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
   const body = await req.json()
   const parsed = prospectUpdateSchema.safeParse(body)
   if (!parsed.success) {
@@ -146,7 +150,7 @@ export async function PATCH(
           channel: "OTHER",
           comment: `Estado cambiado de ${current.status} a ${prospect.status}`,
           result: prospect.status,
-          performedById: session.user!.id,
+          performedById: userId,
         },
       })
     }

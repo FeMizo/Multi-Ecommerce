@@ -2,8 +2,8 @@ import { db } from "@/lib/db"
 import {
   DEFAULT_SOCIAL_ASSET_BASE_URL,
   buildScheduledSocialCampaign,
-  renderSocialImageBuffer,
 } from "@/lib/social-marketing"
+import { renderSocialImageBuffer } from "@/lib/social-marketing-image"
 import { uploadFileToFtp } from "@/lib/ftp"
 import { publishSocialPost } from "@/lib/social-publisher"
 
@@ -33,6 +33,10 @@ function toErrorMessage(error: unknown) {
 
 export async function runSocialPromotionCron(now = new Date()) {
   return runSocialPromotionCronInternal(now, false)
+}
+
+export async function publishDueSocialPosts(now = new Date()) {
+  return runSocialPromotionCron(now)
 }
 
 export async function runSocialPromotionCronInternal(now = new Date(), dryRun = false) {

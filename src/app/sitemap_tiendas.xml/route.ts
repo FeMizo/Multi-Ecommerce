@@ -5,11 +5,16 @@ import { siteUrl } from "@/lib/site-url"
 export const revalidate = 3600
 
 export async function GET() {
-  const stores = await db.store.findMany({
-    where: { isActive: true, deletedAt: null },
-    select: { slug: true, updatedAt: true },
-    orderBy: { slug: "asc" },
-  })
+  let stores: Array<{ slug: string; updatedAt: Date }> = []
+  try {
+    stores = await db.store.findMany({
+      where: { isActive: true, deletedAt: null },
+      select: { slug: true, updatedAt: true },
+      orderBy: { slug: "asc" },
+    })
+  } catch {
+    // Return the static pages only when the database is unavailable during build.
+  }
 
   const pages = [
     { loc: siteUrl, lastmod: new Date(), changefreq: "daily" as const, priority: 1 },

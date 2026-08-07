@@ -122,7 +122,7 @@ function parseRows(text: string, fallbackSource: ProspectSourceValue) {
         return
       }
 
-      result[key] = value
+      ;(result as unknown as Record<string, string>)[key] = value
     })
 
     return result

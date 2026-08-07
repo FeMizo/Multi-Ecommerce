@@ -12,10 +12,11 @@ async function getOwnedStore(userId: string, storeSlug: string) {
 
 export async function GET(_req: NextRequest, { params }: RouteContext<"/api/stores/[storeSlug]/stripe/onboarding">) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 
   const { storeSlug } = await params
-  const membership = await getOwnedStore(session.user.id, storeSlug)
+  const membership = await getOwnedStore(userId, storeSlug)
   if (!membership?.store.stripeAccountId) return NextResponse.json({ connected: false, onboarded: false })
 
   const account = await stripe.accounts.retrieve(membership.store.stripeAccountId)
@@ -26,10 +27,11 @@ export async function GET(_req: NextRequest, { params }: RouteContext<"/api/stor
 
 export async function POST(req: NextRequest, { params }: RouteContext<"/api/stores/[storeSlug]/stripe/onboarding">) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 
   const { storeSlug } = await params
-  const membership = await getOwnedStore(session.user.id, storeSlug)
+  const membership = await getOwnedStore(userId, storeSlug)
   if (!membership) return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
 
   let accountId = membership.store.stripeAccountId
