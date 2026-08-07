@@ -71,20 +71,6 @@ export default async function PublicOrderPage({
         include: { product: { select: { name: true, images: true, slug: true } } },
       },
       payment: { select: { status: true, stripePaymentIntentId: true, stripeRefundId: true } },
-      delivery: {
-        select: {
-          status: true,
-          method: true,
-          formattedAddress: true,
-          notes: true,
-          driver: {
-            select: {
-              name: true,
-              status: true,
-            },
-          },
-        },
-      },
     },
   })
 
@@ -229,21 +215,6 @@ export default async function PublicOrderPage({
               {order.transferCode && <p className="font-mono text-xs text-muted-foreground">Código: {order.transferCode}</p>}
             </CardContent>
           </Card>
-
-          {order.delivery && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Entrega</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm">
-                <p className="text-muted-foreground">Estado: {order.delivery.status}</p>
-                <p className="text-muted-foreground">Método: {order.delivery.method}</p>
-                {order.delivery.formattedAddress && <p className="text-muted-foreground">{order.delivery.formattedAddress}</p>}
-                {order.delivery.notes && <p className="text-muted-foreground">{order.delivery.notes}</p>}
-                {order.delivery.driver && <p className="text-muted-foreground">Repartidor: {order.delivery.driver.name}</p>}
-              </CardContent>
-            </Card>
-          )}
 
           {(order.store.transferAccountName || order.store.transferAccountNumber || order.store.transferBank || transferReference) && (
             <Card>

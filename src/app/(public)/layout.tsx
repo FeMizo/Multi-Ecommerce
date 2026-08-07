@@ -67,7 +67,6 @@ export default async function PublicLayout({ children }: { children: React.React
               <ul className="space-y-3">
                 <li><Link href="/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Abrir tienda</Link></li>
                 <li><Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Panel de vendedor</Link></li>
-                <li><Link href="/rider" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Panel de repartidor</Link></li>
                 <li><Link href="/plans" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Planes y precios</Link></li>
                 <li><Link href="/help" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Centro de ayuda</Link></li>
               </ul>

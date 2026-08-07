@@ -18,19 +18,11 @@ import { sendOrderReceivedEmail, sendSellerNewOrderEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from "@/lib/store-coupons"
 import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
-import { DELIVERY_METHODS } from "@/lib/delivery"
 
 const checkoutSchema = z.object({
   checkoutToken: z.string().uuid(),
   storeId: z.string().min(1),
   paymentMethod: z.enum(PAYMENT_METHODS).default("STRIPE"),
-  deliveryMethod: z.enum(DELIVERY_METHODS).default("PICKUP"),
-  deliveryLocation: z.object({
-    formattedAddress: z.string().min(3).max(255),
-    lat: z.number(),
-    lng: z.number(),
-    notes: z.string().max(500).optional().default(""),
-  }).nullable().optional(),
   couponCode: z.string().max(32).optional(),
   customerInfo: z.object({
     fullName: z.string().min(3).max(120),
@@ -96,7 +88,7 @@ export async function POST(req: Request) {
   const parsed = checkoutSchema.safeParse(await req.json())
   if (!parsed.success) return NextResponse.json({ message: "Carrito o datos invalidos" }, { status: 422 })
 
-  const { checkoutToken, items, storeId, customerInfo, paymentMethod, deliveryMethod, deliveryLocation, couponCode: rawCouponCode } = parsed.data
+  const { checkoutToken, items, storeId, customerInfo, paymentMethod, couponCode: rawCouponCode } = parsed.data
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   let requestedCouponCode = rawCouponCode ? normalizeCouponCode(rawCouponCode) : null
   const customerEmail = customerInfo.email.trim().toLowerCase()
@@ -281,14 +273,6 @@ export async function POST(req: Request) {
           }
         }
 
-        const deliveryData = deliveryMethod === "LOCAL_DELIVERY"
-          ? deliveryLocation
-          : null
-
-        if (deliveryMethod === "LOCAL_DELIVERY" && !deliveryData) {
-          throw new Error("DELIVERY_LOCATION_REQUIRED")
-        }
-
         return tx.order.create({
           data: {
             checkoutToken,
@@ -313,17 +297,6 @@ export async function POST(req: Request) {
             transferCode: paymentMethod === "TRANSFER" ? generateTransferCode() : null,
             customerInfo: customerInfo as Prisma.InputJsonValue,
             notes: customerInfo.notes || null,
-            delivery: {
-              create: {
-                storeId,
-                method: deliveryMethod,
-                status: "PENDING",
-                formattedAddress: deliveryData?.formattedAddress ?? null,
-                lat: deliveryData?.lat ?? null,
-                lng: deliveryData?.lng ?? null,
-                notes: deliveryData?.notes?.trim() || null,
-              },
-            },
             items: {
               create: items.map((item) => {
                 const product = products.find((candidate) => candidate.id === item.productId)!

@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useSession } from "next-auth/react"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Banknote, CheckCircle2, CreditCard, Landmark, MapPin } from "lucide-react"
+import { Banknote, CheckCircle2, CreditCard, Landmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,13 +15,6 @@ import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
-import { DeliveryLocationPicker } from "@/components/checkout/delivery-location-picker"
-import {
-  DELIVERY_METHOD_DESCRIPTIONS,
-  DELIVERY_METHOD_LABELS,
-  type DeliveryLocationDraft,
-  type DeliveryMethodValue,
-} from "@/lib/delivery"
 import {
   PAYMENT_METHOD_DESCRIPTIONS,
   PAYMENT_METHOD_LABELS,
@@ -30,8 +23,8 @@ import {
 
 const schema = z.object({
   fullName: z.string().min(3, "Nombre requerido"),
-  email: z.string().email("Correo inválido"),
-  phone: z.string().min(9, "Teléfono inválido"),
+  email: z.string().email("Correo invalido"),
+  phone: z.string().min(9, "Telefono invalido"),
   city: z.string().min(2, "Ciudad requerida"),
   notes: z.string().optional(),
 })
@@ -72,8 +65,6 @@ const PAYMENT_METHOD_CARDS: Record<PaymentMethodValue, PaymentMethodCard> = {
   },
 }
 
-const DELIVERY_METHODS: DeliveryMethodValue[] = ["PICKUP", "LOCAL_DELIVERY"]
-
 export default function CheckoutPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -84,13 +75,6 @@ export default function CheckoutPage() {
   const [profileReady, setProfileReady] = useState(false)
   const [storeOptions, setStoreOptions] = useState<StoreOptions | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodValue>("CASH_ON_DELIVERY")
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethodValue>("PICKUP")
-  const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocationDraft>({
-    formattedAddress: "",
-    lat: null,
-    lng: null,
-    notes: "",
-  })
   const [couponCode, setCouponCode] = useState("")
   const profilePrefilled = useRef(false)
   const checkoutStoreId = items[0]?.storeId ?? null
@@ -156,7 +140,7 @@ export default function CheckoutPage() {
     fetch(`/api/stores?storeId=${checkoutStoreId}`, { signal: controller.signal })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}))
-        if (!res.ok) throw new Error(data.message ?? "No se pudieron cargar los métodos de pago")
+        if (!res.ok) throw new Error(data.message ?? "No se pudieron cargar los metodos de pago")
         return data as StoreOptions
       })
       .then((data) => {
@@ -174,10 +158,6 @@ export default function CheckoutPage() {
 
   async function onSubmit(data: FormData) {
     if (checkoutItems.length === 0 || !checkoutStoreId) return
-    if (deliveryMethod === "LOCAL_DELIVERY" && (!deliveryLocation.formattedAddress.trim() || deliveryLocation.lat === null || deliveryLocation.lng === null)) {
-      toast.error("Selecciona una ubicación válida")
-      return
-    }
 
     setLoading(true)
 
@@ -189,8 +169,6 @@ export default function CheckoutPage() {
         items: checkoutItems,
         storeId: checkoutStoreId,
         paymentMethod: selectedPaymentMethod,
-        deliveryMethod,
-        deliveryLocation: deliveryMethod === "LOCAL_DELIVERY" ? deliveryLocation : null,
         couponCode: couponCode.trim() || undefined,
         customerInfo: data,
       }),
@@ -223,11 +201,6 @@ export default function CheckoutPage() {
   const selectedPaymentMethod = hasAnyPayment && !availablePaymentMethods.includes(paymentMethod)
     ? availablePaymentMethods[0]
     : paymentMethod
-  const deliveryReady = deliveryMethod === "PICKUP" || (
-    deliveryLocation.formattedAddress.trim().length > 0 &&
-    deliveryLocation.lat !== null &&
-    deliveryLocation.lng !== null
-  )
 
   if (items.length === 0) {
     router.push("/cart")
@@ -244,7 +217,7 @@ export default function CheckoutPage() {
       )}
       {hasPendingItems && checkoutStoreName && (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Solo se procesarán los productos de {checkoutStoreName}. Los demás seguirán en tu carrito.
+          Solo se procesaran los productos de {checkoutStoreName}. Los demas seguiran en tu carrito.
         </div>
       )}
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -260,7 +233,7 @@ export default function CheckoutPage() {
                     {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
                   </div>
                   <div className="col-span-2 space-y-1">
-                    <Label>Correo electrónico</Label>
+                    <Label>Correo electronico</Label>
                     <Input
                       {...register("email")}
                       readOnly={status === "authenticated"}
@@ -270,7 +243,7 @@ export default function CheckoutPage() {
                     {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                   </div>
                   <div className="space-y-1">
-                    <Label>Teléfono</Label>
+                    <Label>Telefono</Label>
                     <Input {...register("phone")} placeholder="987 654 321" />
                     {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
                   </div>
@@ -288,75 +261,10 @@ export default function CheckoutPage() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle>Método de entrega</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                {DELIVERY_METHODS.map((method) => {
-                  const selected = deliveryMethod === method
-
-                  return (
-                    <button
-                      key={method}
-                      type="button"
-                      onClick={() => setDeliveryMethod(method)}
-                      className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${
-                        selected
-                          ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
-                          : "border-border hover:bg-accent/60"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                            selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          <MapPin className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="font-semibold">{DELIVERY_METHOD_LABELS[method]}</p>
-                            {selected && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                Seleccionado
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-xs text-muted-foreground">{DELIVERY_METHOD_DESCRIPTIONS[method]}</p>
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
-                {deliveryMethod === "PICKUP" ? (
-                  <p className="text-xs text-muted-foreground">
-                    No se mostrará ninguna dirección. El cliente recogerá el pedido en la tienda.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground">
-                      Selecciona una dirección con Google Maps. La ubicación se guardará con el pedido.
-                    </p>
-                    <DeliveryLocationPicker
-                      value={deliveryLocation}
-                      onChange={setDeliveryLocation}
-                      disabled={loading}
-                    />
-                    {!deliveryReady && (
-                      <p className="text-xs text-destructive">
-                        Selecciona una ubicación válida para continuar.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader><CardTitle>Método de pago</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Metodo de pago</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {optionsLoading ? (
-                  <p className="text-sm text-muted-foreground">Cargando métodos de pago...</p>
+                  <p className="text-sm text-muted-foreground">Cargando metodos de pago...</p>
                 ) : (
                   <>
                     {availablePaymentMethods.map((method) => {
@@ -401,17 +309,17 @@ export default function CheckoutPage() {
                     })}
                     {!hasAnyPayment && (
                       <p className="text-sm text-destructive">
-                        Esta tienda no tiene métodos de pago disponibles.
+                        Esta tienda no tiene metodos de pago disponibles.
                       </p>
                     )}
                     {selectedPaymentMethod === "CASH_ON_DELIVERY" && (
                       <p className="text-xs text-muted-foreground">
-                        Se mostrará como pago contra entrega en el pedido.
+                        Se mostrara como pago contra entrega en el pedido.
                       </p>
                     )}
                     {selectedPaymentMethod === "TRANSFER" && (
                       <p className="text-xs text-muted-foreground">
-                        Te mostraremos los datos bancarios, el código de transferencia y la referencia al finalizar.
+                        Te mostraremos los datos bancarios, el codigo de transferencia y la referencia al finalizar.
                       </p>
                     )}
                   </>
@@ -420,10 +328,10 @@ export default function CheckoutPage() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle>Cupón</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Cupon</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1">
-                  <Label>Código de cupón</Label>
+                  <Label>Codigo de cupon</Label>
                   <Input
                     value={couponCode}
                     onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
@@ -431,7 +339,7 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Si el cupón es válido para esta tienda, se aplicará al confirmar el pedido.
+                  Si el cupon es valido para esta tienda, se aplicara al confirmar el pedido.
                 </p>
               </CardContent>
             </Card>
@@ -456,22 +364,22 @@ export default function CheckoutPage() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={loading || optionsLoading || profileLoading || !hasAnyPayment || checkoutItems.length === 0 || !deliveryReady}
+                  disabled={loading || optionsLoading || profileLoading || !hasAnyPayment || checkoutItems.length === 0}
                 >
                   {loading
                     ? "Procesando..."
                     : selectedPaymentMethod === "CASH_ON_DELIVERY"
                       ? "Confirmar pedido"
                       : selectedPaymentMethod === "TRANSFER"
-                        ? "Generar código de transferencia"
+                        ? "Generar codigo de transferencia"
                         : "Pagar con Stripe"}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
                   {selectedPaymentMethod === "CASH_ON_DELIVERY"
                     ? "Cobro al entregar · La tienda asume el riesgo"
                     : selectedPaymentMethod === "TRANSFER"
-                      ? "Pago por transferencia · Usa el código de referencia"
-                      : "Pago seguro · Tu dinero está protegido"}
+                      ? "Pago por transferencia · Usa el codigo de referencia"
+                      : "Pago seguro · Tu dinero esta protegido"}
                 </p>
               </CardContent>
             </Card>
