@@ -6,12 +6,21 @@ import { defineConfig } from "prisma/config";
 config({ path: ".env.local" });
 config({ path: ".env" });
 
+function getMigrationUrl() {
+  const rawUrl = process.env["MULTI_POSTGRES_URL_NON_POOLING"] ?? process.env["DATABASE_URL"] ?? process.env["MULTI_POSTGRES_PRISMA_URL"];
+  if (!rawUrl) throw new Error("Set MULTI_POSTGRES_URL_NON_POOLING, DATABASE_URL, or MULTI_POSTGRES_PRISMA_URL");
+  const url = new URL(rawUrl);
+  url.searchParams.delete("sslmode");
+  url.searchParams.delete("pgbouncer");
+  return url.toString();
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["MULTI_POSTGRES_URL_NON_POOLING"],
+    url: getMigrationUrl(),
   },
 });
