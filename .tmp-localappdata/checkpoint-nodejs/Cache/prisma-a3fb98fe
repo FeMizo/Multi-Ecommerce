@@ -1,0 +1,53 @@
+{
+  "last_reminder": 1785945523384,
+  "cached_at": 1785945522091,
+  "version": "7.7.0",
+  "cli_path": "C:\\Users\\mizo_\\Documents\\Trabajo\\Personal\\Multi-Ecommerce\\node_modules\\prisma\\build\\index.js",
+  "output": {
+    "product": "prisma",
+    "previous_version": "7.7.0",
+    "checkpoint_version": 4,
+    "local_timestamp_without_timezone": "2026-08-05T09:58:41Z",
+    "current_version": "7.9.1",
+    "current_release_date": 1785160149,
+    "client_event_id": "ede7c79f-3036-4c1a-9016-dde82c38b51d",
+    "current_download_url": "https://github.com/prisma/prisma",
+    "package": "prisma",
+    "release_tag": "latest",
+    "install_command": "npm install --save-dev prisma",
+    "schema_providers": [
+      "postgresql"
+    ],
+    "schema_preview_features": [],
+    "schema_generators_providers": [
+      "prisma-client-js"
+    ],
+    "current_changelog_url": "https://github.com/prisma/prisma",
+    "outdated": true,
+    "project_website": "https://prisma.io",
+    "alerts": []
+  },
+  "product": "prisma",
+  "cli_install_type": "local",
+  "local_timestamp": "2026-08-05T10:14:17-06:00",
+  "project_hash": "62be2364",
+  "cli_path_hash": "a3fb98fe",
+  "endpoint": "https://checkpoint.prisma.io",
+  "arch": "x64",
+  "os": "win32",
+  "node_version": "v24.15.0",
+  "command": "migrate deploy",
+  "schema_providers": [
+    "postgresql"
+  ],
+  "schema_preview_features": [],
+  "schema_generators_providers": [
+    "prisma-client-js"
+  ],
+  "cache_file": "C:\\Users\\mizo_\\Documents\\Trabajo\\Personal\\Multi-Ecommerce\\.tmp-localappdata\\checkpoint-nodejs\\Cache\\prisma-a3fb98fe",
+  "cache_duration": 43200000,
+  "remind_duration": 172800000,
+  "timeout": 5000,
+  "unref": true,
+  "child_path": "C:\\Users\\mizo_\\Documents\\Trabajo\\Personal\\Multi-Ecommerce\\node_modules\\prisma\\build\\child"
+}
