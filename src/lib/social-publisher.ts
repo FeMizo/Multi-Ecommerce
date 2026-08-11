@@ -47,6 +47,50 @@ async function postGraph(path: string, token: string, body: URLSearchParams) {
   return data
 }
 
+async function getGraph(path: string, token: string) {
+  const { graphVersion } = requireMetaEnv()
+  const res = await fetch(`https://graph.facebook.com/${graphVersion}/${path}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const data = await res.json() as Record<string, unknown>
+  if (!res.ok) {
+    const error = data.error as Record<string, unknown> | undefined
+    const message = typeof error?.message === "string" ? error.message : "Error de Meta"
+    throw new Error(message)
+  }
+
+  return data
+}
+
+async function waitForInstagramContainer(containerId: string, token: string) {
+  const maxAttempts = 10
+  const delayMs = 2000
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const data = await getGraph(`${containerId}?fields=status_code,status`, token)
+    const statusCode = typeof data.status_code === "string" ? data.status_code : ""
+
+    if (statusCode === "FINISHED") {
+      return
+    }
+
+    if (statusCode === "ERROR" || statusCode === "EXPIRED") {
+      const status = typeof data.status === "string" ? data.status : statusCode
+      throw new Error(`Instagram container no listo: ${status}`)
+    }
+
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+    }
+  }
+
+  throw new Error("Instagram container no quedo listo a tiempo")
+}
+
 export async function publishFacebookPagePost({ caption, imageUrl, destinationUrl }: PublishInput): Promise<PublishResult> {
   const { pageId, pageAccessToken } = requireMetaEnv()
   const message = caption.trim()
@@ -89,6 +133,8 @@ export async function publishInstagramPost({ caption, imageUrl }: PublishInput):
   if (!creationId) {
     throw new Error("No se pudo crear el contenedor de Instagram")
   }
+
+  await waitForInstagramContainer(creationId, pageAccessToken)
 
   const published = await postGraph(`${igUserId}/media_publish`, pageAccessToken, new URLSearchParams({
     creation_id: creationId,

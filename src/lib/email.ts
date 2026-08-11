@@ -4,7 +4,7 @@ import { buildTransferReference, type TransferDetails } from "@/lib/transfer-det
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const emailFrom = process.env.RESEND_FROM_EMAIL ?? process.env.EMAIL_FROM ?? "AionSite <onboarding@resend.dev>"
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "http://localhost:1500"
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://shop.aionsite.com.mx"
 
 type EmailStoreBranding = {
   name: string
