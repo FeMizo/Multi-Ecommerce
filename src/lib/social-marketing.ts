@@ -19,6 +19,8 @@ export type SocialCampaign = {
   imageFooter: string
   imageFileName: string
   destinationUrl: string
+  layout?: "sales" | "style"
+  styleVariant?: "monday" | "friday"
 }
 
 export const DEFAULT_SOCIAL_DESTINATION = "https://shop.aionsite.com.mx"
@@ -37,6 +39,26 @@ export const SOCIAL_TOPICS: SocialTopic[] = [
       "Compra local en un solo lugar. Entra a shop.aionsite.com.mx.",
       "Ya esta listo tu mercado local: shop.aionsite.com.mx.",
       "Descubre tiendas y ofertas cercanas en shop.aionsite.com.mx.",
+    ],
+  },
+  {
+    id: "brand",
+    label: "Marca",
+    description: "Posts de estilo y presencia visual.",
+    copy: [
+      "Multi Shop de AionSite: compra local en un solo lugar.",
+      "Una marca para descubrir lo local en shop.aionsite.com.mx.",
+      "Tu escaparate local con identidad propia en shop.aionsite.com.mx.",
+    ],
+  },
+  {
+    id: "showcase",
+    label: "Escaparate",
+    description: "Presentación visual de la propuesta.",
+    copy: [
+      "Tu escaparate local, más claro y más visual.",
+      "Una forma simple de ver lo local en shop.aionsite.com.mx.",
+      "Productos, tiendas y comunidad reunidos en un solo estilo.",
     ],
   },
   {
@@ -155,6 +177,14 @@ export const SOCIAL_THEME_ROTATION = [
   "community",
 ] as const
 
+export const SOCIAL_STYLE_ROTATION = [
+  "brand",
+  "showcase",
+  "featured",
+  "trust",
+  "community",
+] as const
+
 export function getSocialTopic(topicId: string) {
   return SOCIAL_TOPICS.find((topic) => topic.id === topicId) ?? SOCIAL_TOPICS[0]
 }
@@ -222,103 +252,80 @@ function buildSvgLines(lines: string[], x: number, y: number, lineHeight: number
     .join("")
 }
 
-export function buildScheduledSocialCampaign(date = new Date()): SocialCampaign {
-  const day = date.getUTCDay()
-  const weekParity = getIsoWeek(date) % 2
+function buildBrandIconGroup(x: number, y: number, size: number, accent = "#f05f1d", foreground = "#fffdf8") {
+  const scale = size / 132
+  return `
+    <g transform="translate(${x} ${y}) scale(${scale})">
+      <circle cx="66" cy="18" r="8" fill="none" stroke="${foreground}" stroke-width="4" />
+      <circle cx="18" cy="48" r="8" fill="none" stroke="${foreground}" stroke-width="4" />
+      <circle cx="114" cy="48" r="8" fill="none" stroke="${foreground}" stroke-width="4" />
+      <circle cx="18" cy="104" r="8" fill="none" stroke="${foreground}" stroke-width="4" />
+      <circle cx="114" cy="104" r="8" fill="none" stroke="${foreground}" stroke-width="4" />
+      <circle cx="66" cy="128" r="8" fill="none" stroke="${foreground}" stroke-width="4" />
+      <path d="M26 48L66 20L106 48M26 48L26 104M106 48L106 104M26 104L66 128L106 104" fill="none" stroke="${foreground}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M42 62L66 36L90 62V104H42Z" fill="none" stroke="${foreground}" stroke-width="6" stroke-linejoin="round" />
+      <path d="M52 66H80V82H52Z" fill="${foreground}" />
+      <path d="M56 82H76V104H56Z" fill="${foreground}" />
+      <path d="M18 42C28 30 30 22 22 12C10 16 8 28 18 42Z" fill="#a5ba76" />
+      <path d="M114 74C122 86 124 98 112 110C100 106 98 88 114 74Z" fill="#a5ba76" />
+      <path d="M106 58h12v20h-12z" fill="${accent}" opacity="0.95" />
+    </g>
+  `
+}
 
-  const scheduledIndex = ((date.getUTCDate() + weekParity) % SOCIAL_THEME_ROTATION.length + SOCIAL_THEME_ROTATION.length) % SOCIAL_THEME_ROTATION.length
-  const tuesdayTopic = SOCIAL_THEME_ROTATION[scheduledIndex]
-  const thursdayTopic = SOCIAL_THEME_ROTATION[(scheduledIndex + 3) % SOCIAL_THEME_ROTATION.length]
-  const topicId = day === 2 ? tuesdayTopic : thursdayTopic
+export function buildScheduledSocialCampaign(date = new Date()): SocialCampaign {
+  const topicId = SOCIAL_THEME_ROTATION[Math.floor(Math.random() * SOCIAL_THEME_ROTATION.length)]
   const topic = getSocialTopic(topicId)
 
-  const title = day === 2
-    ? ({
-        launch: "Compra local en un solo lugar",
-        featured: "Descubre lo destacado de hoy",
-        store: "Explora tiendas locales",
-        new: "Novedades locales disponibles",
-        offer: "Compra con ofertas locales",
-        seasonal: "Aprovecha la temporada",
-        product: "Compra productos locales",
-        top: "Los favoritos de tu zona",
-        trust: "Compra con más confianza",
-        service: "Mejor atención local",
-        community: "Apoya negocios cercanos",
-      } as const)[topicId]
-    : ({
-        launch: "Descubre nuevas opciones locales",
-        featured: "Una selección local destacada",
-        store: "Tiendas cercanas para comparar",
-        new: "Nuevos productos y tiendas",
-        offer: "Hoy hay ofertas locales",
-        seasonal: "Contenido local de temporada",
-        product: "Tu siguiente compra local",
-        top: "Lo más vendido de tu zona",
-        trust: "Compra local con confianza",
-        service: "Opciones con mejor atención",
-        community: "Apoya negocios cercanos",
-      } as const)[topicId]
+  const titleByTopic: Record<string, string> = {
+    launch: "Compra local en un solo lugar",
+    featured: "Descubre lo destacado de hoy",
+    store: "Explora tiendas locales",
+    new: "Novedades locales disponibles",
+    offer: "Compra con ofertas locales",
+    seasonal: "Aprovecha la temporada",
+    product: "Compra productos locales",
+    top: "Los favoritos de tu zona",
+    trust: "Compra con más confianza",
+    service: "Mejor atención local",
+    community: "Apoya negocios cercanos",
+  }
 
-  const imageHeadline = day === 2
-    ? ({
-        launch: "Compra local",
-        featured: "Destacado local",
-        store: "Tiendas cercanas",
-        new: "Nuevas opciones",
-        offer: "Ofertas locales",
-        seasonal: "Temporada local",
-        product: "Producto local",
-        top: "Top ventas",
-        trust: "Compra segura",
-        service: "Mejor atención",
-        community: "Apoya lo local",
-      } as const)[topicId]
-    : ({
-        launch: "Compra local",
-        featured: "Destacado local",
-        store: "Tiendas cercanas",
-        new: "Nuevas opciones",
-        offer: "Ofertas locales",
-        seasonal: "Temporada local",
-        product: "Producto local",
-        top: "Top ventas",
-        trust: "Compra segura",
-        service: "Mejor atención",
-        community: "Apoya lo local",
-      } as const)[topicId]
+  const headlineByTopic: Record<string, string> = {
+    launch: "Compra local",
+    featured: "Destacado local",
+    store: "Tiendas cercanas",
+    new: "Nuevas opciones",
+    offer: "Ofertas locales",
+    seasonal: "Temporada local",
+    product: "Producto local",
+    top: "Top ventas",
+    trust: "Compra segura",
+    service: "Mejor atención",
+    community: "Apoya lo local",
+  }
 
-  const imageSubheadline = day === 2
-    ? ({
-        launch: "Tiendas, productos y ofertas en un solo sitio",
-        featured: "Una selección lista para descubrir",
-        store: "Comparar nunca fue tan fácil",
-        new: "Lo nuevo de tu zona en un solo lugar",
-        offer: "Promociones para comprar hoy",
-        seasonal: "Compra pensando en la temporada",
-        product: "Encuentra opciones útiles y cercanas",
-        top: "Lo más buscado de tu zona",
-        trust: "Más claridad para comprar local",
-        service: "Compra con acompañamiento local",
-        community: "Un solo sitio para apoyar lo local",
-      } as const)[topicId]
-    : ({
-        launch: "Tiendas, productos y ofertas en un solo sitio",
-        featured: "Una selección lista para descubrir",
-        store: "Comparar nunca fue tan fácil",
-        new: "Lo nuevo de tu zona en un solo lugar",
-        offer: "Promociones para comprar hoy",
-        seasonal: "Compra pensando en la temporada",
-        product: "Encuentra opciones útiles y cercanas",
-        top: "Lo más buscado de tu zona",
-        trust: "Más claridad para comprar local",
-        service: "Compra con acompañamiento local",
-        community: "Un solo sitio para apoyar lo local",
-      } as const)[topicId]
+  const subheadlineByTopic: Record<string, string> = {
+    launch: "Tiendas, productos y ofertas en un solo sitio",
+    featured: "Una selección lista para descubrir",
+    store: "Comparar nunca fue tan fácil",
+    new: "Lo nuevo de tu zona en un solo lugar",
+    offer: "Promociones para comprar hoy",
+    seasonal: "Compra pensando en la temporada",
+    product: "Encuentra opciones útiles y cercanas",
+    top: "Lo más buscado de tu zona",
+    trust: "Más claridad para comprar local",
+    service: "Compra con acompañamiento local",
+    community: "Un solo sitio para apoyar lo local",
+  }
+
+  const title = titleByTopic[topicId] ?? titleByTopic.launch
+  const imageHeadline = headlineByTopic[topicId] ?? headlineByTopic.launch
+  const imageSubheadline = subheadlineByTopic[topicId] ?? subheadlineByTopic.launch
 
   const imageFooter = "Multi Shop by AionSite"
   const destinationUrl = DEFAULT_SOCIAL_DESTINATION
-  const caption = `${buildSocialCopy(topicId, weekParity, destinationUrl)}\n\nMulti Shop by AionSite\n${destinationUrl}`
+  const caption = `${buildSocialCopy(topicId, Math.floor(Math.random() * topic.copy.length), destinationUrl)}\n\nMulti Shop by AionSite\n${destinationUrl}`
 
   const stamp = `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}-${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}`
 
@@ -332,10 +339,53 @@ export function buildScheduledSocialCampaign(date = new Date()): SocialCampaign 
     imageFooter,
     imageFileName: `promo-${topic.id}-${stamp}.png`,
     destinationUrl,
+    layout: "sales",
+  }
+}
+
+export function buildScheduledStyleCampaign(date = new Date()): SocialCampaign {
+  const day = date.getUTCDay()
+  const styleVariant = day === 1 ? "monday" : "friday"
+  const topicId = SOCIAL_STYLE_ROTATION[Math.floor(Math.random() * SOCIAL_STYLE_ROTATION.length)]
+  const topic = getSocialTopic(topicId)
+
+  const title = styleVariant === "monday"
+    ? "Lunes de marca local"
+    : "Viernes de escaparate local"
+
+  const imageHeadline = styleVariant === "monday"
+    ? "Compra local"
+    : "Multi Shop"
+
+  const imageSubheadline = styleVariant === "monday"
+    ? "en un solo lugar"
+    : "de AionSite"
+
+  const imageFooter = "Multi Shop by AionSite"
+  const destinationUrl = DEFAULT_SOCIAL_DESTINATION
+  const caption = `${buildSocialCopy(topicId, Math.floor(Math.random() * topic.copy.length), destinationUrl)}\n\nMulti Shop by AionSite\n${destinationUrl}`
+  const stamp = `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}-${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}`
+
+  return {
+    title,
+    topicId: topic.id,
+    channels: ["FACEBOOK", "INSTAGRAM"],
+    caption,
+    imageHeadline,
+    imageSubheadline,
+    imageFooter,
+    imageFileName: `style-${styleVariant}-${topic.id}-${stamp}.png`,
+    destinationUrl,
+    layout: "style",
+    styleVariant,
   }
 }
 
 export function buildSocialImageSvg(campaign: SocialCampaign) {
+  if (campaign.layout === "style") {
+    return buildStyleSocialImageSvg(campaign)
+  }
+
   const headlineLines = wrapLines(campaign.imageHeadline, 11)
   const subheadlineLines = wrapLines(campaign.imageSubheadline, 24)
   const footerLabel = campaign.topicId === "offer"
@@ -403,6 +453,112 @@ export function buildSocialImageSvg(campaign: SocialCampaign) {
         <text x="106" y="1110" fill="#FFE8D7" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${escapeXml(shortDomain)}</text>
       </a>
       <text x="106" y="1186" fill="#FFF7EE" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${escapeXml(campaign.imageFooter)}</text>
+  </svg>
+  `.trim()
+}
+
+function buildStyleSocialImageSvg(campaign: SocialCampaign) {
+  const isMonday = campaign.styleVariant === "monday"
+  const titleLines = isMonday ? ["Compra local", "en un solo lugar"] : ["Multi Shop", "de AionSite"]
+  const subtitle = isMonday
+    ? "Tiendas, productos y ofertas en un solo sitio"
+    : "Tu escaparate local con identidad propia"
+  const chips = isMonday
+    ? [
+        ["Productos", "de calidad"],
+        ["Tiendas", "locales"],
+        ["Apoya tu", "comunidad"],
+        ["Compra", "con confianza"],
+      ]
+    : [
+        ["Locales", "cercanos"],
+        ["Selección", "visual"],
+        ["Comunidad", "local"],
+        ["Compra", "con estilo"],
+      ]
+
+  return `
+    <svg width="1080" height="1350" viewBox="0 0 1080 1350" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
+      <defs>
+        <linearGradient id="bgStyle" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fff8ef" />
+          <stop offset="100%" stop-color="#f8eddc" />
+        </linearGradient>
+        <linearGradient id="orangeBand" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ff8a2b" />
+          <stop offset="100%" stop-color="#d14c13" />
+        </linearGradient>
+        <linearGradient id="brownText" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#5a2a13" />
+          <stop offset="100%" stop-color="#3f190f" />
+        </linearGradient>
+        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#b85a1f" flood-opacity="0.22" />
+        </filter>
+      </defs>
+      <rect width="1080" height="1350" fill="url(#bgStyle)" />
+      <circle cx="60" cy="120" r="180" fill="#f27a17" fill-opacity="0.86" />
+      <circle cx="1050" cy="118" r="180" fill="#f27a17" fill-opacity="0.82" />
+      <circle cx="84" cy="1240" r="170" fill="#f27a17" fill-opacity="0.80" />
+      <circle cx="1012" cy="1242" r="170" fill="#f27a17" fill-opacity="0.80" />
+      <path d="M0 1120C140 1080 180 1150 320 1118C440 1090 500 1030 620 1060C760 1098 804 1180 940 1162C1000 1154 1046 1120 1080 1108V1350H0Z" fill="url(#orangeBand)" fill-opacity="0.98" />
+      <path d="M0 1280C150 1245 250 1310 386 1290C520 1270 574 1218 696 1236C826 1258 922 1320 1080 1288V1350H0Z" fill="#c94112" fill-opacity="0.88" />
+      <rect x="112" y="74" width="856" height="1198" rx="56" fill="#fff7ef" filter="url(#softShadow)" />
+      ${isMonday ? `
+        <rect x="214" y="92" width="652" height="132" rx="36" fill="#ffffff" fill-opacity="0.35" />
+        ${buildBrandIconGroup(274, 120, 84)}
+        <text x="412" y="155" fill="url(#brownText)" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="800">Multi Shop</text>
+        <text x="412" y="196" fill="url(#orangeBand)" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800">de AionSite</text>
+        <text x="540" y="455" text-anchor="middle" fill="url(#brownText)" font-family="Georgia, 'Times New Roman', serif" font-size="94" font-weight="700">Compra local</text>
+        <text x="540" y="582" text-anchor="middle" fill="url(#orangeBand)" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700">en un solo lugar</text>
+        <a href="${escapeXml(DEFAULT_SOCIAL_DESTINATION)}" target="_blank" rel="noopener noreferrer">
+          <rect x="226" y="650" width="628" height="78" rx="26" fill="url(#orangeBand)" filter="url(#softShadow)" />
+          <text x="540" y="702" text-anchor="middle" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800">shop.aionsite.com.mx</text>
+        </a>
+        <g>
+          ${chips.map((chip, index) => `
+            <g transform="translate(${166 + (index % 2) * 372}, ${796 + Math.floor(index / 2) * 138})">
+              <circle cx="0" cy="0" r="68" fill="#fff9f2" stroke="#f2dec5" stroke-width="6" />
+              <rect x="-18" y="-6" width="36" height="28" rx="6" fill="none" stroke="#db6a24" stroke-width="4" />
+              <path d="M-18 -6h36M-12 -6v-14a12 12 0 0124 0v14" fill="none" stroke="#db6a24" stroke-width="4" stroke-linecap="round" />
+              <text x="0" y="92" text-anchor="middle" fill="#6b2f13" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${chip[0]}</text>
+              <text x="0" y="120" text-anchor="middle" fill="#f27a17" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${chip[1]}</text>
+            </g>
+          `).join("")}
+        </g>
+        <g transform="translate(428 1120)">
+          <rect x="0" y="0" width="224" height="224" rx="34" fill="#f06a1c" filter="url(#softShadow)" />
+          ${buildBrandIconGroup(48, 48, 128, "#fffdf8", "#fffdf8")}
+        </g>
+        <text x="540" y="1062" text-anchor="middle" fill="#6a2e13" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">${escapeXml(subtitle)}</text>
+      ` : `
+        <g transform="translate(116 84)">
+          <rect x="0" y="0" width="360" height="360" rx="54" fill="url(#orangeBand)" filter="url(#softShadow)" />
+          ${buildBrandIconGroup(62, 62, 236, "#fffdf8", "#fffdf8")}
+        </g>
+        <text x="642" y="256" fill="url(#brownText)" font-family="Arial, Helvetica, sans-serif" font-size="108" font-weight="800">Multi Shop</text>
+        <text x="642" y="388" fill="url(#orangeBand)" font-family="Arial, Helvetica, sans-serif" font-size="102" font-weight="800">de AionSite</text>
+        <line x1="644" y1="482" x2="916" y2="482" stroke="#de6f24" stroke-width="3" />
+        <line x1="644" y1="482" x2="740" y2="482" stroke="#de6f24" stroke-width="8" />
+        <text x="642" y="580" fill="#5a2a13" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="700">${escapeXml(titleLines[0])}</text>
+        <text x="642" y="676" fill="#f05f1d" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="700">${escapeXml(titleLines[1])}</text>
+        <a href="${escapeXml(DEFAULT_SOCIAL_DESTINATION)}" target="_blank" rel="noopener noreferrer">
+          <rect x="642" y="742" width="322" height="82" rx="28" fill="url(#orangeBand)" filter="url(#softShadow)" />
+          <text x="803" y="796" text-anchor="middle" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="800">shop.aionsite.com.mx</text>
+        </a>
+        <text x="642" y="892" fill="#6a2e13" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="600">${escapeXml(subtitle)}</text>
+        <g opacity="0.22">
+          ${Array.from({ length: 5 }, (_, row) =>
+            Array.from({ length: 5 }, (_, col) =>
+              `<circle cx="${660 + col * 82}" cy="${84 + row * 42}" r="7" fill="#f2b26a" />`
+            ).join("")
+          ).join("")}
+        </g>
+        <g transform="translate(402 1088)">
+          <rect x="0" y="0" width="244" height="180" rx="38" fill="#f06a1c" filter="url(#softShadow)" />
+          ${buildBrandIconGroup(52, 26, 140, "#fffdf8", "#fffdf8")}
+        </g>
+      `}
     </svg>
   `.trim()
 }
