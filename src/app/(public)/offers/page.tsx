@@ -3,7 +3,10 @@ import { ArrowRight, Tag } from "lucide-react"
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { Badge } from "@/components/ui/badge"
+import { DEFAULT_SHOP_BANNER } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo-jsonld"
+import { absoluteUrl } from "@/lib/site-url"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -11,6 +14,20 @@ export const metadata: Metadata = {
   description: "Productos en oferta disponibles en AionSite Shop.",
   keywords: buildKeywords("Ofertas", ["descuentos", "promociones", "productos rebajados"]),
   alternates: { canonical: "/offers" },
+  openGraph: {
+    title: "Ofertas | AionSite Shop",
+    description: "Productos en oferta disponibles en AionSite Shop.",
+    url: "/offers",
+    siteName: "AionSite Shop",
+    type: "website",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ofertas | AionSite Shop",
+    description: "Productos en oferta disponibles en AionSite Shop.",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
 }
 
 export default async function OffersPage() {
@@ -25,9 +42,14 @@ export default async function OffersPage() {
     orderBy: { createdAt: "desc" },
     take: 24,
   })
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Inicio", url: "https://shop.aionsite.com.mx" },
+    { name: "Ofertas", url: "https://shop.aionsite.com.mx/offers" },
+  ])
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbs) }} />
       <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary border-0">
         <Tag className="w-3 h-3 mr-1" />
         Ofertas

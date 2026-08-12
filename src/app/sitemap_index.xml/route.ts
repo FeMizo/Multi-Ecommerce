@@ -5,21 +5,30 @@ import { siteUrl } from "@/lib/site-url"
 export const revalidate = 3600
 
 export async function GET() {
-  const [storesUpdatedAt, productsUpdatedAt] = await Promise.all([
-    db.store.aggregate({
-      where: { isActive: true, deletedAt: null },
-      _max: { updatedAt: true },
-    }),
-    db.product.aggregate({
-      where: { status: "ACTIVE", deletedAt: null },
-      _max: { updatedAt: true },
-    }),
-  ])
+  let storesUpdatedAt = new Date()
+  let productsUpdatedAt = new Date()
+
+  try {
+    const [stores, products] = await Promise.all([
+      db.store.aggregate({
+        where: { isActive: true, deletedAt: null },
+        _max: { updatedAt: true },
+      }),
+      db.product.aggregate({
+        where: { status: "ACTIVE", deletedAt: null },
+        _max: { updatedAt: true },
+      }),
+    ])
+    storesUpdatedAt = stores._max.updatedAt ?? storesUpdatedAt
+    productsUpdatedAt = products._max.updatedAt ?? productsUpdatedAt
+  } catch {
+    // Fall back to static timestamps when the database is unavailable during build.
+  }
 
   return new Response(
     renderSitemapIndex([
-      { loc: `${siteUrl}/sitemap_tiendas.xml`, lastmod: storesUpdatedAt._max.updatedAt ?? new Date() },
-      { loc: `${siteUrl}/sitemap_productos.xml`, lastmod: productsUpdatedAt._max.updatedAt ?? new Date() },
+      { loc: `${siteUrl}/sitemap_tiendas.xml`, lastmod: storesUpdatedAt },
+      { loc: `${siteUrl}/sitemap_productos.xml`, lastmod: productsUpdatedAt },
     ]),
     {
       headers: {

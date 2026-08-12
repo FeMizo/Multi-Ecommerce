@@ -50,7 +50,7 @@ export async function POST(
       email: owner.email,
       name: owner.name ?? store.name,
       storeName: store.name,
-      verificationUrl: buildStoreVerificationUrl(process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "http://localhost:1500", store.id, token),
+      verificationUrl: buildStoreVerificationUrl(process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://shop.aionsite.com.mx", store.id, token),
     })
   } catch {
     await db.verificationToken.deleteMany({ where: { identifier, token: tokenHash } })

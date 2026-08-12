@@ -58,25 +58,6 @@ export default async function OrdersPage({
           },
         },
         payment: { select: { status: true, stripePaymentIntentId: true, stripeRefundId: true } },
-        delivery: {
-          select: {
-            status: true,
-            method: true,
-            formattedAddress: true,
-            lat: true,
-            lng: true,
-            notes: true,
-            driver: {
-              select: {
-                name: true,
-                phone: true,
-                plate: true,
-                licenseNumber: true,
-                status: true,
-              },
-            },
-          },
-        },
         store: {
           select: {
             name: true,
@@ -127,7 +108,6 @@ export default async function OrdersPage({
     customerEmail: order.customerEmail,
     customerInfo: order.customerInfo as OrderDetailsSheetOrder["customerInfo"],
     payment: order.payment,
-    delivery: order.delivery,
     items: order.items,
   })
 

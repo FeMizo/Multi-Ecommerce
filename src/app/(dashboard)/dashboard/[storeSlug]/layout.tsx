@@ -10,7 +10,6 @@ const navItems: SidebarItem[] = [
   { href: "", label: "Dashboard", iconKey: "LayoutDashboard", exact: true },
   { href: "/products", label: "Productos", iconKey: "Package" },
   { href: "/orders", label: "Pedidos", iconKey: "ShoppingBag" },
-  { href: "/delivery", label: "Delivery", iconKey: "Truck" },
   { href: "/coupons", label: "Cupones", iconKey: "Tag" },
   { href: "/planes", label: "Planes", iconKey: "CreditCard" },
   { href: "/metrics", label: "Metricas", iconKey: "BarChart3" },

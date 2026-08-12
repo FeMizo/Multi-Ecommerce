@@ -5,7 +5,10 @@ import Google from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { fetchGooglePhoneNumber } from "@/lib/google-people"
-import { normalizeDriverPhone } from "@/lib/delivery"
+
+function normalizePhone(value: string) {
+  return value.trim().replace(/[^\d+]/g, "")
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -31,7 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { identifier, password } = credentials as { identifier?: string; password?: string }
         const login = identifier?.trim()
         if (!login || !password) return null
-        const normalizedPhone = login.includes("@") ? null : normalizeDriverPhone(login)
+        const normalizedPhone = login.includes("@") ? null : normalizePhone(login)
 
         const user = await db.user.findFirst({
           where: {

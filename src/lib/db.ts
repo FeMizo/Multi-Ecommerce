@@ -3,7 +3,12 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { createPgPool } from "@/lib/pg-pool"
 
 function createPrismaClient() {
-  const rawUrl = new URL(process.env.MULTI_POSTGRES_PRISMA_URL!)
+  const rawValue = process.env.MULTI_POSTGRES_PRISMA_URL ?? process.env.MULTI_POSTGRES_URL_NON_POOLING ?? process.env.DATABASE_URL
+  if (!rawValue) {
+    throw new Error("Set MULTI_POSTGRES_PRISMA_URL, MULTI_POSTGRES_URL_NON_POOLING, or DATABASE_URL")
+  }
+
+  const rawUrl = new URL(rawValue)
   rawUrl.searchParams.delete("sslmode")
   const pool = createPgPool(rawUrl.toString(), 1)
   const adapter = new PrismaPg(pool)
@@ -13,11 +18,22 @@ function createPrismaClient() {
   })
 }
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 
-export const db = globalForPrisma.prisma || createPrismaClient()
+function getDb() {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient()
+  }
+  return globalForPrisma.prisma
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, property, receiver) {
+    const client = getDb()
+    const value = Reflect.get(client, property, receiver)
+    return typeof value === "function" ? value.bind(client) : value
+  },
+}) as PrismaClient
 
 const TENANT_MODELS = ["Product", "Order", "OrderItem", "Payment", "CartItem", "StoreMember"]
 

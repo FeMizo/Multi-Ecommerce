@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Sheet,
@@ -36,6 +37,7 @@ type SellerDetailsSheetProps = {
   cities: { id: string; name: string }[]
   isActive: boolean
   isVerified: boolean
+  featuredPosition: number | null
   stripeOnboarded: boolean
   stripeAccountId: string | null
   cashOnDeliveryEnabled: boolean
@@ -68,6 +70,7 @@ export function SellerDetailsSheet({
   cityName,
   isActive,
   isVerified,
+  featuredPosition,
   stripeOnboarded,
   stripeAccountId,
   cashOnDeliveryEnabled,
@@ -93,7 +96,9 @@ export function SellerDetailsSheet({
 }: SellerDetailsSheetProps) {
   const router = useRouter()
   const [selectedCityId, setSelectedCityId] = useState(cityId ?? "none")
+  const [selectedFeaturedPosition, setSelectedFeaturedPosition] = useState(featuredPosition?.toString() ?? "")
   const [savingCity, setSavingCity] = useState(false)
+  const [savingFeatured, setSavingFeatured] = useState(false)
 
   async function saveCity() {
     setSavingCity(true)
@@ -109,6 +114,25 @@ export function SellerDetailsSheet({
       return
     }
     toast.success("Ciudad actualizada")
+    router.refresh()
+  }
+
+  async function saveFeaturedPosition() {
+    setSavingFeatured(true)
+    const res = await fetch(`/api/admin/stores/${storeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        featuredPosition: selectedFeaturedPosition.trim() ? Number(selectedFeaturedPosition) : null,
+      }),
+    })
+    setSavingFeatured(false)
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      toast.error(err?.message ?? "Error al actualizar destacada")
+      return
+    }
+    toast.success("Orden destacado actualizado")
     router.refresh()
   }
 
@@ -162,6 +186,24 @@ export function SellerDetailsSheet({
               {commissionRate !== null && (
                 <p className="text-xs text-muted-foreground">Comisión: {Math.round(commissionRate * 100)}%</p>
               )}
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Tienda destacada</p>
+              <div className="space-y-2">
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Sin posición"
+                  value={selectedFeaturedPosition}
+                  onChange={(e) => setSelectedFeaturedPosition(e.target.value)}
+                />
+                <Button type="button" size="sm" onClick={saveFeaturedPosition} disabled={savingFeatured}>
+                  {savingFeatured ? "Guardando..." : "Guardar orden"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Posición actual: {featuredPosition ?? "Sin destacar"}
+                </p>
+              </div>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Productos</p>

@@ -2,7 +2,10 @@ import Link from "next/link"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
+import { DEFAULT_SHOP_BANNER } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
+import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo-jsonld"
+import { absoluteUrl } from "@/lib/site-url"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -10,6 +13,20 @@ export const metadata: Metadata = {
   description: "Explora productos de AionSite Shop por categoria.",
   keywords: buildKeywords("Categorias", ["categorias de productos", "catalogo por categoria", "compras locales"]),
   alternates: { canonical: "/categories" },
+  openGraph: {
+    title: "Categorias | AionSite Shop",
+    description: "Explora productos de AionSite Shop por categoria.",
+    url: "/categories",
+    siteName: "AionSite Shop",
+    type: "website",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Categorias | AionSite Shop",
+    description: "Explora productos de AionSite Shop por categoria.",
+    images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
+  },
 }
 
 export default async function CategoriesPage() {
@@ -30,9 +47,14 @@ export default async function CategoriesPage() {
     },
     orderBy: { name: "asc" },
   })
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Inicio", url: "https://shop.aionsite.com.mx" },
+    { name: "Categorias", url: "https://shop.aionsite.com.mx/categories" },
+  ])
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbs) }} />
       <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary border-0">
         <Sparkles className="w-3 h-3 mr-1" />
         Categorias

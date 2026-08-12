@@ -3,6 +3,7 @@ const blobStoreHostname = process.env.BLOB_STORE_ID
   .toLowerCase()
 
 const nextConfig = {
+  serverExternalPackages: ["sharp"],
   images: {
     remotePatterns: blobStoreHostname
       ? [

@@ -6,11 +6,12 @@ import { completeFullRefund } from "@/lib/payment-lifecycle"
 
 export async function POST(_req: NextRequest, { params }: RouteContext<"/api/stores/[storeSlug]/orders/[orderId]/refund">) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 
   const { storeSlug, orderId } = await params
   const membership = await db.storeMember.findFirst({
-    where: { userId: session.user.id, role: "OWNER", store: { slug: storeSlug } },
+    where: { userId, role: "OWNER", store: { slug: storeSlug } },
     include: { store: { select: { id: true } } },
   })
   if (!membership) return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })

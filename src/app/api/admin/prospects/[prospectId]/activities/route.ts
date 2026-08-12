@@ -16,6 +16,8 @@ export async function POST(
   }
 
   const { prospectId } = await params
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ message: "No autorizado" }, { status: 401 })
   const body = await req.json()
   const parsed = prospectActivitySchema.safeParse(body)
   if (!parsed.success) {
@@ -36,7 +38,7 @@ export async function POST(
         comment: parsed.data.comment ?? null,
         result: parsed.data.result ?? null,
         nextFollowUpAt: parsed.data.nextFollowUpAt ? new Date(parsed.data.nextFollowUpAt) : null,
-        performedById: session.user!.id,
+        performedById: userId,
       },
       include: {
         performedBy: { select: { id: true, name: true, email: true } },

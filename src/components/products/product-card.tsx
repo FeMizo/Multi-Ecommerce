@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart"
 import { withProductPlaceholder } from "@/lib/placeholders"
+import type { FavoriteProduct } from "@/lib/favorites"
 import {
   defaultVariantSelection,
   getVariantQuantityLimit,
@@ -18,6 +19,8 @@ import {
   variantSelectionKey,
 } from "@/lib/product-variants"
 import { readFavoritesFromStorage, removeFavorite, subscribeToFavorites, upsertFavorite } from "@/lib/favorites"
+
+const EMPTY_FAVORITES: readonly FavoriteProduct[] = []
 
 type ProductCardProps = {
   product: {
@@ -60,7 +63,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
     : null
 
   const href = storeSlug ? `/${storeSlug}/${product.slug}` : `/products/${product.slug}`
-  const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => [])
+  const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => EMPTY_FAVORITES)
   const isLiked = favorites.some((favorite) => favorite.id === product.id)
   const canUseFavorites = Boolean(session?.user)
 
