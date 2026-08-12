@@ -18,7 +18,7 @@ import { ProductCard } from "@/components/products/product-card"
 import { CategoryGrid } from "@/components/products/category-grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
+import { DEFAULT_HOME_HERO_IMAGE, DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
 import { absoluteUrl } from "@/lib/site-url"
 import { VerifiedBadge } from "@/components/public/verified-badge"
@@ -259,7 +259,7 @@ export default async function HomePage() {
               <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-[0_30px_80px_-35px_rgba(0,0,0,0.45)]">
                 <div className="relative aspect-[4/5] overflow-hidden">
                   <Image
-                    src={DEFAULT_SHOP_BANNER}
+                    src={DEFAULT_HOME_HERO_IMAGE}
                     alt="AionSite Shop"
                     fill
                     className="object-cover"
