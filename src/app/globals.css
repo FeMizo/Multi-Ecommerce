@@ -87,7 +87,17 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist, Arial, sans-serif);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.02em;
 }
 
 input,
@@ -126,7 +136,23 @@ img {
 }
 
 .gradient-hero {
-  background: linear-gradient(180deg, rgba(250, 248, 245, 1) 0%, rgba(245, 240, 232, 1) 50%, rgba(250, 248, 245, 1) 100%);
+  background:
+    radial-gradient(circle at top left, rgba(240, 122, 23, 0.18), transparent 34%),
+    radial-gradient(circle at top right, rgba(168, 80, 40, 0.14), transparent 30%),
+    linear-gradient(180deg, rgba(250, 248, 245, 1) 0%, rgba(243, 236, 226, 1) 50%, rgba(250, 248, 245, 1) 100%);
+}
+
+.surface-grid {
+  background-image:
+    linear-gradient(rgba(168, 80, 40, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168, 80, 40, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.editorial-title {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
 }
 
 /* Text balance for better typography */

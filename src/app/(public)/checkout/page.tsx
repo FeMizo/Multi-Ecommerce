@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useSession } from "next-auth/react"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Banknote, CheckCircle2, CreditCard, Landmark } from "lucide-react"
+import { Banknote, CheckCircle2, CreditCard, Landmark, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -208,184 +208,216 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-8">Checkout</h1>
-      {items.length > 1 && (
-        <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
-          Solo se tomara la tienda del primer producto del carrito. Los demas productos se quedaran guardados.
+    <div className="relative overflow-hidden">
+      <div className="absolute inset-0 gradient-hero" />
+      <div className="absolute inset-0 surface-grid opacity-35" />
+      <div className="container mx-auto max-w-6xl px-4 py-8 relative">
+        <div className="mb-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Checkout</p>
+            <h1 className="editorial-title mt-2 text-4xl md:text-5xl">Un cierre simple y confiable.</h1>
+            <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+              Menos pasos, más claridad y señales visibles de confianza para que el usuario termine la compra sin dudas.
+            </p>
+          </div>
+          <div className="rounded-[1.75rem] border border-border/60 bg-background/90 p-5 shadow-sm backdrop-blur">
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <ShieldCheck className="h-4 w-4" />
+              Pago seguro y datos protegidos
+            </div>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              El formulario auto-completa el perfil si estás autenticado y muestra sólo los métodos de pago disponibles.
+            </p>
+          </div>
         </div>
-      )}
-      {hasPendingItems && checkoutStoreName && (
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Solo se procesaran los productos de {checkoutStoreName}. Los demas seguiran en tu carrito.
-        </div>
-      )}
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3 space-y-6">
-            <Card>
-              <CardHeader><CardTitle>Datos del cliente</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2 space-y-1">
-                    <Label>Nombre completo</Label>
-                    <Input {...register("fullName")} />
-                    {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label>Correo electronico</Label>
-                    <Input
-                      {...register("email")}
-                      readOnly={status === "authenticated"}
-                      className={status === "authenticated" ? "bg-muted" : undefined}
-                      placeholder="tu@correo.com"
-                    />
-                    {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Telefono</Label>
-                    <Input {...register("phone")} placeholder="987 654 321" />
-                    {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Ciudad</Label>
-                    <Input {...register("city")} />
-                    {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label>Notas (opcional)</Label>
-                    <Input {...register("notes")} placeholder="Instrucciones adicionales" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader><CardTitle>Metodo de pago</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                {optionsLoading ? (
-                  <p className="text-sm text-muted-foreground">Cargando metodos de pago...</p>
-                ) : (
-                  <>
-                    {availablePaymentMethods.map((method) => {
-                      const card = PAYMENT_METHOD_CARDS[method]
-                      const Icon = card.icon
-                      const selected = selectedPaymentMethod === method
+        {items.length > 1 && (
+          <div className="mb-6 rounded-3xl border border-primary/20 bg-primary/8 px-4 py-3 text-sm text-primary">
+            Solo se tomará la tienda del primer producto del carrito. Los demás productos se quedarán guardados.
+          </div>
+        )}
 
-                      return (
-                        <button
-                          key={method}
-                          type="button"
-                          onClick={() => setPaymentMethod(method)}
-                          className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${
-                            selected
-                              ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
-                              : "border-border hover:bg-accent/60"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div
-                              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                                selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="font-semibold">{card.label}</p>
-                                {selected && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                    Seleccionado
-                                  </span>
-                                )}
+        {hasPendingItems && checkoutStoreName && (
+          <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Solo se procesarán los productos de {checkoutStoreName}. Los demás seguirán en tu carrito.
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-6">
+              <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">Datos del cliente</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>Nombre completo</Label>
+                      <Input {...register("fullName")} />
+                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>Correo electrónico</Label>
+                      <Input
+                        {...register("email")}
+                        readOnly={status === "authenticated"}
+                        className={status === "authenticated" ? "bg-muted" : undefined}
+                        placeholder="tu@correo.com"
+                      />
+                      {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Teléfono</Label>
+                      <Input {...register("phone")} placeholder="987 654 321" />
+                      {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Ciudad</Label>
+                      <Input {...register("city")} />
+                      {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>Notas opcionales</Label>
+                      <Input {...register("notes")} placeholder="Instrucciones adicionales" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">Método de pago</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {optionsLoading ? (
+                    <p className="text-sm text-muted-foreground">Cargando métodos de pago...</p>
+                  ) : (
+                    <>
+                      {availablePaymentMethods.map((method) => {
+                        const card = PAYMENT_METHOD_CARDS[method]
+                        const Icon = card.icon
+                        const selected = selectedPaymentMethod === method
+
+                        return (
+                          <button
+                            key={method}
+                            type="button"
+                            onClick={() => setPaymentMethod(method)}
+                            className={`w-full rounded-3xl border px-4 py-4 text-left transition-all ${
+                              selected
+                                ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                                : "border-border hover:bg-accent/60"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                                  selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                <Icon className="h-5 w-5" />
                               </div>
-                              <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="font-semibold">{card.label}</p>
+                                  {selected && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
+                                      <CheckCircle2 className="h-3.5 w-3.5" />
+                                      Seleccionado
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
+                              </div>
                             </div>
-                          </div>
-                        </button>
-                      )
-                    })}
-                    {!hasAnyPayment && (
-                      <p className="text-sm text-destructive">
-                        Esta tienda no tiene metodos de pago disponibles.
-                      </p>
-                    )}
-                    {selectedPaymentMethod === "CASH_ON_DELIVERY" && (
-                      <p className="text-xs text-muted-foreground">
-                        Se mostrara como pago contra entrega en el pedido.
-                      </p>
-                    )}
-                    {selectedPaymentMethod === "TRANSFER" && (
-                      <p className="text-xs text-muted-foreground">
-                        Te mostraremos los datos bancarios, el codigo de transferencia y la referencia al finalizar.
-                      </p>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                          </button>
+                        )
+                      })}
+                      {!hasAnyPayment && (
+                        <p className="text-sm text-destructive">Esta tienda no tiene métodos de pago disponibles.</p>
+                      )}
+                      {selectedPaymentMethod === "CASH_ON_DELIVERY" && (
+                        <p className="text-xs text-muted-foreground">Se mostrará como pago contra entrega en el pedido.</p>
+                      )}
+                      {selectedPaymentMethod === "TRANSFER" && (
+                        <p className="text-xs text-muted-foreground">Mostraremos los datos bancarios, el código y la referencia al finalizar.</p>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader><CardTitle>Cupon</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-1">
-                  <Label>Codigo de cupon</Label>
-                  <Input
-                    value={couponCode}
-                    onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
-                    placeholder="AHORRA10"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Si el cupon es valido para esta tienda, se aplicara al confirmar el pedido.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-2">
-            <Card className="sticky top-20">
-              <CardHeader><CardTitle>Tu pedido</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                {checkoutItems.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-                    <span>{formatPrice(item.price * item.quantity)}</span>
+              <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">Cupón</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label>Código de cupón</Label>
+                    <Input
+                      value={couponCode}
+                      onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
+                      placeholder="AHORRA10"
+                    />
                   </div>
-                ))}
-                <Separator />
-                <div className="flex justify-between font-bold">
-                  <span>Total</span>
-                  <span>{formatPrice(checkoutTotal)}</span>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  size="lg"
-                  disabled={loading || optionsLoading || profileLoading || !hasAnyPayment || checkoutItems.length === 0}
-                >
-                  {loading
-                    ? "Procesando..."
-                    : selectedPaymentMethod === "CASH_ON_DELIVERY"
-                      ? "Confirmar pedido"
+                  <p className="text-xs text-muted-foreground">
+                    Si el cupón es válido para esta tienda, se aplicará al confirmar el pedido.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              <Card className="sticky top-20 rounded-[1.75rem] border-border/60 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">Tu pedido</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {checkoutItems.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                      </div>
+                      <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+                    </div>
+                  ))}
+                  <Separator />
+                  <div className="flex items-center justify-between text-base font-semibold">
+                    <span>Total</span>
+                    <span>{formatPrice(checkoutTotal)}</span>
+                  </div>
+                  <div className="rounded-3xl border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+                    Revisamos método de pago, datos del cliente y disponibilidad antes de enviar el pedido.
+                  </div>
+                  <Button
+                    type="submit"
+                    className="h-12 w-full rounded-full text-base btn-shine"
+                    size="lg"
+                    disabled={loading || optionsLoading || profileLoading || !hasAnyPayment || checkoutItems.length === 0}
+                  >
+                    {loading
+                      ? "Procesando..."
+                      : selectedPaymentMethod === "CASH_ON_DELIVERY"
+                        ? "Confirmar pedido"
+                        : selectedPaymentMethod === "TRANSFER"
+                          ? "Generar código de transferencia"
+                          : "Pagar con Stripe"}
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">
+                    {selectedPaymentMethod === "CASH_ON_DELIVERY"
+                      ? "Cobro al entregar · La tienda asume el riesgo"
                       : selectedPaymentMethod === "TRANSFER"
-                        ? "Generar codigo de transferencia"
-                        : "Pagar con Stripe"}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  {selectedPaymentMethod === "CASH_ON_DELIVERY"
-                    ? "Cobro al entregar · La tienda asume el riesgo"
-                    : selectedPaymentMethod === "TRANSFER"
-                      ? "Pago por transferencia · Usa el codigo de referencia"
-                      : "Pago seguro · Tu dinero esta protegido"}
-                </p>
-              </CardContent>
-            </Card>
+                        ? "Pago por transferencia · Usa el código de referencia"
+                        : "Pago seguro · Tu dinero está protegido"}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

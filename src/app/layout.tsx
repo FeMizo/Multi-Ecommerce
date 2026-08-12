@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist } from "next/font/google"
+import { Cormorant_Garamond, Manrope } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
 import { DEFAULT_SHOP_BANNER } from "@/lib/placeholders"
 import { absoluteUrl, siteUrl } from "@/lib/site-url"
@@ -7,7 +7,8 @@ import { buildKeywords } from "@/lib/seo"
 import { jsonLdScript, organizationJsonLd, webSiteJsonLd } from "@/lib/seo-jsonld"
 import "./globals.css"
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
+const bodyFont = Manrope({ subsets: ["latin"], variable: "--font-body" })
+const displayFont = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-display" })
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${geist.variable} h-full antialiased bg-background`}>
+    <html lang="es" className={`${bodyFont.variable} ${displayFont.variable} h-full antialiased bg-background`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(organizationJsonLd()) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(webSiteJsonLd()) }} />
