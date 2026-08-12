@@ -518,7 +518,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      url: `${origin}/checkout/success?order_id=${order.id}&payment_method=cash_on_delivery`,
+      url: `${origin}/checkout/success?order_id=${order.id}&payment_method=cod`,
     })
   }
 

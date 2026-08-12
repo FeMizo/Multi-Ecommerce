@@ -60,7 +60,7 @@ export default async function CheckoutSuccessPage({
       : null
 
   const effectiveMethod = order?.paymentMethod ?? paymentMethod?.toUpperCase()
-  const isCashOnDelivery = effectiveMethod === "CASH_ON_DELIVERY"
+  const isCashOnDelivery = effectiveMethod === "CASH_ON_DELIVERY" || effectiveMethod === "COD"
   const isTransfer = effectiveMethod === "TRANSFER"
   const transferReference = buildTransferReference(order?.store.transferReferencePrefix, order?.store.transferReferenceExtra)
 
