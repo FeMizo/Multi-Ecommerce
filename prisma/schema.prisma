@@ -581,10 +581,6 @@ enum PaymentMethod {
   TRANSFER
 }
 
-  AVAILABLE
-  OFFLINE
-}
-
 enum CouponType {
   PERCENTAGE
   FIXED
