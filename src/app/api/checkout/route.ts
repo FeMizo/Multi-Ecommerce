@@ -18,6 +18,9 @@ import { sendOrderReceivedEmail, sendSellerNewOrderEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from "@/lib/store-coupons"
 import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
+import { createLogger, serializeError } from "@/lib/observability"
+
+const logger = createLogger("checkout")
 
 const checkoutSchema = z.object({
   checkoutToken: z.string().uuid(),
@@ -82,7 +85,9 @@ export async function POST(req: Request) {
   try {
     await releaseExpiredOrderReservations(5)
   } catch (error) {
-    console.error("No se pudieron liberar reservaciones vencidas", error)
+    logger.error("reservation-cleanup-failed", {
+      error: serializeError(error),
+    })
   }
 
   const parsed = checkoutSchema.safeParse(await req.json())

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { signOut } from "next-auth/react"
-import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard, Heart } from "lucide-react"
+import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard, Heart, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -110,7 +110,14 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
   const itemCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0))
   const openCart = useCartStore((s) => s.openCart)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const pathname = usePathname()
   const sessionUser = session?.user
+  const accountHref = sessionUser ? "/account/orders" : "/login"
+  const mobileNavItems = [
+    { href: "/", label: "Inicio", icon: Home },
+    { href: "/stores", label: "Tiendas", icon: Store },
+    { href: "/search", label: "Buscar", icon: Search },
+  ] as const
 
   return (
     <>
@@ -325,6 +332,63 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
           </div>
         )}
       </header>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-lg md:hidden">
+        <div className="grid grid-cols-5 gap-1">
+          {mobileNavItems.map(({ href, label, icon: Icon }) => {
+            const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)
+
+            return (
+              <Button
+                key={href}
+                variant="ghost"
+                className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
+                  active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                }`}
+                asChild
+              >
+                <Link href={href} aria-current={active ? "page" : undefined}>
+                  <Icon className="h-4 w-4" />
+                  <span>{label}</span>
+                </Link>
+              </Button>
+            )
+          })}
+
+          <Button
+            type="button"
+            variant="ghost"
+            className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
+              itemCount > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"
+            }`}
+            onClick={openCart}
+            aria-label="Abrir carrito"
+          >
+            <span className="relative">
+              <ShoppingCart className="h-4 w-4" />
+              {itemCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                  {itemCount}
+                </span>
+              )}
+            </span>
+            <span>Carrito</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
+              pathname.startsWith("/account") || pathname.startsWith("/login") ? "bg-primary/10 text-primary" : "text-muted-foreground"
+            }`}
+            asChild
+          >
+            <Link href={accountHref} aria-current={pathname.startsWith("/account") || pathname.startsWith("/login") ? "page" : undefined}>
+              <User className="h-4 w-4" />
+              <span>Cuenta</span>
+            </Link>
+          </Button>
+        </div>
+      </nav>
     </>
   )
 }
