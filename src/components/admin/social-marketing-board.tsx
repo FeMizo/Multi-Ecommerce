@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { CopyButton } from "@/components/admin/copy-button"
 import {
   DEFAULT_SOCIAL_DESTINATION,
@@ -17,9 +18,13 @@ import {
   getSocialTopic,
   type SocialChannel,
 } from "@/lib/social-marketing"
-import { cn } from "@/lib/utils"
-import { CalendarClock, CheckCircle2, CircleAlert, ImageIcon, Loader2, Megaphone, PencilLine, Send, Sparkles } from "lucide-react"
-import { createSocialPostAction, publishSocialPostAction, type SocialPostActionInput } from "@/app/(admin)/admin/marketing/actions"
+import { CalendarClock, CircleAlert, ImageIcon, Loader2, Megaphone, PencilLine, Send, Sparkles } from "lucide-react"
+import {
+  createSocialPostAction,
+  publishSocialPostAction,
+  updateSocialPostChannelsAction,
+  type SocialPostActionInput,
+} from "@/app/(admin)/admin/marketing/actions"
 
 type SocialPostStatus = "DRAFT" | "SCHEDULED" | "PUBLISHING" | "PUBLISHED" | "FAILED"
 
@@ -58,6 +63,8 @@ const statusTone: Record<SocialPostStatus, StatusTone> = {
   FAILED: { label: "Fallo", variant: "destructive" },
 }
 
+const socialPostStatuses: SocialPostStatus[] = ["PUBLISHED", "FAILED", "SCHEDULED", "DRAFT", "PUBLISHING"]
+
 function formatLocalDateTimeValue(date: Date) {
   const offsetMs = date.getTimezoneOffset() * 60_000
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
@@ -71,33 +78,24 @@ function formatCompactDate(value: string) {
   }).format(date)
 }
 
-function getToneClass(status: SocialPostStatus) {
-  switch (status) {
-    case "PUBLISHED":
-      return "bg-success/10 text-success-foreground"
-    case "FAILED":
-      return "bg-destructive/10 text-destructive"
-    case "PUBLISHING":
-      return "bg-primary/10 text-primary"
-    case "SCHEDULED":
-      return "bg-secondary/70 text-secondary-foreground"
-    default:
-      return "bg-muted text-muted-foreground"
-  }
-}
-
 export function SocialMarketingBoard({ initialPosts }: BoardProps) {
   const router = useRouter()
   const [posts, setPosts] = useState(initialPosts)
   const [title, setTitle] = useState("")
   const [topic, setTopic] = useState(SOCIAL_TOPICS[0]?.id ?? "launch")
   const [destinationUrl, setDestinationUrl] = useState(DEFAULT_SOCIAL_DESTINATION)
-  const [scheduledAt, setScheduledAt] = useState(formatLocalDateTimeValue(new Date(Date.now() + 60 * 60 * 1000)))
+  const [scheduledAt, setScheduledAt] = useState(() => formatLocalDateTimeValue(new Date(Date.now() + 60 * 60 * 1000)))
   const [imageUrl, setImageUrl] = useState("")
   const [caption, setCaption] = useState(buildSocialCopy(SOCIAL_TOPICS[0]?.id ?? "launch", 0, DEFAULT_SOCIAL_DESTINATION))
   const [channels, setChannels] = useState<SocialChannel[]>(["FACEBOOK"])
   const [busy, setBusy] = useState(false)
   const [publishingId, setPublishingId] = useState<string | null>(null)
+  const [editingChannelsId, setEditingChannelsId] = useState<string | null>(null)
+  const [editingChannels, setEditingChannels] = useState<SocialChannel[]>([])
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<"ALL" | SocialPostStatus>("ALL")
+  const [channelFilter, setChannelFilter] = useState<"ALL" | SocialChannel>("ALL")
+  const [currentPage, setCurrentPage] = useState(1)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -106,6 +104,25 @@ export function SocialMarketingBoard({ initialPosts }: BoardProps) {
     () => selectedTopic.copy.map((copy, index) => buildSocialCopy(selectedTopic.id, index, destinationUrl || DEFAULT_SOCIAL_DESTINATION)),
     [destinationUrl, selectedTopic]
   )
+  const selectedPost = posts.find((post) => post.id === selectedPostId) ?? null
+  const visiblePosts = posts.filter((post) => {
+    const matchesStatus = statusFilter === "ALL" || post.status === statusFilter
+    const matchesChannel = channelFilter === "ALL" || post.channels.includes(channelFilter)
+    return matchesStatus && matchesChannel
+  })
+  const pageSize = 5
+  const totalPages = Math.max(1, Math.ceil(visiblePosts.length / pageSize))
+  const paginatedPosts = visiblePosts.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  function changeStatusFilter(value: "ALL" | SocialPostStatus) {
+    setStatusFilter(value)
+    setCurrentPage(1)
+  }
+
+  function changeChannelFilter(value: "ALL" | SocialChannel) {
+    setChannelFilter(value)
+    setCurrentPage(1)
+  }
 
   function toggleChannel(channel: SocialChannel) {
     setChannels((current) => {
@@ -172,6 +189,44 @@ export function SocialMarketingBoard({ initialPosts }: BoardProps) {
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo publicar")
+    } finally {
+      setPublishingId(null)
+    }
+  }
+
+  function startEditingChannels(post: SocialPostRecord) {
+    setEditingChannelsId(post.id)
+    setEditingChannels([...post.channels])
+    setError(null)
+    setMessage(null)
+  }
+
+  function toggleEditingChannel(channel: SocialChannel) {
+    setEditingChannels((current) => {
+      if (current.includes(channel)) {
+        return current.filter((item) => item !== channel)
+      }
+      return [...current, channel]
+    })
+  }
+
+  async function saveEditingChannels(postId: string) {
+    if (editingChannels.length === 0) {
+      setError("Selecciona al menos un canal")
+      return
+    }
+
+    setPublishingId(postId)
+    setError(null)
+    setMessage(null)
+    try {
+      const post = await updateSocialPostChannelsAction(postId, editingChannels)
+      setPosts((current) => [post, ...current.filter((item) => item.id !== post.id)])
+      setEditingChannelsId(null)
+      setMessage("Canales actualizados")
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudieron actualizar los canales")
     } finally {
       setPublishingId(null)
     }
@@ -346,84 +401,159 @@ export function SocialMarketingBoard({ initialPosts }: BoardProps) {
         </Card>
 
         <Card className="border-border/60 shadow-sm">
-          <CardHeader className="space-y-3">
-            <CardTitle className="text-xl">Publicaciones recientes</CardTitle>
-            <CardDescription>Lista sincronizada desde la base de datos.</CardDescription>
+          <CardHeader className="space-y-3 pb-8">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-xl">Publicaciones recientes</CardTitle>
+                <CardDescription>Lista sincronizada desde la base de datos.</CardDescription>
+              </div>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tipo</label>
+                  <Select value={statusFilter} onValueChange={(value) => changeStatusFilter(value as "ALL" | SocialPostStatus)}>
+                    <SelectTrigger className="w-full sm:w-44" aria-label="Filtrar publicaciones por tipo o estado">
+                      <SelectValue placeholder="Tipo de publicación" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todos ({posts.length})</SelectItem>
+                      {socialPostStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {statusTone[status].label} ({posts.filter((post) => post.status === status).length})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Canal</label>
+                  <Select value={channelFilter} onValueChange={(value) => changeChannelFilter(value as "ALL" | SocialChannel)}>
+                    <SelectTrigger className="w-full sm:w-40" aria-label="Filtrar publicaciones por canal">
+                      <SelectValue placeholder="Filtrar canal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todos los canales</SelectItem>
+                      {SOCIAL_CHANNELS.map((channel) => (
+                        <SelectItem key={channel} value={channel}>
+                          {channel === "FACEBOOK" ? "Facebook" : "Instagram"} ({posts.filter((post) => post.channels.includes(channel)).length})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {posts.length === 0 ? (
               <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
                 Aun no hay publicaciones guardadas.
               </div>
+            ) : visiblePosts.length === 0 ? (
+              <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
+                No hay publicaciones con el estado seleccionado.
+              </div>
             ) : (
-              posts.map((post) => {
+              paginatedPosts.map((post) => {
                 const tone = statusTone[post.status]
                 return (
-                  <div key={post.id} className="rounded-2xl border p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-2">
+                  <button
+                    key={post.id}
+                    type="button"
+                    className="w-full rounded-2xl border p-4 text-left transition hover:border-primary/50 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setSelectedPostId(post.id)}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant={tone.variant}>{tone.label}</Badge>
                           <Badge variant="outline">{post.channels.map((channel) => (channel === "FACEBOOK" ? "Facebook" : "Instagram")).join(" / ")}</Badge>
                         </div>
-                        <h3 className="font-semibold">{post.title}</h3>
-                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{getSocialTopic(post.topic).label}</p>
+                        <h3 className="truncate font-semibold">{post.title}</h3>
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{getSocialTopic(post.topic).label} · {formatCompactDate(post.scheduledAt)}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {post.status !== "PUBLISHED" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => publishScheduledPost(post.id)}
-                            disabled={publishingId === post.id}
-                          >
-                            {publishingId === post.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                            Publicar
-                          </Button>
-                        ) : null}
-                        <CopyButton text={post.caption} />
-                      </div>
+                      <span className="shrink-0 text-sm font-medium text-primary">Ver detalle</span>
                     </div>
-
-                    <div className="mt-4 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-                      <div>
-                        <p className="text-xs uppercase tracking-wide">Programado</p>
-                        <p className="mt-1 text-foreground">{formatCompactDate(post.scheduledAt)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide">Destino</p>
-                        <p className="mt-1 break-all text-foreground">{post.destinationUrl}</p>
-                      </div>
-                    </div>
-
-                    {post.imageUrl ? (
-                      <div className="mt-3 rounded-xl border bg-muted/20 p-3 text-sm text-muted-foreground">
-                        <span className="font-medium text-foreground">Imagen:</span> {post.imageUrl}
-                      </div>
-                    ) : null}
-
-                    {post.lastError ? (
-                      <div className="mt-3 flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-                        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-                        <span>{post.lastError}</span>
-                      </div>
-                    ) : null}
-
-                    <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                      <span>{post.publishedAt ? `Publicado ${formatCompactDate(post.publishedAt)}` : "Pendiente de publicar"}</span>
-                      <span className={cn("inline-flex items-center gap-2 rounded-full px-2.5 py-1", getToneClass(post.status))}>
-                        {post.status === "PUBLISHED" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <CalendarClock className="h-3.5 w-3.5" />}
-                        {post.status}
-                      </span>
-                    </div>
-                  </div>
+                  </button>
                 )
               })
             )}
+            {visiblePosts.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm text-muted-foreground">
+                <span>Mostrando {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, visiblePosts.length)} de {visiblePosts.length}</span>
+                <div className="flex items-center gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>
+                    Anterior
+                  </Button>
+                  <span className="min-w-20 text-center">Página {currentPage} de {totalPages}</span>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages}>
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>
+
+      <Sheet open={Boolean(selectedPost)} onOpenChange={(open) => !open && setSelectedPostId(null)}>
+        <SheetContent side="right" className="h-dvh w-full overflow-y-auto p-0 sm:max-w-xl">
+          {selectedPost ? (
+            <div className="space-y-6 p-6">
+              <SheetHeader className="pr-8 text-left">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={statusTone[selectedPost.status].variant}>{statusTone[selectedPost.status].label}</Badge>
+                  <Badge variant="outline">{selectedPost.channels.map((channel) => (channel === "FACEBOOK" ? "Facebook" : "Instagram")).join(" / ")}</Badge>
+                </div>
+                <SheetTitle>{selectedPost.title}</SheetTitle>
+                <SheetDescription>{getSocialTopic(selectedPost.topic).label} · {formatCompactDate(selectedPost.scheduledAt)}</SheetDescription>
+              </SheetHeader>
+
+              {selectedPost.imageUrl ? <img src={selectedPost.imageUrl} alt="Imagen de la publicación" className="w-full rounded-2xl border object-cover" /> : null}
+
+              {selectedPost.lastError ? (
+                <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                  <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{selectedPost.lastError}</span>
+                </div>
+              ) : null}
+
+              <div className="space-y-3 text-sm">
+                <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Copy</p><p className="mt-1 whitespace-pre-wrap">{selectedPost.caption}</p></div>
+                <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Destino</p><p className="mt-1 break-all">{selectedPost.destinationUrl}</p></div>
+                {selectedPost.imageUrl ? <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Imagen pública</p><p className="mt-1 break-all">{selectedPost.imageUrl}</p></div> : null}
+              </div>
+
+              {selectedPost.status === "FAILED" && editingChannelsId === selectedPost.id ? (
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Canales para reintentar</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {SOCIAL_CHANNELS.map((channel) => (
+                      <Button key={channel} type="button" size="sm" variant={editingChannels.includes(channel) ? "default" : "outline"} onClick={() => toggleEditingChannel(channel)}>
+                        {channel === "FACEBOOK" ? "Facebook" : "Instagram"}
+                      </Button>
+                    ))}
+                    <Button type="button" size="sm" onClick={() => saveEditingChannels(selectedPost.id)} disabled={publishingId === selectedPost.id || editingChannels.length === 0}>Guardar</Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setEditingChannelsId(null)}>Cancelar</Button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap gap-2">
+                {selectedPost.status !== "PUBLISHED" ? <Button type="button" onClick={() => publishScheduledPost(selectedPost.id)} disabled={publishingId === selectedPost.id}><Send className="h-4 w-4" />{publishingId === selectedPost.id ? "Publicando" : "Publicar"}</Button> : null}
+                {selectedPost.status === "FAILED" && editingChannelsId !== selectedPost.id ? <Button type="button" variant="outline" onClick={() => startEditingChannels(selectedPost)}><PencilLine className="h-4 w-4" />Canales</Button> : null}
+                <CopyButton text={selectedPost.caption} />
+              </div>
+
+              <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
+                <div><p className="text-xs uppercase tracking-wide">Estado</p><p className="mt-1 text-foreground">{selectedPost.status}</p></div>
+                <div><p className="text-xs uppercase tracking-wide">Publicado</p><p className="mt-1 text-foreground">{selectedPost.publishedAt ? formatCompactDate(selectedPost.publishedAt) : "Pendiente"}</p></div>
+                <div><p className="text-xs uppercase tracking-wide">Facebook ID</p><p className="mt-1 break-all text-foreground">{selectedPost.facebookPostId ?? "-"}</p></div>
+                <div><p className="text-xs uppercase tracking-wide">Instagram ID</p><p className="mt-1 break-all text-foreground">{selectedPost.instagramMediaId ?? "-"}</p></div>
+              </div>
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
