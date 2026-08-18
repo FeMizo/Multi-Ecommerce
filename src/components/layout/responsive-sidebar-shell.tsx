@@ -368,7 +368,7 @@ export function ResponsiveSidebarShell({
             <div className="min-w-0 flex-1" />
           </div>
         </div>
-        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        <div className={cn("p-4 sm:p-6 lg:p-8", variant === "dashboard" && "mx-auto w-full max-w-6xl")}>{children}</div>
       </main>
     </div>
   )
