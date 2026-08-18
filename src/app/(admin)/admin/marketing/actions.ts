@@ -143,6 +143,30 @@ export async function publishSocialPostAction(postId: string) {
   return serializePost(await db.socialPost.findFirstOrThrow({ where: { id: post.id } }))
 }
 
+export async function updateSocialPostChannelsAction(postId: string, requestedChannels: SocialPostRecord["channels"]) {
+  await requireAdmin()
+
+  const channels = normalizeChannels(requestedChannels)
+  if (channels.length === 0 || !channels.every((channel) => SOCIAL_CHANNELS.includes(channel))) {
+    throw new Error("Selecciona al menos un canal valido")
+  }
+
+  const post = await db.socialPost.findFirst({ where: { id: postId } })
+  if (!post) {
+    throw new Error("Publicacion no encontrada")
+  }
+  if (post.status === "PUBLISHED") {
+    throw new Error("No se pueden editar los canales de una publicacion ya publicada")
+  }
+
+  const updated = await db.socialPost.update({
+    where: { id: post.id },
+    data: { channels, lastError: null },
+  })
+  revalidatePath("/admin/marketing")
+  return serializePost(updated)
+}
+
 export async function publishDueSocialPostsAction() {
   await requireAdmin()
   const results = await publishDueSocialPosts()
