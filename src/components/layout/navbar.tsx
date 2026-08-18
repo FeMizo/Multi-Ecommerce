@@ -3,7 +3,9 @@
 import Link from "next/link"
 import Image from "next/image"
 import { signOut } from "next-auth/react"
-import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard, Heart, Home } from "lucide-react"
+import { ShoppingCart, User, Package, LogOut, Search, Store, X, LayoutDashboard, Heart, Home } from "lucide-react"
+import { Menu as MorphMenu, X as MorphX } from "lucide"
+import { MorphIcon } from "morphicons/react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -289,8 +291,15 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                 size="icon" 
                 className="lg:hidden rounded-full"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                aria-expanded={mobileMenuOpen}
               >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                <MorphIcon
+                  icon={mobileMenuOpen ? MorphX : MorphMenu}
+                  className="h-5 w-5"
+                  spring="snappy"
+                  reducedMotion="user"
+                />
               </Button>
             </div>
           </div>

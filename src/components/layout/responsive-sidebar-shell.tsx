@@ -8,10 +8,10 @@ import {
   ArrowLeft,
   ArrowUpRight,
   BarChart3,
-  ChevronLeft,
-  ChevronRight,
+  ChevronLeft as MorphChevronLeft,
+  ChevronRight as MorphChevronRight,
   CreditCard,
-  Menu,
+  Menu as MorphMenu,
   LayoutDashboard,
   MapPin,
   Package,
@@ -23,6 +23,8 @@ import {
   Truck,
   type LucideIcon,
 } from "lucide-react"
+import { X as MorphX } from "lucide"
+import { MorphIcon } from "morphicons/react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
@@ -108,6 +110,7 @@ export function ResponsiveSidebarShell({
   const pathname = usePathname()
   const [isDesktop, setIsDesktop] = useState(false)
   const [collapsed, setCollapsed] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const media = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`)
@@ -275,7 +278,7 @@ export function ResponsiveSidebarShell({
       >
         <div className="sticky top-0 z-30 border-b bg-background/90 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-3">
-            <Sheet>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
                   type="button"
@@ -283,11 +286,18 @@ export function ResponsiveSidebarShell({
                   size="icon"
                   className={cn("h-9 w-9 shrink-0 xl:hidden", toggleTheme)}
                   aria-label="Abrir navegación"
+                  aria-expanded={mobileMenuOpen}
+                  aria-controls="dashboard-mobile-nav"
                 >
-                  <Menu className="h-4 w-4" />
+                  <MorphIcon
+                    icon={mobileMenuOpen ? MorphX : MorphMenu}
+                    className="h-4 w-4"
+                    spring="snappy"
+                    reducedMotion="user"
+                  />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className={cn("flex w-[85vw] max-w-sm flex-col gap-0 p-0", asideTheme)}>
+              <SheetContent id="dashboard-mobile-nav" side="left" className={cn("flex w-[85vw] max-w-sm flex-col gap-0 p-0", asideTheme)}>
                 <SheetHeader className={cn("border-b px-4 py-4 text-left", variant === "admin" ? "border-background/10" : "border-border")}>
                   <SheetTitle className={cn("text-base", variant === "admin" ? "text-background" : "text-foreground")}>
                     {brandTitle}
@@ -363,7 +373,12 @@ export function ResponsiveSidebarShell({
               onClick={() => setCollapsed((value) => !value)}
               aria-label={collapsed ? "Mostrar textos" : "Mostrar solo iconos"}
             >
-              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              <MorphIcon
+                icon={collapsed ? MorphChevronRight : MorphChevronLeft}
+                className="h-4 w-4"
+                spring="snappy"
+                reducedMotion="user"
+              />
             </Button>
             <div className="min-w-0 flex-1" />
           </div>
