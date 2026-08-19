@@ -1,7 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
 import {
-  ArrowRight,
   CheckCircle2,
   Clock3,
   Heart,
@@ -12,16 +11,17 @@ import {
   TrendingUp,
   BadgeCheck,
 } from "lucide-react"
+import { ArrowRight as MorphArrowRight } from "lucide"
 import type { Metadata } from "next"
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { CategoryGrid } from "@/components/products/category-grid"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DEFAULT_HOME_HERO_IMAGE, DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
 import { buildKeywords } from "@/lib/seo"
 import { absoluteUrl } from "@/lib/site-url"
 import { VerifiedBadge } from "@/components/public/verified-badge"
+import { MorphLink } from "@/components/ui/morph-link"
 
 export const metadata: Metadata = {
   title: { absolute: "AionSite Shop" },
@@ -232,15 +232,22 @@ export default async function HomePage() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" className="h-14 rounded-full px-8 text-base btn-shine" asChild>
-                  <Link href="/search">
-                    Explorar catálogo
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="h-14 rounded-full px-8 text-base border-2" asChild>
-                  <Link href="/register">Abrir mi tienda</Link>
-                </Button>
+                <MorphLink
+                  href="/search"
+                  className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-medium text-primary-foreground btn-shine transition-colors hover:bg-primary/90"
+                  icon={MorphArrowRight}
+                  iconClassName="h-4 w-4"
+                >
+                  Explorar catálogo
+                </MorphLink>
+                <MorphLink
+                  href="/register"
+                  className="inline-flex h-14 items-center justify-center gap-2 rounded-full border-2 border-border bg-background px-8 text-base font-medium text-foreground transition-colors hover:bg-accent"
+                  icon={MorphArrowRight}
+                  iconClassName="h-4 w-4"
+                >
+                  Abrir mi tienda
+                </MorphLink>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
@@ -312,10 +319,14 @@ export default async function HomePage() {
                 </Badge>
                 <h2 className="editorial-title text-4xl md:text-5xl">Explora por categoría</h2>
               </div>
-              <Link href="/categories" className="hidden items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80 sm:flex">
+              <MorphLink
+                href="/categories"
+                className="hidden items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80 sm:flex"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
                 Ver todas
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              </MorphLink>
             </div>
             <CategoryGrid categories={visibleCategories} />
           </div>
@@ -333,10 +344,14 @@ export default async function HomePage() {
                 </Badge>
                 <h2 className="editorial-title text-4xl md:text-5xl">Tiendas que ya se sienten premium</h2>
               </div>
-              <Link href="/stores" className="hidden items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80 sm:flex">
+              <MorphLink
+                href="/stores"
+                className="hidden items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80 sm:flex"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
                 Ver todas
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              </MorphLink>
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -399,10 +414,14 @@ export default async function HomePage() {
                 </Badge>
                 <h2 className="editorial-title text-4xl md:text-5xl">Productos destacados</h2>
               </div>
-              <Link href="/search" className="hidden items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80 sm:flex">
+              <MorphLink
+                href="/search"
+                className="hidden items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80 sm:flex"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
                 Ver catálogo completo
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              </MorphLink>
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">

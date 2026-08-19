@@ -3,7 +3,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState, type DragEvent } from "react"
-import { Minus, Plus, ShoppingBag, X, ArrowRight, GripVertical } from "lucide-react"
+import { ArrowRight as MorphArrowRight, GripVertical as MorphGripVertical, Minus as MorphMinus, Plus as MorphPlus, ShoppingCart as MorphShoppingCart, X as MorphX } from "lucide"
+import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -93,7 +94,7 @@ export function CartDrawer() {
         <SheetHeader className="px-6 py-5 border-b border-border/50">
           <SheetTitle className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <ShoppingBag className="h-5 w-5 text-primary" />
+              <InteractiveMorphIcon icon={MorphShoppingCart} className="h-5 w-5 text-primary" spring="snappy" reducedMotion="never" />
             </div>
             <div>
               <span className="block">Mi carrito</span>
@@ -109,7 +110,7 @@ export function CartDrawer() {
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-6">
             <div className="h-20 w-20 rounded-2xl bg-muted/50 flex items-center justify-center">
-              <ShoppingBag className="h-10 w-10 text-muted-foreground/40" />
+              <InteractiveMorphIcon icon={MorphShoppingCart} className="h-10 w-10 text-muted-foreground/40" spring="snappy" reducedMotion="never" />
             </div>
             <div>
               <p className="font-semibold text-lg mb-1">Tu carrito está vacío</p>
@@ -118,7 +119,7 @@ export function CartDrawer() {
             <Button className="rounded-full px-6" onClick={closeCart} asChild>
               <Link href="/search">
                 Explorar productos
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <InteractiveMorphIcon icon={MorphArrowRight} className="ml-2 h-4 w-4" spring="snappy" reducedMotion="never" />
               </Link>
             </Button>
           </div>
@@ -179,14 +180,14 @@ export function CartDrawer() {
                           aria-label="Arrastrar para ordenar"
                           title="Arrastrar para ordenar"
                         >
-                          <GripVertical className="h-4 w-4" />
+                          <InteractiveMorphIcon icon={MorphGripVertical} className="h-4 w-4" spring="snappy" reducedMotion="never" />
                         </button>
                         <button
                           onClick={() => removeItem(item.id)}
                           className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
                           aria-label="Eliminar"
                         >
-                          <X className="h-4 w-4" />
+                          <InteractiveMorphIcon icon={MorphX} className="h-4 w-4" spring="snappy" reducedMotion="never" />
                         </button>
                       </div>
                     </div>
@@ -197,7 +198,7 @@ export function CartDrawer() {
                           className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-l-full transition-colors"
                           aria-label="Disminuir"
                         >
-                          <Minus className="h-3.5 w-3.5" />
+                          <InteractiveMorphIcon icon={MorphMinus} className="h-3.5 w-3.5" spring="snappy" reducedMotion="never" />
                         </button>
                         <span className="h-8 w-10 flex items-center justify-center text-sm font-medium tabular-nums">
                           {item.quantity}
@@ -207,7 +208,7 @@ export function CartDrawer() {
                           className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-r-full transition-colors"
                           aria-label="Aumentar"
                         >
-                          <Plus className="h-3.5 w-3.5" />
+                          <InteractiveMorphIcon icon={MorphPlus} className="h-3.5 w-3.5" spring="snappy" reducedMotion="never" />
                         </button>
                       </div>
                       <span className="font-bold tabular-nums">
@@ -234,9 +235,9 @@ export function CartDrawer() {
 
               <div className="px-6 pb-6 space-y-3">
                 <Button className="w-full h-12 rounded-xl text-base" size="lg" asChild onClick={closeCart}>
-                  <Link href="/checkout">
-                    Finalizar compra
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <Link href="/checkout">
+                      Finalizar compra
+                    <InteractiveMorphIcon icon={MorphArrowRight} className="ml-2 h-4 w-4" spring="snappy" reducedMotion="never" />
                   </Link>
                 </Button>
                 {whatsappLoading || whatsappPhone ? (

@@ -1,8 +1,9 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState, useTransition } from "react"
-import { Search, X } from "lucide-react"
+import { useState, useTransition } from "react"
+import { Search as MorphSearch, X as MorphX } from "lucide"
+import { MorphIcon } from "morphicons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -37,10 +38,6 @@ export function SearchForm({ initialParams }: { initialParams: SearchParams }) {
   const [, startTransition] = useTransition()
   const [value, setValue] = useState(initialParams.q ?? "")
 
-  useEffect(() => {
-    setValue(initialParams.q ?? "")
-  }, [initialParams.q])
-
   const navigate = (nextValue: string) => {
     startTransition(() => {
       router.replace(buildSearchUrl(pathname, new URLSearchParams(searchParams.toString()), nextValue))
@@ -66,9 +63,14 @@ export function SearchForm({ initialParams }: { initialParams: SearchParams }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <form key={initialParams.q ?? ""} onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <MorphIcon
+          icon={MorphSearch}
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          spring="snappy"
+          reducedMotion="never"
+        />
         <Input
           value={value}
           onChange={handleChange}
@@ -80,9 +82,9 @@ export function SearchForm({ initialParams }: { initialParams: SearchParams }) {
             type="button"
             onClick={handleClear}
             aria-label="Limpiar búsqueda"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+            <MorphIcon icon={MorphX} className="h-4 w-4" spring="snappy" reducedMotion="never" />
           </button>
         )}
       </div>

@@ -2,10 +2,11 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, ChevronRight, Package, ShieldCheck, Sparkles, Store, Truck, User } from "lucide-react"
+import { ShieldCheck, Sparkles, Store, Truck, User } from "lucide-react"
+import { ArrowRight as MorphArrowRight } from "lucide"
+import { MorphLink } from "@/components/ui/morph-link"
 
 export default async function DashboardIndexPage() {
   const session = await auth()
@@ -96,43 +97,51 @@ export default async function DashboardIndexPage() {
               </div>
             </div>
             <div className="mt-4 grid gap-2">
-              <Button asChild className="justify-between rounded-2xl" variant="outline">
-                <Link href={sellerDashboardHref}>
-                  <span className="flex items-center gap-2">
-                    <Store className="h-4 w-4" />
-                    Vendedor
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild className="justify-between rounded-2xl" variant="outline">
-                <Link href={riderDashboardHref}>
-                  <span className="flex items-center gap-2">
-                    <Truck className="h-4 w-4" />
-                    Repartidor
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild className="justify-between rounded-2xl" variant="outline">
-                <Link href={buyerDashboardHref}>
-                  <span className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Comprador
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
+              <MorphLink
+                href={sellerDashboardHref}
+                className="inline-flex items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
+                <span className="flex items-center gap-2">
+                  <Store className="h-4 w-4" />
+                  Vendedor
+                </span>
+              </MorphLink>
+              <MorphLink
+                href={riderDashboardHref}
+                className="inline-flex items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
+                <span className="flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  Repartidor
+                </span>
+              </MorphLink>
+              <MorphLink
+                href={buyerDashboardHref}
+                className="inline-flex items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
+                <span className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Comprador
+                </span>
+              </MorphLink>
               {isPlatformAdmin && (
-                <Button asChild className="justify-between rounded-2xl" variant="secondary">
-                  <Link href="/admin">
-                    <span className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4" />
-                      Admin
-                    </span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </Button>
+                <MorphLink
+                  href="/admin"
+                  className="inline-flex items-center justify-between rounded-2xl border border-input bg-secondary px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                  icon={MorphArrowRight}
+                  iconClassName="h-4 w-4"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4" />
+                    Admin
+                  </span>
+                </MorphLink>
               )}
             </div>
           </div>
@@ -157,10 +166,12 @@ export default async function DashboardIndexPage() {
             {sellerPanels.length > 0 ? (
               <div className="space-y-2">
                 {sellerPanels.slice(0, 3).map((membership) => (
-                  <Link
+                  <MorphLink
                     key={`${membership.store.slug}-${membership.role}`}
                     href={`/dashboard/${membership.store.slug}`}
                     className="group flex items-center justify-between rounded-2xl border bg-background px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5"
+                    icon={MorphArrowRight}
+                    iconClassName="h-4 w-4 text-muted-foreground"
                   >
                     <div className="min-w-0">
                       <p className="font-medium">{membership.store.name}</p>
@@ -172,9 +183,8 @@ export default async function DashboardIndexPage() {
                           Verificada
                         </Badge>
                       )}
-                      <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                     </div>
-                  </Link>
+                  </MorphLink>
                 ))}
               </div>
             ) : (
@@ -182,12 +192,14 @@ export default async function DashboardIndexPage() {
                 No tienes tiendas activas todavia.
               </div>
             )}
-            <Button asChild className="w-full justify-between rounded-2xl" variant="outline">
-              <Link href={sellerDashboardHref}>
+            <MorphLink
+                href={sellerDashboardHref}
+                className="inline-flex w-full items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
                 {sellerPanels.length > 0 ? "Abrir panel de vendedor" : "Crear tienda"}
-                <Package className="h-4 w-4" />
-              </Link>
-            </Button>
+              </MorphLink>
           </CardContent>
         </Card>
 
@@ -232,12 +244,14 @@ export default async function DashboardIndexPage() {
                 Registra tu cuenta de repartidor para ver tu panel aqui.
               </div>
             )}
-            <Button asChild className="w-full justify-between rounded-2xl" variant="outline">
-              <Link href={riderDashboardHref}>
+            <MorphLink
+                href={riderDashboardHref}
+                className="inline-flex w-full items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
                 {riderPanels.length > 0 ? "Abrir panel de repartidor" : "Registrar repartidor"}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+              </MorphLink>
           </CardContent>
         </Card>
 
@@ -259,24 +273,30 @@ export default async function DashboardIndexPage() {
               Tu panel de comprador vive en tu cuenta personal y no requiere suscripcion.
             </div>
             <div className="space-y-2">
-              <Button asChild className="w-full justify-between rounded-2xl" variant="outline">
-                <Link href="/account/orders">
-                  Mis pedidos
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild className="w-full justify-between rounded-2xl" variant="outline">
-                <Link href="/account/profile">
-                  Mi perfil
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild className="w-full justify-between rounded-2xl" variant="outline">
-                <Link href="/account/favorites">
-                  Mis favoritos
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+              <MorphLink
+                href="/account/orders"
+                className="inline-flex w-full items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
+                Mis pedidos
+              </MorphLink>
+              <MorphLink
+                href="/account/profile"
+                className="inline-flex w-full items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
+                Mi perfil
+              </MorphLink>
+              <MorphLink
+                href="/account/favorites"
+                className="inline-flex w-full items-center justify-between rounded-2xl border border-input bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
+                icon={MorphArrowRight}
+                iconClassName="h-4 w-4"
+              >
+                Mis favoritos
+              </MorphLink>
             </div>
           </CardContent>
         </Card>

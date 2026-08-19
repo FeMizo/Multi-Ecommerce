@@ -1,6 +1,9 @@
+"use client"
+
+import type { ComponentType } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import {
-  ArrowRight,
   Shirt,
   Smartphone,
   Home,
@@ -15,6 +18,8 @@ import {
   Laptop,
   BriefcaseBusiness,
 } from "lucide-react"
+import { ArrowRight as MorphArrowRight, ArrowUpRight as MorphArrowUpRight } from "lucide"
+import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 
 type Category = {
   id: string
@@ -24,26 +29,30 @@ type Category = {
   _count: { products: number }
 }
 
-// Icon mapping with Lucide icons and gradient colors
-const categoryConfig: Record<string, { icon: React.ElementType; gradient: string }> = {
-  "ropa": { icon: Shirt, gradient: "from-rose-500/20 to-pink-500/10" },
-  "tecnologia": { icon: Smartphone, gradient: "from-blue-500/20 to-cyan-500/10" },
-  "hogar": { icon: Home, gradient: "from-amber-500/20 to-orange-500/10" },
-  "deportes": { icon: Dumbbell, gradient: "from-green-500/20 to-emerald-500/10" },
-  "belleza": { icon: Sparkles, gradient: "from-purple-500/20 to-pink-500/10" },
-  "juguetes": { icon: Gamepad2, gradient: "from-indigo-500/20 to-violet-500/10" },
-  "libros": { icon: BookOpen, gradient: "from-yellow-500/20 to-amber-500/10" },
-  "comida": { icon: UtensilsCrossed, gradient: "from-red-500/20 to-orange-500/10" },
-  "arte": { icon: Palette, gradient: "from-fuchsia-500/20 to-purple-500/10" },
-  "mascotas": { icon: Dog, gradient: "from-teal-500/20 to-cyan-500/10" },
-  "jardin": { icon: Flower2, gradient: "from-lime-500/20 to-green-500/10" },
-  "electronica": { icon: Laptop, gradient: "from-slate-500/20 to-gray-500/10" },
-  "servicios": { icon: BriefcaseBusiness, gradient: "from-sky-500/20 to-blue-500/10" },
-  "alimentos": { icon: UtensilsCrossed, gradient: "from-red-500/20 to-orange-500/10" },
-  "artesanias": { icon: Palette, gradient: "from-fuchsia-500/20 to-purple-500/10" },
+type CategoryConfig = {
+  icon: ComponentType<{ className?: string }>
+  gradient: string
 }
 
-function getCategoryConfig(slug: string) {
+const categoryConfig: Record<string, CategoryConfig> = {
+  ropa: { icon: Shirt, gradient: "from-rose-500/20 to-pink-500/10" },
+  tecnologia: { icon: Smartphone, gradient: "from-blue-500/20 to-cyan-500/10" },
+  hogar: { icon: Home, gradient: "from-amber-500/20 to-orange-500/10" },
+  deportes: { icon: Dumbbell, gradient: "from-green-500/20 to-emerald-500/10" },
+  belleza: { icon: Sparkles, gradient: "from-purple-500/20 to-pink-500/10" },
+  juguetes: { icon: Gamepad2, gradient: "from-indigo-500/20 to-violet-500/10" },
+  libros: { icon: BookOpen, gradient: "from-yellow-500/20 to-amber-500/10" },
+  comida: { icon: UtensilsCrossed, gradient: "from-red-500/20 to-orange-500/10" },
+  arte: { icon: Palette, gradient: "from-fuchsia-500/20 to-purple-500/10" },
+  mascotas: { icon: Dog, gradient: "from-teal-500/20 to-cyan-500/10" },
+  jardin: { icon: Flower2, gradient: "from-lime-500/20 to-green-500/10" },
+  electronica: { icon: Laptop, gradient: "from-slate-500/20 to-gray-500/10" },
+  servicios: { icon: BriefcaseBusiness, gradient: "from-sky-500/20 to-blue-500/10" },
+  alimentos: { icon: UtensilsCrossed, gradient: "from-red-500/20 to-orange-500/10" },
+  artesanias: { icon: Palette, gradient: "from-fuchsia-500/20 to-purple-500/10" },
+}
+
+function getCategoryConfig(slug: string): CategoryConfig {
   const normalizedSlug = slug
     .toLowerCase()
     .normalize("NFD")
@@ -53,74 +62,75 @@ function getCategoryConfig(slug: string) {
   return categoryConfig[normalizedSlug] || { icon: Sparkles, gradient: "from-primary/20 to-primary/5" }
 }
 
+function CategoryCardLink({ cat, isFirst }: { cat: Category; isFirst: boolean }) {
+  const [hovered, setHovered] = useState(false)
+  const config = getCategoryConfig(cat.slug)
+  const Icon = config.icon
+
+  return (
+    <Link
+      href={`/search?category=${cat.slug}`}
+      className={`group relative overflow-hidden rounded-2xl border border-border/50 bg-card hover-lift ${
+        isFirst ? "sm:col-span-2 sm:row-span-2" : ""
+      }`}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+
+      <div className={`relative p-6 h-full flex flex-col ${isFirst ? "sm:p-10" : ""}`}>
+        <div
+          className={`inline-flex items-center justify-center rounded-2xl bg-muted/80 group-hover:bg-card/80 backdrop-blur-sm transition-colors mb-4 ${
+            isFirst ? "h-20 w-20 sm:h-24 sm:w-24" : "h-14 w-14"
+          }`}
+        >
+          <Icon
+            className={`text-muted-foreground group-hover:text-primary transition-colors ${
+              isFirst ? "h-10 w-10 sm:h-12 sm:w-12" : "h-7 w-7"
+            }`}
+          />
+        </div>
+
+        <div className="flex-1">
+          <h3 className={`font-bold group-hover:text-primary transition-colors ${isFirst ? "text-xl sm:text-2xl" : "text-base"}`}>
+            {cat.name}
+          </h3>
+          <p className={`text-muted-foreground mt-1 ${isFirst ? "text-sm" : "text-xs"}`}>
+            {cat._count.products} {cat._count.products === 1 ? "producto" : "productos"}
+          </p>
+        </div>
+
+        <div className="absolute right-4 bottom-4 flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-all">
+          <span className={`font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ${isFirst ? "text-sm" : "text-xs"}`}>
+            Ver mas
+          </span>
+          <div className={`rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-all ${isFirst ? "h-9 w-9" : "h-8 w-8"}`}>
+            <InteractiveMorphIcon
+              icon={MorphArrowRight}
+              hoverIcon={MorphArrowUpRight}
+              hovered={hovered}
+              className={isFirst ? "h-6 w-6" : "h-4 w-4"}
+              spring="snappy"
+              reducedMotion="never"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+      <div className="absolute -top-8 -left-8 h-20 w-20 rounded-full bg-primary/3 group-hover:bg-primary/5 transition-colors" />
+    </Link>
+  )
+}
+
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-      {categories.map((cat, index) => {
-        const config = getCategoryConfig(cat.slug)
-        const Icon = config.icon
-        const isFirst = index === 0
-        
-        return (
-          <Link
-            key={cat.id}
-            href={`/search?category=${cat.slug}`}
-            className={`group relative overflow-hidden rounded-2xl border border-border/50 bg-card hover-lift ${
-              isFirst ? 'sm:col-span-2 sm:row-span-2' : ''
-            }`}
-          >
-            {/* Background gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-            
-            <div className={`relative p-6 h-full flex flex-col ${isFirst ? 'sm:p-10' : ''}`}>
-              {/* Icon */}
-              <div className={`inline-flex items-center justify-center rounded-2xl bg-muted/80 group-hover:bg-card/80 backdrop-blur-sm transition-colors mb-4 ${
-                isFirst ? 'h-20 w-20 sm:h-24 sm:w-24' : 'h-14 w-14'
-              }`}>
-                <Icon className={`text-muted-foreground group-hover:text-primary transition-colors ${
-                  isFirst ? 'h-10 w-10 sm:h-12 sm:w-12' : 'h-7 w-7'
-                }`} />
-              </div>
-              
-              {/* Content */}
-              <div className="flex-1">
-                <h3 className={`font-bold group-hover:text-primary transition-colors ${
-                  isFirst ? 'text-xl sm:text-2xl' : 'text-base'
-                }`}>
-                  {cat.name}
-                </h3>
-                <p className={`text-muted-foreground mt-1 ${
-                  isFirst ? 'text-sm' : 'text-xs'
-                }`}>
-                  {cat._count.products} {cat._count.products === 1 ? 'producto' : 'productos'}
-                </p>
-              </div>
-              
-              {/* Arrow indicator */}
-              <div className={`absolute right-4 bottom-4 flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-all ${
-                isFirst ? '' : ''
-              }`}>
-                <span className={`font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ${
-                  isFirst ? 'text-sm' : 'text-xs'
-                }`}>
-                  Ver mas
-                </span>
-                <div className={`rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-all ${
-                  isFirst ? 'h-9 w-9' : 'h-8 w-8'
-                }`}>
-                  <ArrowRight className={`group-hover:translate-x-0.5 transition-transform ${
-                    isFirst ? 'h-6 w-6' : 'h-4 w-4'
-                  }`} />
-                </div>
-              </div>
-            </div>
-            
-            {/* Decorative circles */}
-            <div className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors" />
-            <div className="absolute -top-8 -left-8 h-20 w-20 rounded-full bg-primary/3 group-hover:bg-primary/5 transition-colors" />
-          </Link>
-        )
-      })}
+    <div className="grid grid-cols-2 gap-4 md:gap-6 sm:grid-cols-3 lg:grid-cols-4">
+      {categories.map((cat, index) => (
+        <CategoryCardLink key={cat.id} cat={cat} isFirst={index === 0} />
+      ))}
     </div>
   )
 }

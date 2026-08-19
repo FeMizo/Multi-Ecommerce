@@ -293,7 +293,7 @@ export function ResponsiveSidebarShell({
                     icon={mobileMenuOpen ? MorphX : MorphMenu}
                     className="h-4 w-4"
                     spring="snappy"
-                    reducedMotion="user"
+                    reducedMotion="never"
                   />
                 </Button>
               </SheetTrigger>
@@ -377,7 +377,7 @@ export function ResponsiveSidebarShell({
                 icon={collapsed ? MorphChevronRight : MorphChevronLeft}
                 className="h-4 w-4"
                 spring="snappy"
-                reducedMotion="user"
+                reducedMotion="never"
               />
             </Button>
             <div className="min-w-0 flex-1" />
