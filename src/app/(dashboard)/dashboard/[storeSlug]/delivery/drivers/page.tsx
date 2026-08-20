@@ -17,7 +17,7 @@ export default async function DeliveryDriversPage({
   if (!membership) redirect("/dashboard")
 
   const drivers = await db.driver.findMany({
-    where: { storeId: membership.store.id },
+    where: { OR: [{ storeId: membership.store.id }, { storeId: null }] },
     select: {
       id: true,
       name: true,

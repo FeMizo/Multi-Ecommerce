@@ -29,7 +29,8 @@ export default async function DashboardLayout({
 
   if (!session?.user) redirect("/login")
 
-  const [membership, user] = await Promise.all([
+  const isPlatformAdmin = session.user.globalRole === "PLATFORM_ADMIN"
+  const [membership, adminStore, user] = await Promise.all([
     db.storeMember.findFirst({
       where: {
         userId: session.user.id,
@@ -54,23 +55,41 @@ export default async function DashboardLayout({
         },
       },
     }),
+    isPlatformAdmin
+      ? db.store.findUnique({
+          where: { slug: storeSlug },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            primaryColor: true,
+            subscription: {
+              select: {
+                status: true,
+                currentPeriodEnd: true,
+                cancelAtPeriodEnd: true,
+              },
+            },
+          },
+        })
+      : null,
     db.user.findUnique({
       where: { id: session.user.id },
       select: { phone: true },
     }),
   ])
 
-  if (!membership) redirect("/dashboard")
+  const store = membership?.store ?? adminStore
+  if (!store) redirect("/dashboard")
 
   const base = `/dashboard/${storeSlug}`
-  const storeColor = membership.store.primaryColor
-  const isPlatformAdmin = session.user.globalRole === "PLATFORM_ADMIN"
+  const storeColor = store.primaryColor
 
   return (
     <SessionProvider session={session}>
       <ResponsiveSidebarShell
         brandHref="/"
-        brandTitle={membership.store.name}
+        brandTitle={store.name}
         brandSubtitle="Dashboard"
         brandImageAlt="AionSite"
         items={navItems.map((item) => ({ ...item, href: `${base}${item.href}` }))}
@@ -90,12 +109,12 @@ export default async function DashboardLayout({
           className="min-h-screen"
         >
           <SubscriptionRenewalReminder
-            storeId={membership.store.id}
-            storeName={membership.store.name}
-            subscription={membership.store.subscription ? {
-              status: membership.store.subscription.status,
-              currentPeriodEnd: membership.store.subscription.currentPeriodEnd?.toISOString() ?? null,
-              cancelAtPeriodEnd: membership.store.subscription.cancelAtPeriodEnd,
+            storeId={store.id}
+            storeName={store.name}
+            subscription={store.subscription ? {
+              status: store.subscription.status,
+              currentPeriodEnd: store.subscription.currentPeriodEnd?.toISOString() ?? null,
+              cancelAtPeriodEnd: store.subscription.cancelAtPeriodEnd,
             } : null}
           />
           {children}

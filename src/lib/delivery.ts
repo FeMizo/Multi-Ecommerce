@@ -7,6 +7,10 @@ export const DELIVERY_METHOD_LABELS: Record<DeliveryMethodValue, string> = {
   LOCAL_DELIVERY: "Entrega local",
 }
 
+export function formatDeliveryMethodLabel(method: string) {
+  return DELIVERY_METHOD_LABELS[method as DeliveryMethodValue] ?? method.replace(/_/g, " ")
+}
+
 export const DELIVERY_METHOD_DESCRIPTIONS: Record<DeliveryMethodValue, string> = {
   PICKUP: "El cliente recoge el pedido en la tienda.",
   LOCAL_DELIVERY: "El cliente recibe el pedido en una dirección local.",
@@ -108,6 +112,23 @@ export function buildWhatsAppLink(phone: string, message: string) {
   const normalizedPhone = normalizeWhatsAppPhone(phone)
   const text = encodeURIComponent(message)
   return `https://wa.me/${normalizedPhone}?text=${text}`
+}
+
+export function buildGoogleMapsSearchUrl(input: {
+  formattedAddress?: string | null
+  lat?: number | null
+  lng?: number | null
+}) {
+  if (typeof input.lat === "number" && typeof input.lng === "number") {
+    return `https://www.google.com/maps/search/?api=1&query=${input.lat},${input.lng}`
+  }
+
+  const address = input.formattedAddress?.trim()
+  if (address) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+  }
+
+  return null
 }
 
 export function deliveryStatusToOrderStatus(status: DeliveryStatusValue) {

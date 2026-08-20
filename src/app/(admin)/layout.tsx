@@ -17,10 +17,11 @@ const navItems: SidebarItem[] = [
   { href: "/admin/prospects", label: "Prospectos", iconKey: "Tag" },
   { href: "/admin/users", label: "Usuarios", iconKey: "Users" },
   { href: "/admin/sellers", label: "Vendedores", iconKey: "Store" },
-  { href: "/admin/plans", label: "Planes", iconKey: "CreditCard" },
+  { href: "/admin/drivers", label: "Repartidores", iconKey: "Truck" },
   { href: "/admin/orders", label: "Pedidos", iconKey: "ShoppingBag" },
   { href: "/admin/products", label: "Productos", iconKey: "Package" },
   { href: "/admin/cities", label: "Ciudades", iconKey: "MapPin" },
+  { href: "/admin/plans", label: "Planes", iconKey: "CreditCard" },
   { href: "/admin/metrics", label: "Metricas", iconKey: "BarChart3" },
 ]
 

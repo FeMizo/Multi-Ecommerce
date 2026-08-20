@@ -47,7 +47,7 @@ export async function PATCH(
       nextDriver = await tx.driver.findFirst({
         where: {
           id: nextDriverId,
-          storeId: membership.store.id,
+          OR: [{ storeId: membership.store.id }, { storeId: null }],
         },
         select: {
           id: true,

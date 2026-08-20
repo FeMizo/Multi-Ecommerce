@@ -7,8 +7,7 @@ import { AdminSearch } from "@/components/admin/admin-search"
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
 import { OrderStatus } from "@prisma/client"
 import Link from "next/link"
-import { OrderDetailsSheet, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet"
-import { PanelRightOpen } from "lucide-react"
+import { OrderDetailsSheetButton, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet-client"
 
 const ALL_STATUSES = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]
 
@@ -38,7 +37,7 @@ export default async function AdminOrdersPage({
     } : {}),
   }
 
-  const [orders, total] = await Promise.all([
+  const [orders, total, drivers] = await Promise.all([
     db.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -68,8 +67,18 @@ export default async function AdminOrdersPage({
           },
         },
         payment: { select: { status: true, stripePaymentIntentId: true, stripeRefundId: true } },
+        coupon: {
+          select: {
+            code: true,
+            name: true,
+            type: true,
+            value: true,
+          },
+        },
         delivery: {
           select: {
+            id: true,
+            driverId: true,
             status: true,
             method: true,
             formattedAddress: true,
@@ -78,6 +87,7 @@ export default async function AdminOrdersPage({
             notes: true,
             driver: {
               select: {
+                id: true,
                 name: true,
                 phone: true,
                 plate: true,
@@ -90,6 +100,18 @@ export default async function AdminOrdersPage({
       },
     }),
     db.order.count({ where }),
+    db.driver.findMany({
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        plate: true,
+        licenseNumber: true,
+        status: true,
+        storeId: true,
+      },
+      orderBy: { name: "asc" },
+    }),
   ])
 
   const buildHref = (s?: string) => {
@@ -107,6 +129,15 @@ export default async function AdminOrdersPage({
     platformFee: order.platformFee,
     discountAmount: order.discountAmount,
     total: order.total,
+    couponCode: order.couponCode,
+    coupon: order.coupon
+      ? {
+          code: order.coupon.code,
+          name: order.coupon.name,
+          type: order.coupon.type,
+          value: order.coupon.value,
+        }
+      : null,
     notes: order.notes,
     transferCode: order.transferCode,
     createdAtLabel: new Date(order.createdAt).toLocaleString("es-MX", {
@@ -124,13 +155,25 @@ export default async function AdminOrdersPage({
         })
       : null,
     store: order.store,
-    customer: order.customer ? { name: order.customer.name, email: order.customer.email, phone: order.customer.phone } : null,
+    customer: order.customer ? order.customer : null,
     customerEmail: order.customerEmail,
     customerInfo: order.customerInfo as OrderDetailsSheetOrder["customerInfo"],
     payment: order.payment,
     delivery: order.delivery,
     items: order.items,
   })
+
+  const driversForOrder = (storeId: string) =>
+    drivers
+      .filter((driver) => driver.storeId === null || driver.storeId === storeId)
+      .map((driver) => ({
+        id: driver.id,
+        name: driver.name,
+        phone: driver.phone,
+        plate: driver.plate,
+        licenseNumber: driver.licenseNumber,
+        status: driver.status,
+      }))
 
   return (
     <div className="space-y-6">
@@ -199,15 +242,10 @@ export default async function AdminOrdersPage({
                       })}
                     </td>
                     <td className="p-4 text-right">
-                      <OrderDetailsSheet
+                      <OrderDetailsSheetButton
                         mode="admin"
                         order={orderDetails(order)}
-                        trigger={
-                          <Button variant="ghost" size="sm" className="h-8 gap-1 px-3">
-                            <PanelRightOpen className="h-3.5 w-3.5" />
-                            Ver
-                          </Button>
-                        }
+                        drivers={driversForOrder(order.storeId)}
                       />
                     </td>
                   </tr>

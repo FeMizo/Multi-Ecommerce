@@ -1,16 +1,13 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight, Package, Truck, Users, Clock3 } from "lucide-react"
+import { ArrowRight, Clock3, Package, Truck, Users } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getEffectivePlan } from "@/lib/plan-limits"
 import { getStoreAccess } from "@/lib/store-access"
-import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { DeliveryAssignmentPanel } from "@/components/delivery/delivery-assignment-panel"
-import { DELIVERY_STATUS_LABELS, DRIVER_STATUS_LABELS } from "@/lib/delivery"
 
 export default async function DeliveryDashboardPage({
   params,
@@ -27,7 +24,7 @@ export default async function DeliveryDashboardPage({
 
   const [drivers, deliveries, totalOrders] = await Promise.all([
     db.driver.findMany({
-      where: { storeId: membership.store.id },
+      where: { OR: [{ storeId: membership.store.id }, { storeId: null }] },
       select: {
         id: true,
         name: true,
@@ -72,7 +69,7 @@ export default async function DeliveryDashboardPage({
         },
       },
       orderBy: { updatedAt: "desc" },
-      take: 8,
+      take: 12,
     }),
     db.order.count({ where: { storeId: membership.store.id } }),
   ])
@@ -122,7 +119,7 @@ export default async function DeliveryDashboardPage({
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{drivers.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">{availableDrivers.length} disponibles</p>
+            <p className="mt-1 text-xs text-muted-foreground">{availableDrivers.length} disponibles</p>
           </CardContent>
         </Card>
         <Card>
@@ -146,22 +143,7 @@ export default async function DeliveryDashboardPage({
               <p className="py-6 text-center text-sm text-muted-foreground">No hay entregas pendientes.</p>
             ) : (
               pendingDeliveries.map((delivery) => (
-                <DeliveryAssignmentPanel
-                  key={delivery.id}
-                  storeSlug={storeSlug}
-                  delivery={{
-                    id: delivery.id,
-                    status: delivery.status,
-                    formattedAddress: delivery.formattedAddress,
-                    lat: delivery.lat,
-                    lng: delivery.lng,
-                    notes: delivery.notes,
-                    driverId: delivery.driverId,
-                    driver: delivery.driver,
-                    order: delivery.order,
-                  }}
-                  drivers={drivers}
-                />
+                <DeliveryAssignmentPanel key={delivery.id} storeSlug={storeSlug} delivery={delivery} drivers={drivers} />
               ))
             )}
           </CardContent>
@@ -171,29 +153,12 @@ export default async function DeliveryDashboardPage({
           <CardHeader>
             <CardTitle className="text-base">Entregas activas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {activeDeliveries.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">Sin entregas en proceso.</p>
             ) : (
               activeDeliveries.map((delivery) => (
-                <div key={delivery.id} className="rounded-2xl border bg-card p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">#{delivery.order.id.slice(-8).toUpperCase()}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {delivery.order.customer?.name ?? delivery.order.customerEmail ?? "Sin nombre"}
-                      </p>
-                    </div>
-                    <Badge variant="outline">{DELIVERY_STATUS_LABELS[delivery.status as keyof typeof DELIVERY_STATUS_LABELS] ?? delivery.status}</Badge>
-                  </div>
-                  <p className="mt-3 text-sm text-muted-foreground">{delivery.formattedAddress ?? "Sin dirección"}</p>
-                  <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      {delivery.driver ? `${delivery.driver.name} · ${DRIVER_STATUS_LABELS[delivery.driver.status]}` : "Sin repartidor"}
-                    </span>
-                    <span>{formatPrice(delivery.order.total)}</span>
-                  </div>
-                </div>
+                <DeliveryAssignmentPanel key={delivery.id} storeSlug={storeSlug} delivery={delivery} drivers={drivers} />
               ))
             )}
           </CardContent>

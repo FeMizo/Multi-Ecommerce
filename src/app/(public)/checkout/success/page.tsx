@@ -135,7 +135,7 @@ export default async function CheckoutSuccessPage({
       )}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Button asChild>
-          <Link href={orderId ? `/orders?id=${orderId}` : "/account/orders"}>Ver mi pedido</Link>
+          <Link href={orderId ? `/orders/${orderId}` : "/account/orders"}>Ver mi pedido</Link>
         </Button>
         <Button variant="outline" asChild>
           <Link href="/">Seguir comprando</Link>

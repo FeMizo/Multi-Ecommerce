@@ -17,7 +17,7 @@ import {
 } from "@/lib/delivery"
 import { formatPrice } from "@/lib/utils"
 
-type DriverOption = {
+export type DriverOption = {
   id: string
   name: string
   phone: string
@@ -114,7 +114,13 @@ export function DeliveryAssignmentPanel({ storeSlug, delivery, drivers }: Props)
       return
     }
 
-    const popup = window.open("", "_blank", "noopener,noreferrer")
+    const whatsappUrl = buildWhatsAppLink(selectedDriver.phone, buildWhatsAppMessage())
+    const popup = window.open("about:blank", "_blank")
+    if (!popup) {
+      toast.error("El navegador bloqueo WhatsApp. Permite ventanas emergentes para asignar.")
+      return
+    }
+
     setLoading(true)
     const res = await fetch(`/api/stores/${storeSlug}/deliveries/${delivery.id}`, {
       method: "PATCH",
@@ -130,12 +136,7 @@ export function DeliveryAssignmentPanel({ storeSlug, delivery, drivers }: Props)
       return
     }
 
-    const whatsappUrl = buildWhatsAppLink(selectedDriver.phone, buildWhatsAppMessage())
-    if (popup) {
-      popup.location.href = whatsappUrl
-    } else {
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer")
-    }
+    popup.location.href = whatsappUrl
     toast.success("Repartidor asignado. Abriendo WhatsApp...")
     router.refresh()
   }
@@ -174,13 +175,6 @@ export function DeliveryAssignmentPanel({ storeSlug, delivery, drivers }: Props)
           </Select>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => void assignDriver(selectedDriverId === "none" ? "" : selectedDriverId)}
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Guardar asignacion
-          </Button>
           <Button
             onClick={() => void assignAndOpenWhatsApp()}
             disabled={loading || !selectedDriver || selectedDriver.status !== "AVAILABLE"}
