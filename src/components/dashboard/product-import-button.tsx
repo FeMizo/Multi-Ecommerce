@@ -74,7 +74,10 @@ export function ProductImportButton({ storeSlug, disabled }: Props) {
         return
       }
 
-      toast.success(`Importados ${payload.created ?? 0} productos`)
+      const created = Number(payload.created ?? 0)
+      const updated = Number(payload.updated ?? 0)
+      const summary = [created > 0 ? `${created} creados` : null, updated > 0 ? `${updated} actualizados` : null].filter(Boolean).join(", ")
+      toast.success(summary ? `Importación lista: ${summary}` : "Importación lista")
       router.refresh()
     } catch {
       toast.error("No se pudo importar el CSV")
