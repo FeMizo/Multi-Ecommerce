@@ -11,7 +11,6 @@ export function getStripe(): Stripe {
       throw new Error("Producción requiere una STRIPE_SECRET_KEY live")
     }
     stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2026-03-25.dahlia",
       typescript: true,
       maxNetworkRetries: 2,
     })
