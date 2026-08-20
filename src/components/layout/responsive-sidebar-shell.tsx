@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   Store,
   Tag,
+  Tags,
   Users,
   Truck,
   type LucideIcon,
@@ -38,6 +39,7 @@ type SidebarIconName =
   | "Store"
   | "Settings"
   | "Tag"
+  | "Tags"
   | "Users"
   | "Truck"
 
@@ -81,6 +83,7 @@ const ICONS: Record<SidebarIconName, LucideIcon> = {
   Store,
   Settings,
   Tag,
+  Tags,
   Users,
   Truck,
 }

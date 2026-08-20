@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { formatCategoryLabel } from "@/lib/categories"
 import {
   getDuplicateVariantNames,
   normalizeVariantOptions,
@@ -46,7 +47,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-type Category = { id: string; name: string }
+type Category = { id: string; name: string; parent?: { name: string } | null }
 
 type VariantValueDraft = {
   value: string
@@ -691,7 +692,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                 <SelectContent>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
+                      {formatCategoryLabel(cat)}
                     </SelectItem>
                   ))}
                 </SelectContent>

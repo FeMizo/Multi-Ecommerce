@@ -25,7 +25,11 @@ export default async function NewProductPage({
 
   const categories = await db.category.findMany({
     where: { active: true },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      parent: { select: { name: true } },
+    },
     orderBy: { name: "asc" },
   })
 

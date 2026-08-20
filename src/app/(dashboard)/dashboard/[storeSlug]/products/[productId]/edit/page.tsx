@@ -26,7 +26,11 @@ export default async function EditProductPage({
     }),
     db.category.findMany({
       where: { active: true },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        parent: { select: { name: true } },
+      },
       orderBy: { name: "asc" },
     }),
   ])
