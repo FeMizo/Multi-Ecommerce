@@ -1,5 +1,6 @@
 import { config } from "dotenv"
 import { BlobNotFoundError, copy, del, head } from "@vercel/blob"
+import type { Prisma } from "@prisma/client"
 import { getStoreBlobMigration, type BlobMigration } from "../src/lib/blob-migration"
 
 config({ path: ".env.local" })
@@ -75,7 +76,7 @@ async function main() {
       }
     }
 
-    await db.$transaction(async (tx: typeof db) => {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
       for (const store of stores) {
         const nextLogoUrl = store.logoUrl ? migrations.get(store.logoUrl)?.targetUrl ?? store.logoUrl : null
         const nextBannerUrl = store.bannerUrl ? migrations.get(store.bannerUrl)?.targetUrl ?? store.bannerUrl : null
