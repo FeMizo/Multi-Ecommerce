@@ -14,6 +14,7 @@ import { formatVariantSelection } from "@/lib/product-variants"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, moveItemRelative, total } = useCartStore()
+  const [mounted, setMounted] = useState(false)
   const [whatsappPhone, setWhatsappPhone] = useState<string | null>(null)
   const [whatsappLoading, setWhatsappLoading] = useState(false)
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null)
@@ -34,6 +35,13 @@ export default function CartPage() {
   const hasMultipleStores = itemGroups.length > 1
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
     let active = true
 
     async function loadRecipient() {
@@ -54,7 +62,11 @@ export default function CartPage() {
     return () => {
       active = false
     }
-  }, [items])
+  }, [items, mounted])
+
+  if (!mounted) {
+    return null
+  }
 
   async function shareCartByWhatsApp() {
     if (!whatsappPhone) return

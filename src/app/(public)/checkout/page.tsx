@@ -78,6 +78,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const { items } = useCartStore()
+  const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checkoutToken] = useState(() => crypto.randomUUID())
   const [optionsLoading, setOptionsLoading] = useState(true)
@@ -229,8 +230,18 @@ export default function CheckoutPage() {
     deliveryLocation.lng !== null
   )
 
-  if (items.length === 0) {
-    router.push("/cart")
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && items.length === 0) {
+      router.replace("/cart")
+    }
+  }, [items.length, mounted, router])
+
+  if (!mounted || items.length === 0) {
     return null
   }
 
