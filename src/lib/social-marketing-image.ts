@@ -4,9 +4,9 @@ import path from "node:path"
 import sharp from "sharp"
 import { buildSocialImageSvg, type SocialCampaign } from "@/lib/social-marketing"
 
-const FONT_DIR = path.join(process.cwd(), "node_modules", "@fontsource", "roboto", "files")
-const REGULAR_FONT_FILE = path.join(FONT_DIR, "roboto-latin-400-normal.woff")
-const BOLD_FONT_FILE = path.join(FONT_DIR, "roboto-latin-700-normal.woff")
+const FONT_DIR = path.join(process.cwd(), "assets", "fonts")
+const REGULAR_FONT_FILE = path.join(FONT_DIR, "Roboto-Regular.ttf")
+const BOLD_FONT_FILE = path.join(FONT_DIR, "Roboto-Bold.ttf")
 
 type TextLayer = {
   text: string
