@@ -58,7 +58,7 @@ function textInput(layer: TextLayer) {
   return {
     input: {
       text: {
-        text: `<span foreground="${layer.color}" size="${Math.round(layer.fontSize * 1024)}" font_weight="${layer.weight ?? "700"}">${escapePango(layer.text)}</span>`,
+        text: `<span foreground="${layer.color}" font_desc="Roboto ${layer.fontSize}" font_weight="${layer.weight ?? "700"}">${escapePango(layer.text)}</span>`,
         font: "Roboto",
         fontfile: fontFile,
         width: layer.width,
