@@ -120,6 +120,7 @@ model Store {
   updatedAt               DateTime  @updatedAt
 
   members      StoreMember[]
+  drivers      Driver[]
   coupons      StoreCoupon[]
   products     Product[]
   orders       Order[]
@@ -141,6 +142,24 @@ model StoreMember {
   @@unique([storeId, userId])
   @@index([userId])
   @@map("store_members")
+}
+
+model Driver {
+  id             String       @id @default(cuid())
+  storeId        String?
+  store          Store?       @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  name           String
+  email          String       @unique
+  phone          String       @default("")
+  plate          String       @default("")
+  licenseNumber  String       @default("")
+  notes          String?      @db.Text
+  status         DriverStatus @default(AVAILABLE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([storeId, status])
+  @@map("drivers")
 }
 
 model Prospect {
@@ -524,6 +543,11 @@ enum ProspectPriority {
   LOW
   MEDIUM
   HIGH
+}
+
+enum DriverStatus {
+  AVAILABLE
+  OFFLINE
 }
 
 enum ProspectActivityType {

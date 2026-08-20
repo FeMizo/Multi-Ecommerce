@@ -103,7 +103,7 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
               if (inputRef.current) inputRef.current.value = ""
               navigate("")
             }}
-            aria-label="Limpiar bÃºsqueda"
+            aria-label="Limpiar búsqueda"
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <InteractiveMorphIcon icon={MorphX} className="h-3.5 w-3.5" spring="snappy" reducedMotion="never" />
@@ -272,7 +272,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                 <DialogTrigger asChild>
                   <MorphNavButton
                     className="md:hidden rounded-full"
-                    ariaLabel="Abrir bÃºsqueda"
+                    ariaLabel="Abrir búsqueda"
                     icon={MorphSearch}
                     iconClassName="h-5 w-5"
                   />
@@ -361,7 +361,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                       className="text-destructive focus:text-destructive rounded-lg cursor-pointer"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
-                      Cerrar sesiÃ³n
+                      Cerrar sesión
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -382,7 +382,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                 size="icon"
                 className="lg:hidden rounded-full"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                ariaLabel={mobileMenuOpen ? "Cerrar menÃº" : "Abrir menÃº"}
+                ariaLabel={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                 ariaExpanded={mobileMenuOpen}
                 icon={mobileMenuOpen ? MorphX : MorphMenu}
                 iconClassName="h-5 w-5"

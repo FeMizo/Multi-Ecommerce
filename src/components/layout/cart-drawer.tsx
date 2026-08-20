@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState, type DragEvent } from "react"
-import { ArrowRight as MorphArrowRight, GripVertical as MorphGripVertical, Minus as MorphMinus, Plus as MorphPlus, ShoppingCart as MorphShoppingCart, X as MorphX } from "lucide"
+import { ArrowRight as MorphArrowRight, GripVertical as MorphGripVertical, Minus as MorphMinus, Plus as MorphPlus, ShoppingCart as MorphShoppingCart, SquareArrowOutUpRight as MorphArrowOutUpRight, X as MorphX } from "lucide"
 import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +24,8 @@ export function CartDrawer() {
   const [whatsappLoading, setWhatsappLoading] = useState(false)
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null)
   const [dropHint, setDropHint] = useState<{ id: string; position: "before" | "after" } | null>(null)
+  const [exploreHovered, setExploreHovered] = useState(false)
+  const [checkoutHovered, setCheckoutHovered] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -116,10 +118,25 @@ export function CartDrawer() {
               <p className="font-semibold text-lg mb-1">Tu carrito está vacío</p>
               <p className="text-sm text-muted-foreground">Explora productos y agrega tus favoritos</p>
             </div>
-            <Button className="rounded-full px-6" onClick={closeCart} asChild>
+            <Button
+              className="rounded-full px-6"
+              onClick={closeCart}
+              onPointerEnter={() => setExploreHovered(true)}
+              onPointerLeave={() => setExploreHovered(false)}
+              onFocus={() => setExploreHovered(true)}
+              onBlur={() => setExploreHovered(false)}
+              asChild
+            >
               <Link href="/search">
                 Explorar productos
-                <InteractiveMorphIcon icon={MorphArrowRight} className="ml-2 h-4 w-4" spring="snappy" reducedMotion="never" />
+                <InteractiveMorphIcon
+                  icon={MorphArrowRight}
+                  hoverIcon={MorphArrowOutUpRight}
+                  hovered={exploreHovered}
+                  className="ml-2 h-4 w-4"
+                  spring="snappy"
+                  reducedMotion="never"
+                />
               </Link>
             </Button>
           </div>
@@ -234,10 +251,26 @@ export function CartDrawer() {
               </div>
 
               <div className="px-6 pb-6 space-y-3">
-                <Button className="w-full h-12 rounded-xl text-base" size="lg" asChild onClick={closeCart}>
+                <Button
+                  className="w-full h-12 rounded-xl text-base"
+                  size="lg"
+                  asChild
+                  onClick={closeCart}
+                  onPointerEnter={() => setCheckoutHovered(true)}
+                  onPointerLeave={() => setCheckoutHovered(false)}
+                  onFocus={() => setCheckoutHovered(true)}
+                  onBlur={() => setCheckoutHovered(false)}
+                >
                     <Link href="/checkout">
                       Finalizar compra
-                    <InteractiveMorphIcon icon={MorphArrowRight} className="ml-2 h-4 w-4" spring="snappy" reducedMotion="never" />
+                    <InteractiveMorphIcon
+                      icon={MorphArrowRight}
+                      hoverIcon={MorphArrowOutUpRight}
+                      hovered={checkoutHovered}
+                      className="ml-2 h-4 w-4"
+                      spring="snappy"
+                      reducedMotion="never"
+                    />
                   </Link>
                 </Button>
                 {whatsappLoading || whatsappPhone ? (

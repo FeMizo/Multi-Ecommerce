@@ -1,13 +1,11 @@
 "use client"
 
 import { useState, type PointerEvent, type FocusEvent } from "react"
-import { MorphIcon, type MorphIconProps } from "morphicons/react"
-import type { IconInput } from "lucide"
+import { MorphIcon, type MorphIconProps, type IconInput } from "morphicons/react"
 import {
   ArrowLeft,
   ArrowRight,
   ArrowUpLeft,
-  ArrowUpRight,
   ChevronLeft,
   ChevronRight,
   Grid2X2Plus,
@@ -33,6 +31,7 @@ import {
   Store,
   User,
   UserPlus,
+  SquareArrowOutUpRight,
   X,
 } from "lucide"
 
@@ -40,9 +39,9 @@ const DEFAULT_HOVER_ICON = new WeakMap<object, IconInput>([
   [Menu as unknown as object, X],
   [Search as unknown as object, Sparkles],
   [ShoppingCart as unknown as object, ShoppingBag],
-  [ArrowRight as unknown as object, ArrowUpRight],
+  [ArrowRight as unknown as object, SquareArrowOutUpRight],
   [ArrowLeft as unknown as object, ArrowUpLeft],
-  [ChevronRight as unknown as object, ArrowRight],
+  [ChevronRight as unknown as object, SquareArrowOutUpRight],
   [ChevronLeft as unknown as object, ArrowLeft],
   [Plus as unknown as object, Minus],
   [Minus as unknown as object, Plus],

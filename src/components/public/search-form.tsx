@@ -71,19 +71,14 @@ export function SearchForm({ initialParams }: { initialParams: SearchParams }) {
           spring="snappy"
           reducedMotion="never"
         />
-        <Input
-          value={value}
-          onChange={handleChange}
-          placeholder="Buscar productos, tiendas..."
-          className="pl-10 pr-10"
-        />
+        <Input value={value} onChange={handleChange} placeholder="Buscar productos, tiendas..." className="pl-10 pr-10" />
         {value && (
           <button
             type="button"
             onClick={handleClear}
             aria-label="Limpiar búsqueda"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
             <MorphIcon icon={MorphX} className="h-4 w-4" spring="snappy" reducedMotion="never" />
           </button>
         )}

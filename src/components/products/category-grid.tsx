@@ -18,7 +18,7 @@ import {
   Laptop,
   BriefcaseBusiness,
 } from "lucide-react"
-import { ArrowRight as MorphArrowRight, ArrowUpRight as MorphArrowUpRight } from "lucide"
+import { ArrowRight as MorphArrowRight, SquareArrowOutUpRight as MorphArrowOutUpRight } from "lucide"
 import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 
 type Category = {
@@ -107,9 +107,9 @@ function CategoryCardLink({ cat, isFirst }: { cat: Category; isFirst: boolean })
             Ver mas
           </span>
           <div className={`rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-all ${isFirst ? "h-9 w-9" : "h-8 w-8"}`}>
-            <InteractiveMorphIcon
+              <InteractiveMorphIcon
               icon={MorphArrowRight}
-              hoverIcon={MorphArrowUpRight}
+              hoverIcon={MorphArrowOutUpRight}
               hovered={hovered}
               className={isFirst ? "h-6 w-6" : "h-4 w-4"}
               spring="snappy"
