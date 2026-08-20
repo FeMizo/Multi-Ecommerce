@@ -127,6 +127,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
   const autocompleteRef = useRef<GoogleMapsAutocomplete | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [mapsLoaded, setMapsLoaded] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
   const valueRef = useRef(value)
   const onChangeRef = useRef(onChange)
 
@@ -251,12 +252,23 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
     return () => {
       cancelled = true
     }
-  }, [apiKey])
+  }, [apiKey, retryCount])
 
   const statusMessage = !apiKey
     ? "Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY."
     : loadError
   const isLoading = Boolean(apiKey) && !mapsLoaded && !loadError
+  const issueTitle = loadError ? "Google Maps no pudo inicializarse" : "Google Maps está desactivado"
+  const issueBullets = loadError
+    ? [
+        "La clave puede estar restringida por referrer, proyecto o APIs permitidas.",
+        "Verifica que la URL actual coincida con las restricciones autorizadas.",
+        "Abre la consola para ver el código exacto que devolvió Google Maps.",
+      ]
+    : [
+        "La clave de Maps no está disponible en el frontend.",
+        "Revisa que NEXT_PUBLIC_GOOGLE_MAPS_API_KEY exista en el entorno del cliente.",
+      ]
 
   return (
     <div className="space-y-4">
@@ -285,18 +297,62 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
 
       <div ref={mapRef} className="h-72 overflow-hidden rounded-2xl border bg-muted/30" />
 
-      <div className="rounded-2xl border bg-muted/20 p-3 text-xs text-muted-foreground">
+      <div
+        className={[
+          "rounded-2xl border p-4 shadow-sm",
+          loadError || !apiKey ? "border-red-200 bg-red-50 text-red-950" : "border-muted bg-muted/20 text-muted-foreground",
+        ].join(" ")}
+      >
         {statusMessage ? (
-          <p>{statusMessage}</p>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{issueTitle}</p>
+                <p className="mt-1 text-sm leading-6">{statusMessage}</p>
+              </div>
+            </div>
+
+            <ul className="space-y-1 pl-4 text-sm leading-6">
+              {issueBullets.map((bullet) => (
+                <li key={bullet} className="list-disc">
+                  {bullet}
+                </li>
+              ))}
+            </ul>
+
+            {loadError && (
+              <div className="rounded-xl border border-red-200 bg-white/80 px-3 py-2 text-xs font-mono text-red-900">
+                Error técnico: {loadError}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setLoadError(null)
+                setMapsLoaded(false)
+                setRetryCount((current) => current + 1)
+              }}
+              className="inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              Reintentar carga de Maps
+            </button>
+          </div>
         ) : isLoading ? (
-          <p>Cargando Google Maps...</p>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-primary" />
+            <p>Cargando Google Maps...</p>
+          </div>
         ) : mapsLoaded ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-sm">
             <MapPin className="h-4 w-4 text-primary" />
             <p>Haz clic en el mapa o arrastra el marcador para ajustar la ubicacion.</p>
           </div>
         ) : (
-          <p>Ingresa la clave de Google Maps para activar Places Autocomplete y el mapa.</p>
+          <p className="text-sm">Ingresa la clave de Google Maps para activar Places Autocomplete y el mapa.</p>
         )}
       </div>
 
