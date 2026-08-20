@@ -4,6 +4,9 @@ const blobStoreHostname = process.env.BLOB_STORE_ID
 
 const nextConfig = {
   serverExternalPackages: ["sharp"],
+  outputFileTracingIncludes: {
+    "/api/internal/social-publish-due": ["./node_modules/@fontsource/roboto/files/*.woff"],
+  },
   images: {
     remotePatterns: blobStoreHostname
       ? [

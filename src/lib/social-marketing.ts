@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs"
-
 export const SOCIAL_CHANNELS = ["FACEBOOK", "INSTAGRAM"] as const
 
 export type SocialChannel = (typeof SOCIAL_CHANNELS)[number]
@@ -31,13 +29,6 @@ export const DEFAULT_SOCIAL_ASSET_BASE_URL = (
   process.env.NEXT_PUBLIC_APP_URL?.trim() ||
   "https://aionsite.com.mx"
 ).replace(/\/$/, "")
-
-const ROBOTO_REGULAR_DATA = readFileSync(require.resolve("@fontsource/roboto/files/roboto-latin-400-normal.woff")).toString("base64")
-const ROBOTO_BOLD_DATA = readFileSync(require.resolve("@fontsource/roboto/files/roboto-latin-700-normal.woff")).toString("base64")
-
-function buildEmbeddedFontStyle() {
-  return `<style>@font-face{font-family:EmbeddedRoboto;src:url(data:font/woff;base64,${ROBOTO_REGULAR_DATA}) format('woff');font-weight:400;}@font-face{font-family:EmbeddedRoboto;src:url(data:font/woff;base64,${ROBOTO_BOLD_DATA}) format('woff');font-weight:700 900;}text{font-family:EmbeddedRoboto,Arial,sans-serif !important;}</style>`
-}
 
 export const SOCIAL_TOPICS: SocialTopic[] = [
   {
@@ -481,7 +472,6 @@ function buildRichSalesSocialImageSvg(campaign: SocialCampaign) {
         <filter id="salesShadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#733116" flood-opacity="0.22"/></filter>
         <pattern id="salesDots" width="34" height="34" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="2" fill="#d65a1b" fill-opacity="0.16"/></pattern>
       </defs>
-      ${buildEmbeddedFontStyle()}
       <rect width="1080" height="1350" fill="url(#salesBg)"/>
       <path d="M0 0H410C360 130 240 196 0 238V0Z" fill="url(#salesOrange)"/>
       <path d="M1080 1350H610C760 1260 880 1190 1080 1150V1350Z" fill="url(#salesOrange)"/>
@@ -564,7 +554,6 @@ function buildStyleSocialImageSvg(campaign: SocialCampaign) {
           <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#b85a1f" flood-opacity="0.22" />
         </filter>
       </defs>
-      ${buildEmbeddedFontStyle()}
       <rect width="1080" height="1350" fill="url(#bgStyle)" />
       <circle cx="60" cy="120" r="180" fill="#f27a17" fill-opacity="0.86" />
       <circle cx="1050" cy="118" r="180" fill="#f27a17" fill-opacity="0.82" />
