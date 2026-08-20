@@ -53,12 +53,14 @@ type GoogleMapsAutocomplete = {
   addListener: (eventName: "place_changed", handler: () => void) => GoogleMapsListener
 }
 
+type GoogleMapsAutocompleteCtor = new (
+  input: HTMLInputElement,
+  options: { fields: string[]; types: string[] },
+) => GoogleMapsAutocomplete
+
 type GoogleMapsApi = {
   importLibrary?: <T extends "places">(library: T) => Promise<{
-    Autocomplete: new (
-      input: HTMLInputElement,
-      options: { fields: string[]; types: string[] },
-    ) => GoogleMapsAutocomplete
+    Autocomplete: GoogleMapsAutocompleteCtor
   }>
   Map: new (
     element: HTMLElement,
@@ -73,10 +75,7 @@ type GoogleMapsApi = {
   ) => GoogleMapsMap
   Marker: new (options: { map: GoogleMapsMap; position: GoogleMapsPoint; draggable: boolean }) => GoogleMapsMarker
   places: {
-    Autocomplete: new (
-      input: HTMLInputElement,
-      options: { fields: string[]; types: string[] },
-    ) => GoogleMapsAutocomplete
+    Autocomplete: GoogleMapsAutocompleteCtor
   }
 }
 
@@ -128,7 +127,7 @@ async function waitForGoogleMapsApi(timeoutMs = 5000) {
     const mapsApi = mapsWindow.google?.maps
 
     if (mapsApi?.Map && mapsApi?.Marker) {
-      let autocompleteCtor = mapsApi.places?.Autocomplete ?? null
+      let autocompleteCtor: GoogleMapsAutocompleteCtor | null = mapsApi.places?.Autocomplete ?? null
 
       if (!autocompleteCtor && mapsApi.importLibrary) {
         try {
@@ -186,7 +185,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDet
         if (cancelled || !mapRef.current || !inputRef.current) return
 
         let readyMapsApi: GoogleMapsApi
-        let autocompleteCtor: GoogleMapsAutocomplete | null = null
+        let autocompleteCtor: GoogleMapsAutocompleteCtor | null = null
 
         try {
           const result = await waitForGoogleMapsApi()
