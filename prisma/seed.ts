@@ -42,6 +42,55 @@ async function main() {
     db.category.upsert({ where: { slug: "deportes" }, update: {}, create: { name: "Deportes", slug: "deportes", icon: "⚽" } }),
   ])
 
+  const papeleriaCategory = await db.category.upsert({
+    where: { slug: "papeleria" },
+    update: { name: "Papelería", icon: "🗒️", parentId: null, active: true },
+    create: { name: "Papelería", slug: "papeleria", icon: "🗒️" },
+  })
+
+  await Promise.all([
+    db.category.upsert({
+      where: { slug: "cuadernos-libretas" },
+      update: { name: "Cuadernos y libretas", icon: "📓", parentId: papeleriaCategory.id, active: true },
+      create: {
+        name: "Cuadernos y libretas",
+        slug: "cuadernos-libretas",
+        icon: "📓",
+        parentId: papeleriaCategory.id,
+      },
+    }),
+    db.category.upsert({
+      where: { slug: "escritura" },
+      update: { name: "Escritura", icon: "✏️", parentId: papeleriaCategory.id, active: true },
+      create: {
+        name: "Escritura",
+        slug: "escritura",
+        icon: "✏️",
+        parentId: papeleriaCategory.id,
+      },
+    }),
+    db.category.upsert({
+      where: { slug: "organizacion" },
+      update: { name: "Organización", icon: "🗂️", parentId: papeleriaCategory.id, active: true },
+      create: {
+        name: "Organización",
+        slug: "organizacion",
+        icon: "🗂️",
+        parentId: papeleriaCategory.id,
+      },
+    }),
+    db.category.upsert({
+      where: { slug: "oficina" },
+      update: { name: "Oficina", icon: "🖇️", parentId: papeleriaCategory.id, active: true },
+      create: {
+        name: "Oficina",
+        slug: "oficina",
+        icon: "🖇️",
+        parentId: papeleriaCategory.id,
+      },
+    }),
+  ])
+
   // ─── Plans ────────────────────────────────────────────────────────────────
   for (const plan of PLAN_CATALOG) {
     await db.plan.upsert({
