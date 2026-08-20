@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { DeliveryLocationDraft } from "@/lib/delivery"
 
+declare global {
+  interface Window {
+    gm_authFailure?: () => void
+  }
+}
+
 type Props = {
   value: DeliveryLocationDraft
   onChange: (value: DeliveryLocationDraft) => void
