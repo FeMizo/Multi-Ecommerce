@@ -105,6 +105,7 @@ export default function CheckoutPage() {
     [checkoutItems]
   )
   const profileLoading = status === "authenticated" && !profileReady
+  const showMapsErrorDetails = session?.user?.globalRole === "PLATFORM_ADMIN"
 
   const {
     register,
@@ -352,6 +353,7 @@ export default function CheckoutPage() {
                       value={deliveryLocation}
                       onChange={setDeliveryLocation}
                       disabled={loading}
+                      showErrorDetails={showMapsErrorDetails}
                     />
                     {!deliveryReady && (
                       <p className="text-xs text-destructive">

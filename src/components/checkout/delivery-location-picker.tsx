@@ -10,6 +10,7 @@ type Props = {
   value: DeliveryLocationDraft
   onChange: (value: DeliveryLocationDraft) => void
   disabled?: boolean
+  showErrorDetails?: boolean
 }
 
 type GoogleMapsLatLng = {
@@ -47,16 +48,18 @@ type GoogleMapsMarker = {
   addListener: (eventName: "dragend", handler: () => void) => GoogleMapsListener
 }
 
-type GoogleMapsGeocoder = {
-  geocode: (request: { location: GoogleMapsPoint }) => Promise<{ results?: Array<{ formatted_address?: string }> }>
-}
-
 type GoogleMapsAutocomplete = {
   getPlace: () => GoogleMapsPlace
   addListener: (eventName: "place_changed", handler: () => void) => GoogleMapsListener
 }
 
 type GoogleMapsApi = {
+  importLibrary?: <T extends "places">(library: T) => Promise<{
+    Autocomplete: new (
+      input: HTMLInputElement,
+      options: { fields: string[]; types: string[] },
+    ) => GoogleMapsAutocomplete
+  }>
   Map: new (
     element: HTMLElement,
     options: {
@@ -69,7 +72,6 @@ type GoogleMapsApi = {
     },
   ) => GoogleMapsMap
   Marker: new (options: { map: GoogleMapsMap; position: GoogleMapsPoint; draggable: boolean }) => GoogleMapsMarker
-  Geocoder: new () => GoogleMapsGeocoder
   places: {
     Autocomplete: new (
       input: HTMLInputElement,
@@ -118,13 +120,45 @@ function loadGoogleMaps(apiKey: string) {
   return googleMapsLoader
 }
 
+async function waitForGoogleMapsApi(timeoutMs = 5000) {
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const mapsWindow = window as Window & { google?: { maps?: GoogleMapsApi } }
+    const mapsApi = mapsWindow.google?.maps
+
+    if (mapsApi?.Map && mapsApi?.Marker) {
+      let autocompleteCtor = mapsApi.places?.Autocomplete ?? null
+
+      if (!autocompleteCtor && mapsApi.importLibrary) {
+        try {
+          const placesLibrary = await mapsApi.importLibrary("places")
+          autocompleteCtor = placesLibrary.Autocomplete
+        } catch {
+          autocompleteCtor = null
+        }
+      }
+
+      if (autocompleteCtor) {
+        return { mapsApi, autocompleteCtor }
+      }
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 150))
+  }
+
+  throw new Error("Google Maps no terminó de exponer sus librerías a tiempo.")
+}
+
 const DEFAULT_CENTER = { lat: 19.4326, lng: -99.1332 }
 
-export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
+export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDetails = false }: Props) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
   const mapRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const autocompleteRef = useRef<GoogleMapsAutocomplete | null>(null)
+  const mapInstanceRef = useRef<GoogleMapsMap | null>(null)
+  const markerRef = useRef<GoogleMapsMarker | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [mapsLoaded, setMapsLoaded] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
@@ -140,16 +174,33 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
     if (!apiKey) return
 
     let cancelled = false
+    const previousAuthFailure = window.gm_authFailure
+    window.gm_authFailure = () => {
+      setLoadError("Google rechazó la autenticación de esta key. Revisa proyecto, referrer y restricciones.")
+    }
 
     loadGoogleMaps(apiKey)
-      .then(() => {
-        const mapsWindow = window as Window & { google?: { maps?: GoogleMapsApi } }
-        const mapsApi = mapsWindow.google?.maps
+      .then(async () => {
         const currentValue = valueRef.current
 
-        if (cancelled || !mapRef.current || !inputRef.current || !mapsApi) return
-        if (!mapsApi.places?.Autocomplete || !mapsApi.Geocoder || !mapsApi.Map || !mapsApi.Marker) {
-          setLoadError("Activa Maps JavaScript API, Places API y Geocoding API para esta clave.")
+        if (cancelled || !mapRef.current || !inputRef.current) return
+
+        let readyMapsApi: GoogleMapsApi
+        let autocompleteCtor: GoogleMapsAutocomplete | null = null
+
+        try {
+          const result = await waitForGoogleMapsApi()
+          readyMapsApi = result.mapsApi
+          autocompleteCtor = result.autocompleteCtor
+        } catch (error) {
+          setLoadError(error instanceof Error ? error.message : "Google Maps no terminó de inicializarse.")
+          return
+        }
+
+        if (cancelled || !mapRef.current || !inputRef.current || !autocompleteCtor) {
+          if (!autocompleteCtor) {
+            setLoadError("Places no quedó disponible. Revisa que Places API esté habilitada para la misma key.")
+          }
           return
         }
 
@@ -158,7 +209,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
             ? { lat: currentValue.lat, lng: currentValue.lng }
             : DEFAULT_CENTER
 
-        const map = new mapsApi.Map(mapRef.current, {
+        const map = new readyMapsApi.Map(mapRef.current, {
           center,
           zoom: currentValue.lat !== null && currentValue.lng !== null ? 15 : 12,
           mapTypeControl: false,
@@ -167,15 +218,16 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
           clickableIcons: false,
         })
 
-        const marker = new mapsApi.Marker({
+        const marker = new readyMapsApi.Marker({
           map,
           position: center,
           draggable: true,
         })
 
-        const geocoder = new mapsApi.Geocoder()
+        mapInstanceRef.current = map
+        markerRef.current = marker
 
-        const syncLocation = async (lat: number, lng: number) => {
+        const syncLocation = (lat: number, lng: number) => {
           const location = { lat, lng }
           marker.setPosition(location)
           map.panTo(location)
@@ -183,17 +235,8 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
             map.setZoom(15)
           }
 
-          let formattedAddress = valueRef.current.formattedAddress
-          try {
-            const response = await geocoder.geocode({ location })
-            formattedAddress = response.results?.[0]?.formatted_address ?? formattedAddress
-          } catch {
-            // Keep the last usable address text.
-          }
-
           onChangeRef.current({
             ...valueRef.current,
-            formattedAddress,
             lat,
             lng,
           })
@@ -203,7 +246,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
           marker.setPosition({ lat: currentValue.lat, lng: currentValue.lng })
         }
 
-        autocompleteRef.current = new mapsApi.places.Autocomplete(inputRef.current, {
+        autocompleteRef.current = new autocompleteCtor(inputRef.current, {
           fields: ["formatted_address", "geometry", "name"],
           types: ["geocode"],
         })
@@ -232,7 +275,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
         map.addListener("click", (event) => {
           const lat = event.latLng.lat()
           const lng = event.latLng.lng()
-          void syncLocation(lat, lng)
+          syncLocation(lat, lng)
         })
 
         marker.addListener("dragend", () => {
@@ -240,7 +283,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
           if (!position) return
           const lat = typeof position.lat === "function" ? position.lat() : position.lat
           const lng = typeof position.lng === "function" ? position.lng() : position.lng
-          void syncLocation(lat, lng)
+          syncLocation(lat, lng)
         })
 
         setMapsLoaded(true)
@@ -251,12 +294,14 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
 
     return () => {
       cancelled = true
+      window.gm_authFailure = previousAuthFailure
+      mapInstanceRef.current = null
+      markerRef.current = null
+      autocompleteRef.current = null
     }
   }, [apiKey, retryCount])
 
-  const statusMessage = !apiKey
-    ? "Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY."
-    : loadError
+  const statusMessage = !apiKey ? "Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY." : loadError
   const isLoading = Boolean(apiKey) && !mapsLoaded && !loadError
   const issueTitle = loadError ? "Google Maps no pudo inicializarse" : "Google Maps está desactivado"
   const issueBullets = loadError
@@ -293,68 +338,77 @@ export function DeliveryLocationPicker({ value, onChange, disabled }: Props) {
             placeholder="Busca una direccion"
           />
         </div>
+        <p className="text-xs text-muted-foreground">
+          Selecciona una sugerencia para mover el mapa automáticamente. Luego puedes ajustar el pin.
+        </p>
       </div>
 
       <div ref={mapRef} className="h-72 overflow-hidden rounded-2xl border bg-muted/30" />
 
-      <div
-        className={[
-          "rounded-2xl border p-4 shadow-sm",
-          loadError || !apiKey ? "border-red-200 bg-red-50 text-red-950" : "border-muted bg-muted/20 text-muted-foreground",
-        ].join(" ")}
-      >
-        {statusMessage ? (
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
-                <MapPin className="h-5 w-5" />
+      {(statusMessage || isLoading || mapsLoaded) && (
+        <div
+          className={[
+            "rounded-2xl border p-4 shadow-sm",
+            loadError || !apiKey ? "border-red-200 bg-red-50 text-red-950" : "border-muted bg-muted/20 text-muted-foreground",
+          ].join(" ")}
+        >
+          {statusMessage ? (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{showErrorDetails ? issueTitle : "Google Maps no está disponible"}</p>
+                  <p className="mt-1 text-sm leading-6">
+                    {showErrorDetails ? statusMessage : "No se pudo cargar el mapa. Puedes reintentar la carga."}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{issueTitle}</p>
-                <p className="mt-1 text-sm leading-6">{statusMessage}</p>
-              </div>
+
+              {showErrorDetails && (
+                <ul className="space-y-1 pl-4 text-sm leading-6">
+                  {issueBullets.map((bullet) => (
+                    <li key={bullet} className="list-disc">
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {showErrorDetails && loadError && (
+                <div className="rounded-xl border border-red-200 bg-white/80 px-3 py-2 text-xs font-mono text-red-900">
+                  Error técnico: {loadError}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLoadError(null)
+                  setMapsLoaded(false)
+                  setRetryCount((current) => current + 1)
+                }}
+                className="inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              >
+                Reintentar carga de Maps
+              </button>
             </div>
-
-            <ul className="space-y-1 pl-4 text-sm leading-6">
-              {issueBullets.map((bullet) => (
-                <li key={bullet} className="list-disc">
-                  {bullet}
-                </li>
-              ))}
-            </ul>
-
-            {loadError && (
-              <div className="rounded-xl border border-red-200 bg-white/80 px-3 py-2 text-xs font-mono text-red-900">
-                Error técnico: {loadError}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setLoadError(null)
-                setMapsLoaded(false)
-                setRetryCount((current) => current + 1)
-              }}
-              className="inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-            >
-              Reintentar carga de Maps
-            </button>
-          </div>
-        ) : isLoading ? (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-primary" />
-            <p>Cargando Google Maps...</p>
-          </div>
-        ) : mapsLoaded ? (
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin className="h-4 w-4 text-primary" />
-            <p>Haz clic en el mapa o arrastra el marcador para ajustar la ubicacion.</p>
-          </div>
-        ) : (
-          <p className="text-sm">Ingresa la clave de Google Maps para activar Places Autocomplete y el mapa.</p>
-        )}
-      </div>
+          ) : isLoading ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-primary" />
+              <p>Cargando Google Maps...</p>
+            </div>
+          ) : mapsLoaded ? (
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-primary" />
+              <p>Haz clic en el mapa o arrastra el marcador para ajustar la ubicacion.</p>
+            </div>
+          ) : (
+            <p className="text-sm">Ingresa la clave de Google Maps para activar Places Autocomplete y el mapa.</p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Notas de entrega</label>
