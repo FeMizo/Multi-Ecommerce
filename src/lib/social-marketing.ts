@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs"
-
 export const SOCIAL_CHANNELS = ["FACEBOOK", "INSTAGRAM"] as const
 
 export type SocialChannel = (typeof SOCIAL_CHANNELS)[number]
@@ -31,13 +29,6 @@ export const DEFAULT_SOCIAL_ASSET_BASE_URL = (
   process.env.NEXT_PUBLIC_APP_URL?.trim() ||
   "https://aionsite.com.mx"
 ).replace(/\/$/, "")
-
-const ROBOTO_REGULAR_DATA = readFileSync(require.resolve("@fontsource/roboto/files/roboto-latin-400-normal.woff")).toString("base64")
-const ROBOTO_BOLD_DATA = readFileSync(require.resolve("@fontsource/roboto/files/roboto-latin-700-normal.woff")).toString("base64")
-
-function buildEmbeddedFontStyle() {
-  return `<style>@font-face{font-family:EmbeddedRoboto;src:url(data:font/woff;base64,${ROBOTO_REGULAR_DATA}) format('woff');font-weight:400;}@font-face{font-family:EmbeddedRoboto;src:url(data:font/woff;base64,${ROBOTO_BOLD_DATA}) format('woff');font-weight:700 900;}text{font-family:EmbeddedRoboto,Arial,sans-serif !important;}</style>`
-}
 
 export const SOCIAL_TOPICS: SocialTopic[] = [
   {
@@ -214,14 +205,6 @@ export function requiresImage(channels: SocialChannel[]) {
   return channels.includes("INSTAGRAM")
 }
 
-function getIsoWeek(date: Date) {
-  const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
-  const day = utcDate.getUTCDay() || 7
-  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day)
-  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1))
-  return Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
-}
-
 function pad(value: number) {
   return String(value).padStart(2, "0")
 }
@@ -277,7 +260,7 @@ function buildBrandIconGroup(x: number, y: number, size: number, accent = "#f05f
       <path d="M56 82H76V104H56Z" fill="${foreground}" />
       <path d="M18 42C28 30 30 22 22 12C10 16 8 28 18 42Z" fill="#a5ba76" />
       <path d="M114 74C122 86 124 98 112 110C100 106 98 88 114 74Z" fill="#a5ba76" />
-      <path d="M106 58h12v20h-12z" fill="${accent}" opacity="0.95" />
+      <circle cx="106" cy="76" r="5" fill="${accent}" opacity="0.95" />
     </g>
   `
 }
@@ -396,76 +379,6 @@ export function buildSocialImageSvg(campaign: SocialCampaign) {
   }
 
   return buildRichSalesSocialImageSvg(campaign)
-
-  const headlineLines = wrapLines(campaign.imageHeadline, 11)
-  const subheadlineLines = wrapLines(campaign.imageSubheadline, 24)
-  const footerLabel = campaign.topicId === "offer"
-    ? "Promociones para comprar hoy"
-    : campaign.topicId === "community"
-      ? "Compra local desde tu zona"
-      : "Tu multi site local"
-  const shortDomain = campaign.destinationUrl.replace(/^https?:\/\//, "")
-
-  return `
-    <svg width="1080" height="1350" viewBox="0 0 1080 1350" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#f26a21" />
-          <stop offset="40%" stop-color="#c84a1c" />
-          <stop offset="100%" stop-color="#20110c" />
-        </linearGradient>
-        <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(590 380) rotate(90) scale(530 530)">
-          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.20" />
-          <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
-        </radialGradient>
-        <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.14" />
-          <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
-        </linearGradient>
-        <linearGradient id="panelBorder" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#ffe7cf" stop-opacity="0.85" />
-          <stop offset="100%" stop-color="#f3b27a" stop-opacity="0.08" />
-        </linearGradient>
-        <linearGradient id="cta" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#8ea86d" />
-          <stop offset="100%" stop-color="#7a9257" />
-        </linearGradient>
-      </defs>
-      <rect width="1080" height="1350" fill="url(#bg)" />
-      <ellipse cx="540" cy="390" rx="420" ry="300" fill="url(#glow)" />
-      <rect x="88" y="86" width="904" height="1176" rx="48" fill="url(#panel)" stroke="url(#panelBorder)" stroke-width="2" />
-      <rect x="106" y="106" width="284" height="58" rx="29" fill="#ffffff" fill-opacity="0.12" />
-      <rect x="116" y="116" width="38" height="38" rx="12" fill="#f26a21" />
-      <path d="M125 129l10-10 10 10v10h-20z" fill="none" stroke="#FFF7EE" stroke-width="2.4" stroke-linejoin="round" />
-      <path d="M130 129h10v10h-10z" fill="none" stroke="#FFF7EE" stroke-width="2.4" stroke-linejoin="round" />
-      <circle cx="135" cy="124" r="4.5" fill="none" stroke="#FFF7EE" stroke-width="2.4" />
-      <text x="168" y="142" fill="#FFF7EE" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800">Multi Shop de AionSite</text>
-      <rect x="744" y="110" width="144" height="42" rx="21" fill="#8ea86d" fill-opacity="0.22" stroke="#cfe0a2" stroke-width="1" />
-      <text x="766" y="137" fill="#F7EFE5" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="1.2">11:00 AM</text>
-      <text x="106" y="276" fill="#FFF7EE" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" letter-spacing="2">MARTES Y JUEVES</text>
-      ${buildSvgLines(headlineLines, 106, 430, 86, 92, "#FFF9F2", 900)}
-      ${buildSvgLines(subheadlineLines, 106, 576, 50, 34, "#F8E8D8", 600)}
-      <clipPath id="ctaClip">
-        <rect x="106" y="650" width="484" height="76" rx="24" />
-      </clipPath>
-      <a href="${escapeXml(campaign.destinationUrl)}" target="_blank" rel="noopener noreferrer">
-        <rect x="106" y="650" width="484" height="76" rx="24" fill="url(#cta)" stroke="#dbc96b" stroke-width="2" />
-        <g clip-path="url(#ctaClip)">
-          <circle cx="154" cy="688" r="18" fill="none" stroke="#FFF7EE" stroke-width="3" />
-          <path d="M154 676v24M142 688h24M146 680h16M146 696h16" stroke="#FFF7EE" stroke-width="2.5" stroke-linecap="round" />
-          <text x="192" y="698" fill="#FFF7EE" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800">${escapeXml(shortDomain)}</text>
-          <path d="M542 688l10-10" fill="none" stroke="#FFF7EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-        </g>
-      </a>
-      <rect x="106" y="764" width="790" height="2" fill="#ffffff" fill-opacity="0.16" />
-      <text x="106" y="856" fill="#FFF7EE" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">${escapeXml(footerLabel)}</text>
-      <text x="106" y="910" fill="#F8E8D8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500">Compra local, descubre tiendas y ofrece identidad propia.</text>
-      <a href="${escapeXml(campaign.destinationUrl)}" target="_blank" rel="noopener noreferrer">
-        <text x="106" y="1110" fill="#FFE8D7" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${escapeXml(shortDomain)}</text>
-      </a>
-      <text x="106" y="1186" fill="#FFF7EE" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${escapeXml(campaign.imageFooter)}</text>
-  </svg>
-  `.trim()
 }
 
 function buildRichSalesSocialImageSvg(campaign: SocialCampaign) {
@@ -481,7 +394,6 @@ function buildRichSalesSocialImageSvg(campaign: SocialCampaign) {
         <filter id="salesShadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#733116" flood-opacity="0.22"/></filter>
         <pattern id="salesDots" width="34" height="34" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="2" fill="#d65a1b" fill-opacity="0.16"/></pattern>
       </defs>
-      ${buildEmbeddedFontStyle()}
       <rect width="1080" height="1350" fill="url(#salesBg)"/>
       <path d="M0 0H410C360 130 240 196 0 238V0Z" fill="url(#salesOrange)"/>
       <path d="M1080 1350H610C760 1260 880 1190 1080 1150V1350Z" fill="url(#salesOrange)"/>
@@ -503,15 +415,23 @@ function buildRichSalesSocialImageSvg(campaign: SocialCampaign) {
       <text x="199" y="574" fill="#6a3017" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="800">Descubre cerca de ti</text>
       <rect x="150" y="616" width="128" height="126" rx="20" fill="#fbe2c5"/><rect x="306" y="616" width="128" height="126" rx="20" fill="#e9f0d8"/>
       <rect x="150" y="770" width="128" height="112" rx="20" fill="#f2d4c1"/><rect x="306" y="770" width="128" height="112" rx="20" fill="#dce9e7"/>
-      <path d="M177 704h74v-48h-74v48Zm12-48v-14c0-20 50-20 50 0v14" fill="none" stroke="#d95117" stroke-width="7" stroke-linejoin="round"/>
-      <path d="M338 706h64v-46h-64v46Zm-7-46 39-28 39 28" fill="none" stroke="#668052" stroke-width="7" stroke-linejoin="round"/>
-      <path d="M179 850h68M179 830h50M335 848h70M335 827h48" stroke="#d95117" stroke-width="7" stroke-linecap="round"/>
+      <path d="M177 704H251V656H177V704Z" fill="none" stroke="#d95117" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M189 656V642C189 622 239 622 239 642V656" fill="none" stroke="#d95117" stroke-width="7" stroke-linecap="round"/>
+      <path d="M338 706H402V660H338V706Z" fill="none" stroke="#668052" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M331 660L370 632L409 660" fill="none" stroke="#668052" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M178 828H236L252 844L210 886L152 828H178Z" fill="none" stroke="#d95117" stroke-width="7" stroke-linejoin="round"/>
+      <circle cx="195" cy="846" r="5" fill="#d95117"/>
+      <path d="M336 820H404V884H336V820Z" fill="none" stroke="#668052" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M336 840L370 858L404 840M370 858V884" fill="none" stroke="#668052" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
       <text x="150" y="903" fill="#8b5a3c" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700">Tiendas · productos · ofertas</text>
       <g filter="url(#salesShadow)"><rect x="548" y="514" width="378" height="350" rx="34" fill="#fffdf8" stroke="#e8c9a8" stroke-width="3"/>
         <rect x="576" y="548" width="322" height="116" rx="24" fill="url(#salesOrange)"/><path d="M610 620h254V581H610v39Zm15-39v-28h224v28" fill="none" stroke="#fffdf8" stroke-width="8" stroke-linejoin="round"/>
         <path d="M610 620v94h254v-94M704 714v-76h66v76" fill="none" stroke="#6a3017" stroke-width="8" stroke-linejoin="round"/><path d="M595 576h286l-18-34H613l-18 34Z" fill="#fff3e4"/>
         <path d="M642 542v34M692 542v34M742 542v34M792 542v34M842 542v34" stroke="#d95117" stroke-width="8"/><circle cx="624" cy="782" r="30" fill="#f4d5ae"/><circle cx="850" cy="782" r="30" fill="#e5efcf"/>
-        <path d="M611 786h26l-3 20h-20l-3-20Zm5 0c0-15 16-15 16 0M838 785h24l-12 22-12-22Zm4-10h16" fill="none" stroke="#d95117" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M611 786H637L634 806H614L611 786Z" fill="none" stroke="#d95117" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M616 786C616 771 632 771 632 786" fill="none" stroke="#d95117" stroke-width="4" stroke-linecap="round"/>
+        <path d="M850 808C866 788 874 774 874 760C874 747 863 736 850 736C837 736 826 747 826 760C826 774 834 788 850 808Z" fill="none" stroke="#d95117" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="850" cy="760" r="7" fill="#d95117"/>
       </g>
       <path d="M524 944C612 906 690 904 770 938C834 965 900 963 960 926" fill="none" stroke="#d66a26" stroke-width="4" stroke-dasharray="10 14" opacity="0.6"/>
       <a href="${escapeXml(campaign.destinationUrl)}" target="_blank" rel="noopener noreferrer"><rect x="92" y="984" width="896" height="108" rx="34" fill="url(#salesOrange)"/>
@@ -564,7 +484,6 @@ function buildStyleSocialImageSvg(campaign: SocialCampaign) {
           <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#b85a1f" flood-opacity="0.22" />
         </filter>
       </defs>
-      ${buildEmbeddedFontStyle()}
       <rect width="1080" height="1350" fill="url(#bgStyle)" />
       <circle cx="60" cy="120" r="180" fill="#f27a17" fill-opacity="0.86" />
       <circle cx="1050" cy="118" r="180" fill="#f27a17" fill-opacity="0.82" />
