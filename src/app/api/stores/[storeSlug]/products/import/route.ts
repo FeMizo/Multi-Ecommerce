@@ -1,8 +1,11 @@
 import { Prisma } from "@prisma/client"
 import { NextResponse, type NextRequest } from "next/server"
+import { put } from "@vercel/blob"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { buildStoreUploadPath } from "@/lib/blob-path"
 import { checkProductLimit } from "@/lib/plan-limits"
+import { downloadRemoteImage, isRemoteImageUrl } from "@/lib/remote-image"
 import { slugify } from "@/lib/utils"
 import {
   normalizeCsvHeader,
@@ -24,6 +27,42 @@ type CsvRow = {
   status: "DRAFT" | "ACTIVE" | "PAUSED"
   images: string[]
   tags: string[]
+}
+
+async function importRemoteImages(storeSlug: string, rows: CsvRow[]) {
+  const errors: Array<{ line: number; message: string }> = []
+  const importedRows: CsvRow[] = []
+
+  for (const row of rows) {
+    const images: string[] = []
+
+    for (const image of row.images) {
+      if (!isRemoteImageUrl(image)) {
+        images.push(image)
+        continue
+      }
+
+      try {
+        const downloaded = await downloadRemoteImage(image)
+        const imageBuffer = downloaded.bytes.buffer.slice(downloaded.bytes.byteOffset, downloaded.bytes.byteOffset + downloaded.bytes.byteLength) as ArrayBuffer
+        const blob = await put(buildStoreUploadPath(storeSlug, downloaded.filename), new Blob([imageBuffer], {
+          type: downloaded.contentType,
+        }), {
+          access: "public",
+          contentType: downloaded.contentType,
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+        })
+        images.push(blob.url)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "No se pudo importar la imagen"
+        errors.push({ line: row.line, message: `imagen ${image}: ${message}` })
+      }
+    }
+
+    importedRows.push({ ...row, images })
+  }
+
+  return { rows: importedRows, errors }
 }
 
 const headerAliases: Record<string, string[]> = {
@@ -287,12 +326,25 @@ export async function POST(
       )
     }
 
+    const importedImages = await importRemoteImages(storeSlug, parsedRows)
+    if (importedImages.errors.length > 0) {
+      return NextResponse.json(
+        {
+          message: "No se pudieron importar algunas imagenes",
+          errors: importedImages.errors,
+        },
+        { status: 422 }
+      )
+    }
+
+    const rowsToImport = importedImages.rows
+
     const usedSlugs = new Set<string>()
 
     const result = await db.$transaction(async (tx) => {
       const counts = { created: 0, updated: 0 }
 
-      for (const row of parsedRows) {
+      for (const row of rowsToImport) {
         const skuKey = row.sku ? normalizeSkuKey(row.sku) : null
         const existingProduct = skuKey ? productsBySku.get(skuKey)?.[0] ?? null : null
 
