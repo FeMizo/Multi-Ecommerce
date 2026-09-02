@@ -5,10 +5,9 @@ import { Plus, Package } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { checkProductLimit, getEffectivePlan } from "@/lib/plan-limits"
-import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ProductImportButton } from "@/components/dashboard/product-import-button"
-import { ProductStatusUpdater } from "@/components/dashboard/product-status-updater"
+import { ProductBulkEditor } from "@/components/dashboard/product-bulk-editor"
 
 function NewProductButton({
   storeSlug,
@@ -116,65 +115,21 @@ export default async function StoreProductsPage({
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border overflow-x-auto overflow-hidden">
-          <table className="min-w-max w-full whitespace-nowrap text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium">Producto</th>
-                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Categoria</th>
-                <th className="text-right px-4 py-3 font-medium">Precio</th>
-                <th className="text-right px-4 py-3 font-medium hidden sm:table-cell">Stock</th>
-                <th className="text-center px-4 py-3 font-medium">Estado</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {products.map((product) => {
-                return (
-                  <tr key={product.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-medium truncate max-w-[200px]">{product.name}</p>
-                      {product.sku && (
-                        <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                      {product.category.name}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {formatPrice(product.price)}
-                      {product.comparePrice && (
-                        <p className="text-xs text-muted-foreground line-through">
-                          {formatPrice(product.comparePrice)}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right hidden sm:table-cell">
-                      <span className={product.manageStock && product.stock === 0 ? "text-destructive font-medium" : ""}>
-                        {product.manageStock ? product.stock : "Libre"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <ProductStatusUpdater
-                        key={`${product.id}-${product.status}`}
-                        storeSlug={storeSlug}
-                        productId={product.id}
-                        currentStatus={product.status as "DRAFT" | "ACTIVE" | "PAUSED" | "DELETED"}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/${storeSlug}/products/${product.id}/edit`}>
-                          Editar
-                        </Link>
-                      </Button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ProductBulkEditor
+          storeSlug={storeSlug}
+          products={products.map((product) => ({
+            id: product.id,
+            name: product.name,
+            sku: product.sku,
+            price: product.price,
+            comparePrice: product.comparePrice,
+            stock: product.stock,
+            manageStock: product.manageStock,
+            status: product.status,
+            featured: product.featured,
+            category: { name: product.category.name },
+          }))}
+        />
       )}
     </div>
   )

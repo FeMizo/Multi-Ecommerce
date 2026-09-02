@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ReactNode } from "react"
 import { Package, PanelRightOpen } from "lucide-react"
-import { OrderStatus } from "@prisma/client"
+import type { OrderStatus } from "@/lib/order-status"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {

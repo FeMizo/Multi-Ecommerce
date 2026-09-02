@@ -290,6 +290,38 @@ img {
   box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
 }
 
+/* Icon motion for interactive controls */
+button:not(:disabled) svg:not([data-morph-icon]),
+a svg:not([data-morph-icon]),
+[role="button"] svg:not([data-morph-icon]) {
+  transform-origin: center;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    filter 180ms ease;
+}
+
+button:not(:disabled):hover svg:not([data-morph-icon]),
+a:hover svg:not([data-morph-icon]),
+[role="button"]:hover svg:not([data-morph-icon]) {
+  transform: translateY(-1px) scale(1.04);
+}
+
+button:not(:disabled):active svg:not([data-morph-icon]),
+a:active svg:not([data-morph-icon]),
+[role="button"]:active svg:not([data-morph-icon]) {
+  transform: translateY(0) scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled) svg:not([data-morph-icon]),
+  a svg:not([data-morph-icon]),
+  [role="button"] svg:not([data-morph-icon]) {
+    transition: none;
+    transform: none;
+  }
+}
+
 /* Button shine effect */
 .btn-shine {
   position: relative;

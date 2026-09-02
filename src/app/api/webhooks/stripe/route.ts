@@ -10,6 +10,9 @@ import { sendWhatsAppText } from "@/lib/whatsapp"
 import { getCurrentPeriodEnd } from "@/lib/billing-rules"
 import { toMinorUnits } from "@/lib/money"
 import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
+import { createLogger, serializeError } from "@/lib/observability"
+
+const logger = createLogger("stripe-webhook")
 
 type OrderItemInput = {
   productId: string
@@ -249,7 +252,10 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
         await db.order.update({ where: { id: order.id }, data: { whatsappNotifiedAt: new Date() } })
       }
     } catch (error) {
-      console.error("No se pudieron enviar notificaciones del pedido", webhookError(error))
+      logger.error("order-notification-failed", {
+        orderId: order.id,
+        error: serializeError(error),
+      })
     }
   }
 }

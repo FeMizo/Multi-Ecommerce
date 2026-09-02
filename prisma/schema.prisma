@@ -120,11 +120,11 @@ model Store {
   updatedAt               DateTime  @updatedAt
 
   members      StoreMember[]
+  drivers      Driver[]
   coupons      StoreCoupon[]
   products     Product[]
   orders       Order[]
   cartItems    CartItem[]
-  drivers      Driver[]
   deliveries   Delivery[]
   subscription StoreSubscription?
 

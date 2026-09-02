@@ -5,13 +5,19 @@ import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils"
 import { AdminSearch } from "@/components/admin/admin-search"
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
-import { OrderStatus } from "@prisma/client"
+import type { OrderStatus } from "@/lib/order-status"
 import Link from "next/link"
 import { OrderDetailsSheetButton, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet-client"
 
 const ALL_STATUSES = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]
 
 type SearchParams = { q?: string; status?: string; page?: string }
+
+type AdminOrder = Omit<OrderDetailsSheetOrder, "createdAtLabel" | "paidAtLabel" | "store"> & {
+  createdAt: Date
+  paidAt: Date | null
+  store: OrderDetailsSheetOrder["store"] & { id: string }
+}
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -47,6 +53,7 @@ export default async function AdminOrdersPage({
         customer: { select: { name: true, email: true, phone: true } },
         store: {
           select: {
+            id: true,
             name: true,
             slug: true,
             transferAccountName: true,
@@ -114,6 +121,8 @@ export default async function AdminOrdersPage({
     }),
   ])
 
+  const typedOrders = orders as AdminOrder[]
+
   const buildHref = (s?: string) => {
     const params = new URLSearchParams()
     if (s) params.set("status", s)
@@ -121,7 +130,7 @@ export default async function AdminOrdersPage({
     return `/admin/orders${params.size ? `?${params}` : ""}`
   }
 
-  const orderDetails = (order: Awaited<typeof orders>[number]): OrderDetailsSheetOrder => ({
+  const orderDetails = (order: AdminOrder): OrderDetailsSheetOrder => ({
     id: order.id,
     status: order.status,
     paymentMethod: order.paymentMethod,
@@ -214,7 +223,7 @@ export default async function AdminOrdersPage({
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {typedOrders.map((order) => (
                   <tr key={order.id} className="border-b last:border-0 hover:bg-muted/40">
                     <td className="p-4">
                       <span className="font-mono text-xs text-muted-foreground">#{order.id.slice(-8).toUpperCase()}</span>
@@ -245,12 +254,12 @@ export default async function AdminOrdersPage({
                       <OrderDetailsSheetButton
                         mode="admin"
                         order={orderDetails(order)}
-                        drivers={driversForOrder(order.storeId)}
+                        drivers={driversForOrder(order.store.id)}
                       />
                     </td>
                   </tr>
                 ))}
-                {orders.length === 0 && (
+                {typedOrders.length === 0 && (
                   <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin resultados</td></tr>
                 )}
               </tbody>

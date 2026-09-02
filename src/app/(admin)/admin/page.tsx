@@ -5,11 +5,12 @@ import { Users, Store, Package, DollarSign, TrendingUp, ShoppingBag } from "luci
 import { AdminRevenueChart } from "@/components/admin/revenue-chart"
 
 async function getAdminStats() {
-  const [totalUsers, totalStores, totalProducts, totalOrders, revenue, recentOrders] = await Promise.all([
+  const [totalUsers, totalStores, totalProducts, totalOrders, totalCategories, revenue, recentOrders] = await Promise.all([
     db.user.count(),
     db.store.count({ where: { isActive: true } }),
     db.product.count({ where: { status: "ACTIVE" } }),
     db.order.count(),
+    db.category.count({ where: { active: true } }),
     db.order.aggregate({
       where: { status: { in: ["PAID", "DELIVERED"] } },
       _sum: { platformFee: true, total: true },
@@ -37,6 +38,7 @@ async function getAdminStats() {
     totalStores,
     totalProducts,
     totalOrders,
+    totalCategories,
     totalRevenue: revenue._sum.total ?? 0,
     platformRevenue: revenue._sum.platformFee ?? 0,
     recentOrders,
@@ -51,6 +53,7 @@ export default async function AdminDashboardPage() {
     { title: "Usuarios", value: stats.totalUsers, icon: Users, desc: "Total registrados" },
     { title: "Tiendas activas", value: stats.totalStores, icon: Store, desc: "" },
     { title: "Productos totales", value: stats.totalProducts, icon: Package, desc: "Incluye activos e inactivos" },
+    { title: "Categorias activas", value: stats.totalCategories, icon: Package, desc: "" },
     { title: "Total pedidos", value: stats.totalOrders, icon: ShoppingBag, desc: "" },
     { title: "Volumen total", value: formatPrice(stats.totalRevenue), icon: TrendingUp, desc: "" },
     { title: "Revenue plataforma", value: formatPrice(stats.platformRevenue), icon: DollarSign, desc: "Comisiones cobradas" },

@@ -9,8 +9,9 @@ export default async function RegisterPage({
 }) {
   const { planId, role } = await searchParams
   const session = await auth()
+  const normalizedRole = role?.trim().toUpperCase() ?? null
 
   if (session?.user) redirect("/dashboard")
 
-  return <RegisterForm planId={planId ?? null} role={role ?? null} />
+  return <RegisterForm planId={planId ?? null} role={normalizedRole} />
 }

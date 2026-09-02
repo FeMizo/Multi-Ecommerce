@@ -10,6 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { ArrowLeft, CheckCircle2, Shield, Truck, User } from "lucide-react"
+import { ArrowLeft as MorphArrowLeft } from "lucide"
+import { MorphLink } from "@/components/ui/morph-link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -162,10 +164,14 @@ export function RegisterForm({ planId, role }: { planId: string | null; role: st
 
       <div className="flex-1 flex flex-col">
         <div className="p-4 lg:p-6">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
+          <MorphLink
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            icon={MorphArrowLeft}
+            iconClassName="h-4 w-4"
+          >
             Volver al inicio
-          </Link>
+          </MorphLink>
         </div>
 
         <div className="flex-1 flex items-center justify-center p-4">

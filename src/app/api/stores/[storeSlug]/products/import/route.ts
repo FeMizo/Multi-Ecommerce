@@ -1,8 +1,11 @@
 import { Prisma } from "@prisma/client"
 import { NextResponse, type NextRequest } from "next/server"
+import { put } from "@vercel/blob"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { buildStoreUploadPath } from "@/lib/blob-path"
 import { checkProductLimit } from "@/lib/plan-limits"
+import { downloadRemoteImage, isRemoteImageUrl } from "@/lib/remote-image"
 import { slugify } from "@/lib/utils"
 import {
   normalizeCsvHeader,
@@ -24,6 +27,42 @@ type CsvRow = {
   status: "DRAFT" | "ACTIVE" | "PAUSED"
   images: string[]
   tags: string[]
+}
+
+async function importRemoteImages(storeSlug: string, rows: CsvRow[]) {
+  const errors: Array<{ line: number; message: string }> = []
+  const importedRows: CsvRow[] = []
+
+  for (const row of rows) {
+    const images: string[] = []
+
+    for (const image of row.images) {
+      if (!isRemoteImageUrl(image)) {
+        images.push(image)
+        continue
+      }
+
+      try {
+        const downloaded = await downloadRemoteImage(image)
+        const imageBuffer = downloaded.bytes.buffer.slice(downloaded.bytes.byteOffset, downloaded.bytes.byteOffset + downloaded.bytes.byteLength) as ArrayBuffer
+        const blob = await put(buildStoreUploadPath(storeSlug, downloaded.filename), new Blob([imageBuffer], {
+          type: downloaded.contentType,
+        }), {
+          access: "public",
+          contentType: downloaded.contentType,
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+        })
+        images.push(blob.url)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "No se pudo importar la imagen"
+        errors.push({ line: row.line, message: `imagen ${image}: ${message}` })
+      }
+    }
+
+    importedRows.push({ ...row, images })
+  }
+
+  return { rows: importedRows, errors }
 }
 
 const headerAliases: Record<string, string[]> = {
@@ -57,6 +96,10 @@ function mapStatus(value: string | undefined) {
 
 function findHeaderIndex(headers: string[], candidates: string[]) {
   return headers.findIndex((header) => candidates.includes(normalizeCsvHeader(header)))
+}
+
+function normalizeSkuKey(value: string) {
+  return value.toLowerCase().trim()
 }
 
 async function getMembership(userId: string, storeSlug: string) {
@@ -133,6 +176,7 @@ export async function POST(
 
   const parsedRows: CsvRow[] = []
   const rowErrors: Array<{ line: number; message: string }> = []
+  const seenSkus = new Set<string>()
 
   dataRows.forEach((row, index) => {
     const line = index + 2
@@ -168,6 +212,14 @@ export async function POST(
     if (skuValue.length > 60) {
       rowErrors.push({ line, message: "sku supera 60 caracteres" })
       return
+    }
+    const skuKey = skuValue ? normalizeSkuKey(skuValue) : null
+    if (skuKey && seenSkus.has(skuKey)) {
+      rowErrors.push({ line, message: `sku duplicado en el CSV: ${skuValue}` })
+      return
+    }
+    if (skuKey) {
+      seenSkus.add(skuKey)
     }
 
     const descriptionValue = cell(headerIndexes.description).trim()
@@ -229,22 +281,93 @@ export async function POST(
   }
 
   const currentLimit = await checkProductLimit(membership.store.id)
-  if (currentLimit.max !== null && currentLimit.count + parsedRows.length > currentLimit.max) {
-    return NextResponse.json(
-      {
-        message: `Limite de productos alcanzado (${currentLimit.count}/${currentLimit.max})`,
-      },
-      { status: 409 }
-    )
-  }
-
-  const usedSlugs = new Set<string>()
 
   try {
-    const created = await db.$transaction(async (tx) => {
-      const createdProducts: Array<{ id: string }> = []
+    const skuRows = parsedRows.filter((row) => row.sku)
+    const uniqueSkus = [...new Set(skuRows.map((row) => normalizeSkuKey(row.sku ?? "")))]
+    const existingSkuProducts = uniqueSkus.length > 0
+      ? await db.product.findMany({
+        where: {
+          storeId: membership.store.id,
+          deletedAt: null,
+          sku: { in: uniqueSkus },
+        },
+        select: { id: true, sku: true },
+      })
+      : []
 
-      for (const row of parsedRows) {
+    const productsBySku = new Map<string, Array<{ id: string }>>()
+    for (const product of existingSkuProducts) {
+      const skuKey = normalizeSkuKey(product.sku ?? "")
+      const existing = productsBySku.get(skuKey) ?? []
+      existing.push({ id: product.id })
+      productsBySku.set(skuKey, existing)
+    }
+
+    const duplicatedCatalogSku = [...productsBySku.entries()].find(([, products]) => products.length > 1)
+    if (duplicatedCatalogSku) {
+      return NextResponse.json(
+        { message: `SKU duplicado en el catalogo: ${duplicatedCatalogSku[0]}` },
+        { status: 409 }
+      )
+    }
+
+    const createsNeeded = parsedRows.filter((row) => {
+      if (!row.sku) return true
+      return !productsBySku.has(normalizeSkuKey(row.sku))
+    }).length
+
+    if (currentLimit.max !== null && currentLimit.count + createsNeeded > currentLimit.max) {
+      return NextResponse.json(
+        {
+          message: `Limite de productos alcanzado (${currentLimit.count}/${currentLimit.max})`,
+        },
+        { status: 409 }
+      )
+    }
+
+    const importedImages = await importRemoteImages(storeSlug, parsedRows)
+    if (importedImages.errors.length > 0) {
+      return NextResponse.json(
+        {
+          message: "No se pudieron importar algunas imagenes",
+          errors: importedImages.errors,
+        },
+        { status: 422 }
+      )
+    }
+
+    const rowsToImport = importedImages.rows
+
+    const usedSlugs = new Set<string>()
+
+    const result = await db.$transaction(async (tx) => {
+      const counts = { created: 0, updated: 0 }
+
+      for (const row of rowsToImport) {
+        const skuKey = row.sku ? normalizeSkuKey(row.sku) : null
+        const existingProduct = skuKey ? productsBySku.get(skuKey)?.[0] ?? null : null
+
+        if (existingProduct) {
+          await tx.product.update({
+            where: { id: existingProduct.id },
+            data: {
+              name: row.title,
+              description: row.description,
+              price: row.price,
+              stock: row.stock,
+              manageStock: row.manageStock,
+              sku: row.sku,
+              images: row.images,
+              tags: row.tags,
+              categoryId: row.categoryId,
+              status: row.status,
+            },
+          })
+          counts.updated += 1
+          continue
+        }
+
         const slugBase = slugify(row.title) || `producto-${row.line}`
         let finalSlug = slugBase
         let suffix = 1
@@ -264,7 +387,7 @@ export async function POST(
 
         usedSlugs.add(finalSlug)
 
-        const product = await tx.product.create({
+        await tx.product.create({
           data: {
             storeId: membership.store.id,
             categoryId: row.categoryId,
@@ -282,16 +405,14 @@ export async function POST(
             status: row.status,
             featured: false,
           },
-          select: { id: true },
         })
-
-        createdProducts.push(product)
+        counts.created += 1
       }
 
-      return createdProducts
+      return counts
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 
-    return NextResponse.json({ created: created.length }, { status: 201 })
+    return NextResponse.json(result, { status: 200 })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
       return NextResponse.json(

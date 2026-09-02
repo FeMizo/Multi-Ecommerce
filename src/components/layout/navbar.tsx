@@ -4,6 +4,17 @@ import Link from "next/link"
 import Image from "next/image"
 import { signOut } from "next-auth/react"
 import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard, Heart, Truck } from "lucide-react"
+import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
+import {
+  Menu as MorphMenu,
+  Search as MorphSearch,
+  ShoppingCart as MorphShoppingCart,
+  X as MorphX,
+  Home as MorphHome,
+  Store as MorphStore,
+  Package as MorphPackage,
+  User as MorphUser,
+} from "lucide"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,7 +36,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useCartStore } from "@/stores/cart"
 import { CartDrawer } from "@/components/layout/cart-drawer"
 import type { Session } from "next-auth"
-import { useRef, useState, useTransition } from "react"
+import { useRef, useState, useTransition, type ReactNode, type ComponentProps } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus?: boolean; submitLabel?: string }) {
@@ -62,9 +73,14 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
         event.preventDefault()
         navigate(inputRef.current?.value ?? value)
       }}
-    >
+      >
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <InteractiveMorphIcon
+          icon={MorphSearch}
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+          spring="snappy"
+          reducedMotion="never"
+        />
         <input
           key={value}
           ref={inputRef}
@@ -90,7 +106,7 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
             aria-label="Limpiar búsqueda"
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
-            <X className="h-3.5 w-3.5" />
+            <InteractiveMorphIcon icon={MorphX} className="h-3.5 w-3.5" spring="snappy" reducedMotion="never" />
           </button>
         )}
       </div>
@@ -98,6 +114,83 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
         {submitLabel}
       </Button>
     </form>
+  )
+}
+
+function MorphNavLink({
+  href,
+  icon,
+  children,
+  className,
+  onClick,
+  active = false,
+  iconClassName = "h-4 w-4",
+}: {
+  href: string
+  icon: ComponentProps<typeof InteractiveMorphIcon>["icon"]
+  children: ReactNode
+  className?: string
+  onClick?: () => void
+  active?: boolean
+  iconClassName?: string
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      className={className}
+      aria-current={active ? "page" : undefined}
+    >
+      <InteractiveMorphIcon icon={icon} hovered={hovered} className={iconClassName} spring="snappy" reducedMotion="never" />
+      {children}
+    </Link>
+  )
+}
+
+function MorphNavButton({
+  onClick,
+  icon,
+  children,
+  className,
+  ariaLabel,
+  ariaExpanded,
+  variant = "ghost",
+  size = "icon",
+  iconClassName = "h-5 w-5",
+  ...buttonProps
+}: {
+  onClick?: () => void
+  icon: ComponentProps<typeof InteractiveMorphIcon>["icon"]
+  children?: ReactNode
+  className?: string
+  ariaLabel?: string
+  ariaExpanded?: boolean
+  variant?: ComponentProps<typeof Button>["variant"]
+  size?: ComponentProps<typeof Button>["size"]
+  iconClassName?: string
+} & Omit<ComponentProps<typeof Button>, "onClick" | "children" | "className" | "variant" | "size">) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <Button
+      type="button"
+      variant={variant}
+      size={size}
+      onClick={onClick}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      aria-label={ariaLabel}
+      aria-expanded={ariaExpanded}
+      className={className}
+      {...buttonProps}
+    >
+      <InteractiveMorphIcon icon={icon} hovered={hovered} className={iconClassName} spring="snappy" reducedMotion="never" />
+      {children}
+    </Button>
   )
 }
 
@@ -110,7 +203,14 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
   const itemCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0))
   const openCart = useCartStore((s) => s.openCart)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const pathname = usePathname()
   const sessionUser = session?.user
+  const accountHref = sessionUser ? "/account/orders" : "/login"
+  const mobileNavItems = [
+    { href: "/", label: "Inicio", icon: MorphHome },
+    { href: "/stores", label: "Tiendas", icon: MorphStore },
+    { href: "/search", label: "Buscar", icon: MorphSearch },
+  ] as const
 
   return (
     <>
@@ -149,20 +249,20 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
 
             {/* Nav Links - Desktop */}
             <nav className="hidden lg:flex items-center gap-1">
-              <Link 
-                href="/stores" 
+              <MorphNavLink
+                href="/stores"
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                icon={MorphStore}
               >
-                <Store className="h-4 w-4" />
                 Tiendas
-              </Link>
-              <Link 
-                href="/search" 
+              </MorphNavLink>
+              <MorphNavLink
+                href="/search"
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                icon={MorphPackage}
               >
-                <Package className="h-4 w-4" />
                 Productos
-              </Link>
+              </MorphNavLink>
             </nav>
 
             {/* Actions */}
@@ -170,14 +270,12 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
               {/* Search Mobile */}
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <MorphNavButton
                     className="md:hidden rounded-full"
-                    aria-label="Abrir búsqueda"
-                  >
-                    <Search className="h-5 w-5" />
-                  </Button>
+                    ariaLabel="Abrir búsqueda"
+                    icon={MorphSearch}
+                    iconClassName="h-5 w-5"
+                  />
                 </DialogTrigger>
                 <DialogContent className="top-[72px] left-4 right-4 translate-x-0 translate-y-0 w-[calc(100%-2rem)] max-w-none rounded-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:slide-in-from-top-2 data-[state=closed]:slide-out-to-top-2 sm:left-auto sm:right-4 sm:w-96 sm:max-w-md">
                   <DialogHeader>
@@ -189,19 +287,21 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
               </Dialog>
               
               {/* Cart */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative rounded-full hover:bg-primary/10" 
+                            <MorphNavButton 
+                variant="ghost"
+                size="icon"
+                className="relative rounded-full hover:bg-primary/10"
                 onClick={openCart}
+                ariaLabel="Abrir carrito"
+                icon={MorphShoppingCart}
+                iconClassName="h-5 w-5"
               >
-                <ShoppingCart className="h-5 w-5" />
                 {itemCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
                     {itemCount}
                   </span>
                 )}
-              </Button>
+              </MorphNavButton>
 
               {sessionUser ? (
                 <DropdownMenu>
@@ -283,14 +383,16 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
               )}
 
               {/* Mobile Menu Toggle */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <MorphNavButton 
+                variant="ghost"
+                size="icon"
                 className="lg:hidden rounded-full"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
+                ariaLabel={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                ariaExpanded={mobileMenuOpen}
+                icon={mobileMenuOpen ? MorphX : MorphMenu}
+                iconClassName="h-5 w-5"
+              />
             </div>
           </div>
         </div>
@@ -300,37 +402,105 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
           <div className="lg:hidden border-t border-border/50 bg-background">
             <div className="container mx-auto px-4 py-4 space-y-4">
               <nav className="flex flex-col gap-1">
-                <Link 
-                  href="/stores" 
+                <MorphNavLink
+                  href="/stores"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                  icon={MorphStore}
+                  iconClassName="h-5 w-5 text-muted-foreground"
                 >
-                  <Store className="h-5 w-5 text-muted-foreground" />
                   Tiendas
-                </Link>
-                <Link 
+                </MorphNavLink>
+                <MorphNavLink
                   href="/search"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                  icon={MorphPackage}
+                  iconClassName="h-5 w-5 text-muted-foreground"
                 >
-                  <Package className="h-5 w-5 text-muted-foreground" />
                   Productos
-                </Link>
+                </MorphNavLink>
                 {!session && (
-                  <Link 
+                  <MorphNavLink
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground hover:bg-accent transition-colors sm:hidden"
+                    icon={MorphUser}
+                    iconClassName="h-5 w-5 text-muted-foreground"
                   >
-                    <User className="h-5 w-5 text-muted-foreground" />
                     Iniciar sesión
-                  </Link>
+                  </MorphNavLink>
                 )}
               </nav>
             </div>
           </div>
         )}
       </header>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-lg md:hidden">
+        <div className="grid grid-cols-5 gap-1">
+          {mobileNavItems.map(({ href, label, icon: Icon }) => {
+            const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)
+
+            return (
+              <Button
+                key={href}
+                variant="ghost"
+                className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
+                  active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                }`}
+                asChild
+              >
+                <Link href={href} aria-current={active ? "page" : undefined}>
+                  <InteractiveMorphIcon icon={Icon} className="h-4 w-4" hovered={active} spring="snappy" reducedMotion="never" />
+                  <span>{label}</span>
+                </Link>
+              </Button>
+            )
+          })}
+
+          <Button
+            type="button"
+            variant="ghost"
+            className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
+              itemCount > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"
+            }`}
+            onClick={openCart}
+            aria-label="Abrir carrito"
+          >
+              <span className="relative">
+              <InteractiveMorphIcon icon={MorphShoppingCart} className="h-4 w-4" spring="snappy" reducedMotion="never" />
+              {itemCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                  {itemCount}
+                </span>
+              )}
+            </span>
+            <span>Carrito</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
+              pathname.startsWith("/account") || pathname.startsWith("/login") ? "bg-primary/10 text-primary" : "text-muted-foreground"
+            }`}
+            asChild
+          >
+            <Link href={accountHref} aria-current={pathname.startsWith("/account") || pathname.startsWith("/login") ? "page" : undefined}>
+              <InteractiveMorphIcon icon={MorphUser} className="h-4 w-4" spring="snappy" reducedMotion="never" />
+              <span>Cuenta</span>
+            </Link>
+          </Button>
+        </div>
+      </nav>
     </>
   )
 }
+
+
+
+
+
+
+
+

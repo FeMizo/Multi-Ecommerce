@@ -1,6 +1,8 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Package, Store, ArrowRight, Sparkles } from "lucide-react"
+import { Package, Store, Sparkles } from "lucide-react"
+import { ArrowRight as MorphArrowRight } from "lucide"
+import { MorphLink } from "@/components/ui/morph-link"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { DEFAULT_SHOP_BANNER, DEFAULT_SHOP_ICON } from "@/lib/placeholders"
@@ -81,13 +83,14 @@ export default async function StoresPage() {
             <p className="text-muted-foreground mb-6">
               Se el primero en abrir una tienda
             </p>
-            <Link
+            <MorphLink
               href="/register"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              icon={MorphArrowRight}
+              iconClassName="h-4 w-4"
             >
               Abrir mi tienda
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            </MorphLink>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">

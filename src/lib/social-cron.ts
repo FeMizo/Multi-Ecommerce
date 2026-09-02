@@ -7,6 +7,7 @@ import {
 import { renderSocialImageBuffer } from "@/lib/social-marketing-image"
 import { uploadFileToFtp } from "@/lib/ftp"
 import { publishSocialPost } from "@/lib/social-publisher"
+import type { SocialChannel } from "@/lib/social-marketing"
 
 function isPromotionDay(date: Date) {
   const day = date.getUTCDay()
@@ -35,6 +36,65 @@ function readCronConfig() {
 
 function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "No se pudo completar la publicacion"
+}
+
+export async function publishUploadedSocialPromotion(input: {
+  now?: Date
+  title: string
+  topicId?: string
+  channels: SocialChannel[]
+  caption: string
+  destinationUrl?: string
+  imageFileName: string
+  imageBuffer: Buffer
+}) {
+  const now = input.now ?? new Date()
+  const created = await db.socialPost.create({
+    data: {
+      title: input.title,
+      topic: input.topicId ?? "external-image",
+      channels: input.channels,
+      caption: input.caption,
+      destinationUrl: input.destinationUrl ?? "https://shop.aionsite.com.mx",
+      scheduledAt: now,
+      status: "PUBLISHING",
+    },
+  })
+
+  try {
+    const upload = await uploadFileToFtp(readCronConfig(), input.imageFileName, input.imageBuffer)
+    await db.socialPost.update({ where: { id: created.id }, data: { imageUrl: upload.publicUrl } })
+
+    await publishSocialPost({
+      id: created.id,
+      caption: input.caption,
+      channels: input.channels,
+      imageUrl: upload.publicUrl,
+      destinationUrl: input.destinationUrl,
+    })
+
+    const finalPost = await db.socialPost.findUniqueOrThrow({ where: { id: created.id } })
+    return {
+      ok: true,
+      post: {
+        id: finalPost.id,
+        status: finalPost.status,
+        imageUrl: finalPost.imageUrl,
+        facebookPostId: finalPost.facebookPostId,
+        instagramMediaId: finalPost.instagramMediaId,
+        lastError: finalPost.lastError,
+      },
+      upload,
+    }
+  } catch (error) {
+    const message = toErrorMessage(error)
+    await db.socialPost.update({
+      where: { id: created.id },
+      data: { status: "FAILED", lastError: message },
+    })
+
+    return { ok: false, postId: created.id, error: message }
+  }
 }
 
 export async function runSocialPromotionCron(now = new Date()) {

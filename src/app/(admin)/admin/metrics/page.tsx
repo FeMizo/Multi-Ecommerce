@@ -18,6 +18,32 @@ type SubscriptionPlanSummary = {
   unpaid: number
 }
 
+type TopStoreMetric = {
+  storeId: string
+  _sum: { total: number | null; platformFee: number | null }
+  _count: { id: number }
+}
+
+type DailyOrderMetric = {
+  createdAt: Date
+  _sum: { total: number | null; platformFee: number | null }
+}
+
+type OrderStatusMetric = {
+  status: string
+  _count: { id: number }
+}
+
+type PaymentMethodMetric = {
+  paymentMethod: keyof typeof PAYMENT_METHOD_LABELS
+  _count: { id: number }
+}
+
+type StoreNameMetric = {
+  id: string
+  name: string
+}
+
 export default async function AdminMetricsPage() {
   await requireAdmin()
 
@@ -72,14 +98,19 @@ export default async function AdminMetricsPage() {
     }),
   ])
 
-  const storeIds = topStores.map((s) => s.storeId)
+  const typedTopStores = topStores as TopStoreMetric[]
+  const typedDailyOrders = dailyOrders as DailyOrderMetric[]
+  const typedOrdersByStatus = ordersByStatus as OrderStatusMetric[]
+  const typedOrdersByPaymentMethod = ordersByPaymentMethod as PaymentMethodMetric[]
+
+  const storeIds = typedTopStores.map((s) => s.storeId)
   const storeNames = await db.store.findMany({
     where: { id: { in: storeIds } },
     select: { id: true, name: true },
   })
-  const storeNameMap = new Map(storeNames.map((s) => [s.id, s.name]))
+  const storeNameMap = new Map((storeNames as StoreNameMetric[]).map((s) => [s.id, s.name]))
 
-  const topStoresData = topStores.map((s) => ({
+  const topStoresData = typedTopStores.map((s) => ({
     name: storeNameMap.get(s.storeId) ?? s.storeId.slice(0, 8),
     gmv: s._sum.total ?? 0,
     fee: s._sum.platformFee ?? 0,
@@ -88,7 +119,7 @@ export default async function AdminMetricsPage() {
 
   const days = eachDayOfInterval({ start: last30, end: now })
   const dayMap = new Map<string, { gmv: number; fee: number }>()
-  dailyOrders.forEach((d) => {
+  typedDailyOrders.forEach((d) => {
     const key = format(new Date(d.createdAt), "yyyy-MM-dd")
     const prev = dayMap.get(key) ?? { gmv: 0, fee: 0 }
     dayMap.set(key, {
@@ -102,13 +133,13 @@ export default async function AdminMetricsPage() {
     return { date: format(d, "dd MMM", { locale: es }), ...data }
   })
 
-  const statusData = ordersByStatus.map((s) => ({
+  const statusData = typedOrdersByStatus.map((s) => ({
     status: s.status,
     count: s._count.id,
   }))
 
   const paymentMethodOrder = ["STRIPE", "CASH_ON_DELIVERY", "TRANSFER"] as const
-  const paymentMethodMap = new Map(ordersByPaymentMethod.map((entry) => [entry.paymentMethod, entry._count.id]))
+  const paymentMethodMap = new Map(typedOrdersByPaymentMethod.map((entry) => [entry.paymentMethod, entry._count.id]))
   const paymentData = paymentMethodOrder.map((method) => ({
     method: PAYMENT_METHOD_LABELS[method],
     count: paymentMethodMap.get(method) ?? 0,

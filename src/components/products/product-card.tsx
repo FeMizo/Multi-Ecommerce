@@ -3,9 +3,10 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { Heart, ShoppingCart } from "lucide-react"
 import { useMemo, useState, useSyncExternalStore } from "react"
 import { toast } from "sonner"
+import { Heart as MorphHeart, HeartPlus as MorphHeartPlus, ShoppingCart as MorphShoppingCart } from "lucide"
+import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils"
@@ -49,6 +50,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const { data: session } = useSession()
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [isFavoriteHovered, setIsFavoriteHovered] = useState(false)
   const imageSrc = withProductPlaceholder(product.images)
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
   const defaultSelection = defaultVariantSelection(variantOptions)
@@ -150,6 +152,8 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
           <button
             type="button"
             onClick={handleLike}
+            onPointerEnter={() => setIsFavoriteHovered(true)}
+            onPointerLeave={() => setIsFavoriteHovered(false)}
             aria-label={canUseFavorites ? (isLiked ? "Quitar de favoritos" : "Agregar a favoritos") : "Inicia sesion para usar favoritos"}
             aria-pressed={isLiked}
             title={canUseFavorites ? undefined : "Debes iniciar sesion para usar favoritos"}
@@ -158,9 +162,17 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
               isLiked
                 ? "bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30"
                 : "bg-card/90 backdrop-blur-sm text-foreground hover:bg-card hover:scale-110 shadow-md"
-            } ${!canUseFavorites ? "opacity-70 cursor-not-allowed hover:scale-100" : ""}`}
+              } ${!canUseFavorites ? "opacity-70 cursor-not-allowed hover:scale-100" : ""}`}
           >
-            <Heart className={`h-4 w-4 transition-transform ${isLiked ? "fill-current scale-110" : ""}`} />
+            <InteractiveMorphIcon
+              icon={MorphHeart}
+              hoverIcon={MorphHeartPlus}
+              hovered={isFavoriteHovered}
+              activeIcon={MorphHeartPlus}
+              className={`h-4 w-4 transition-transform ${isLiked ? "fill-current scale-110" : ""}`}
+              spring="snappy"
+              reducedMotion="never"
+            />
           </button>
 
           <div
@@ -173,7 +185,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
               className="w-full h-12 rounded-xl bg-primary text-primary-foreground shadow-xl btn-shine"
               disabled={!canAdd}
             >
-              <ShoppingCart className="h-4 w-4 mr-2" />
+              <InteractiveMorphIcon icon={MorphShoppingCart} className="mr-2 h-4 w-4" spring="snappy" reducedMotion="never" />
               Agregar al carrito
             </Button>
           </div>
@@ -201,7 +213,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
               onClick={handleAddToCart}
               disabled={!canAdd}
             >
-              <ShoppingCart className="h-4 w-4" />
+              <InteractiveMorphIcon icon={MorphShoppingCart} className="h-4 w-4" spring="snappy" reducedMotion="never" />
             </Button>
           </div>
         </div>

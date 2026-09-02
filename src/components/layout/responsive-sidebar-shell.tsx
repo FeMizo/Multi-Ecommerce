@@ -8,8 +8,6 @@ import {
   ArrowLeft,
   ArrowUpRight,
   BarChart3,
-  ChevronLeft,
-  ChevronRight,
   CreditCard,
   LayoutDashboard,
   MapPin,
@@ -18,11 +16,15 @@ import {
   ShoppingBag,
   Store,
   Tag,
+  Tags,
   Users,
   Truck,
   type LucideIcon,
 } from "lucide-react"
+import { ChevronLeft as MorphChevronLeft, ChevronRight as MorphChevronRight, Menu as MorphMenu, X as MorphX } from "lucide"
+import { MorphIcon } from "morphicons/react"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 
 type SidebarIconName =
@@ -37,6 +39,7 @@ type SidebarIconName =
   | "Store"
   | "Settings"
   | "Tag"
+  | "Tags"
   | "Users"
   | "Truck"
 
@@ -80,6 +83,7 @@ const ICONS: Record<SidebarIconName, LucideIcon> = {
   Store,
   Settings,
   Tag,
+  Tags,
   Users,
   Truck,
 }
@@ -106,6 +110,7 @@ export function ResponsiveSidebarShell({
   const pathname = usePathname()
   const [isDesktop, setIsDesktop] = useState(false)
   const [collapsed, setCollapsed] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const media = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`)
@@ -164,7 +169,7 @@ export function ResponsiveSidebarShell({
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
       <aside
-        className={cn("fixed inset-y-0 left-0 z-40 flex flex-col border-r transition-[width] duration-300 ease-in-out", asideTheme)}
+        className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col border-r transition-[width] duration-300 ease-in-out xl:flex", asideTheme)}
         style={{ width: sidebarWidth }}
       >
         <div
@@ -269,10 +274,97 @@ export function ResponsiveSidebarShell({
           "min-h-screen min-w-0 transition-[margin-left] duration-300 ease-in-out",
           variant === "admin" ? "bg-muted/30" : "bg-background"
         )}
-        style={{ marginLeft: sidebarWidth }}
+        style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}
       >
         <div className="sticky top-0 z-30 border-b bg-background/90 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-3">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn("h-9 w-9 shrink-0 xl:hidden", toggleTheme)}
+                  aria-label="Abrir navegación"
+                  aria-expanded={mobileMenuOpen}
+                  aria-controls="dashboard-mobile-nav"
+                >
+                  <MorphIcon
+                    icon={mobileMenuOpen ? MorphX : MorphMenu}
+                    className="h-4 w-4"
+                    spring="snappy"
+                    reducedMotion="never"
+                  />
+                </Button>
+              </SheetTrigger>
+              <SheetContent id="dashboard-mobile-nav" side="left" className={cn("flex w-[85vw] max-w-sm flex-col gap-0 p-0", asideTheme)}>
+                <SheetHeader className={cn("border-b px-4 py-4 text-left", variant === "admin" ? "border-background/10" : "border-border")}>
+                  <SheetTitle className={cn("text-base", variant === "admin" ? "text-background" : "text-foreground")}>
+                    {brandTitle}
+                  </SheetTitle>
+                  {brandSubtitle ? (
+                    <SheetDescription className={cn(variant === "admin" ? "text-background/70" : "text-muted-foreground")}>
+                      {brandSubtitle}
+                    </SheetDescription>
+                  ) : null}
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto px-3 py-4">
+                  <nav className="space-y-1">
+                    {items.map(({ href, label, iconKey, exact }) => {
+                      const Icon = ICONS[iconKey]
+                      const active = exact
+                        ? pathname === href
+                        : href === "/admin"
+                          ? pathname === "/admin"
+                          : pathname === href || pathname.startsWith(`${href}/`)
+
+                      return (
+                        <SheetClose asChild key={href}>
+                          <Link
+                            href={href}
+                            className={cn(
+                              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors",
+                              active ? activeTheme : idleTheme
+                            )}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{label}</span>
+                          </Link>
+                        </SheetClose>
+                      )
+                    })}
+                  </nav>
+                </div>
+                <div className={cn("border-t px-3 py-3", variant === "admin" ? "border-background/10" : "border-border")}>
+                  <div className="space-y-2">
+                    {topFooterHref && topFooterLabel && TopFooterIcon ? (
+                      <SheetClose asChild>
+                        <Link
+                          href={topFooterHref}
+                          className={cn("flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors", topFooterTheme)}
+                          target={topFooterExternal ? "_blank" : undefined}
+                          rel={topFooterExternal ? "noreferrer" : undefined}
+                        >
+                          <TopFooterIcon className="h-4 w-4 shrink-0" />
+                          <span>{topFooterLabel}</span>
+                        </Link>
+                      </SheetClose>
+                    ) : null}
+                    <SheetClose asChild>
+                      <Link
+                        href={footerHref}
+                        className={cn("flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors", footerTheme)}
+                        target={footerExternal ? "_blank" : undefined}
+                        rel={footerExternal ? "noreferrer" : undefined}
+                      >
+                        <FooterIcon className="h-4 w-4 shrink-0" />
+                        <span>{footerLabel}</span>
+                      </Link>
+                    </SheetClose>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
             <Button
               type="button"
               variant="ghost"
@@ -281,12 +373,17 @@ export function ResponsiveSidebarShell({
               onClick={() => setCollapsed((value) => !value)}
               aria-label={collapsed ? "Mostrar textos" : "Mostrar solo iconos"}
             >
-              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              <MorphIcon
+                icon={collapsed ? MorphChevronRight : MorphChevronLeft}
+                className="h-4 w-4"
+                spring="snappy"
+                reducedMotion="never"
+              />
             </Button>
             <div className="min-w-0 flex-1" />
           </div>
         </div>
-        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        <div className={cn("p-4 sm:p-6 lg:p-8", variant === "dashboard" && "mx-auto w-full max-w-6xl")}>{children}</div>
       </main>
     </div>
   )

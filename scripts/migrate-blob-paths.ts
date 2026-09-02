@@ -1,8 +1,14 @@
 import { config } from "dotenv"
 import { BlobNotFoundError, copy, del, head } from "@vercel/blob"
+import type { Prisma } from "@prisma/client"
 import { getStoreBlobMigration, type BlobMigration } from "../src/lib/blob-migration"
 
 config({ path: ".env.local" })
+
+type ProductBlobSource = {
+  id: string
+  images: string[]
+}
 
 async function main() {
   const apply = process.argv.includes("--apply")
@@ -31,7 +37,7 @@ async function main() {
       const urls = [
         store.logoUrl,
         store.bannerUrl,
-        ...store.products.flatMap((product) => product.images),
+        ...store.products.flatMap((product: ProductBlobSource) => product.images),
       ]
       for (const url of urls) {
         if (!url) continue
@@ -70,7 +76,7 @@ async function main() {
       }
     }
 
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
       for (const store of stores) {
         const nextLogoUrl = store.logoUrl ? migrations.get(store.logoUrl)?.targetUrl ?? store.logoUrl : null
         const nextBannerUrl = store.bannerUrl ? migrations.get(store.bannerUrl)?.targetUrl ?? store.bannerUrl : null
@@ -81,7 +87,7 @@ async function main() {
           })
         }
 
-        for (const product of store.products) {
+        for (const product of store.products as ProductBlobSource[]) {
           const nextImages = product.images.map((url) => migrations.get(url)?.targetUrl ?? url)
           if (nextImages.some((url, index) => url !== product.images[index])) {
             await tx.product.update({ where: { id: product.id }, data: { images: nextImages } })
