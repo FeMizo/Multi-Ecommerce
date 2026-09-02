@@ -71,7 +71,6 @@ export function DeliveryAssignmentPanel({ storeSlug, delivery, drivers }: Props)
   )
 
   function buildWhatsAppMessage() {
-    const riderUrl = `${window.location.origin}/rider/${storeSlug}`
     const mapUrl =
       delivery.lat !== null && delivery.lng !== null
         ? `https://www.google.com/maps/search/?api=1&query=${delivery.lat},${delivery.lng}`
@@ -86,7 +85,6 @@ export function DeliveryAssignmentPanel({ storeSlug, delivery, drivers }: Props)
       address: delivery.formattedAddress,
       notes: delivery.notes,
       totalLabel: formatPrice(delivery.order.total),
-      riderUrl,
       mapUrl,
     })
   }

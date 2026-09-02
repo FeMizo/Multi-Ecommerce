@@ -112,7 +112,7 @@ export function DriverDetailsSheet({ driver }: Props) {
               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                 <p>Placa: {driver.plate || "Sin placa"}</p>
                 <p>Licencia: {driver.licenseNumber || "Sin licencia"}</p>
-                {driver.notes && <p>Notas: {driver.notes}</p>}
+                {driver.notes && <p>Referencias: {driver.notes}</p>}
               </div>
             </div>
           </div>

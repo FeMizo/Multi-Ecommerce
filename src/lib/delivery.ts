@@ -90,7 +90,6 @@ export function buildDeliveryAssignmentMessage(input: {
   address: string | null
   notes: string | null
   totalLabel: string
-  riderUrl: string
   mapUrl?: string | null
 }) {
   const lines = [
@@ -99,10 +98,9 @@ export function buildDeliveryAssignmentMessage(input: {
     `Cliente: ${input.customerName}`,
     input.customerPhone ? `Telefono: ${input.customerPhone}` : null,
     input.address ? `Direccion: ${input.address}` : null,
-    input.notes ? `Notas: ${input.notes}` : null,
+    input.notes ? `Referencias: ${input.notes}` : null,
     input.mapUrl ? `Mapa: ${input.mapUrl}` : null,
     `Total: ${input.totalLabel}`,
-    `Panel: ${input.riderUrl}`,
   ].filter(Boolean)
 
   return lines.join("\n")
