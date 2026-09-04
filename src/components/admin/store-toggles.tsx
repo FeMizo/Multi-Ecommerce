@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -11,20 +11,31 @@ type Props = { storeId: string; isActive: boolean; isVerified: boolean }
 
 export function StoreToggles({ storeId, isActive, isVerified }: Props) {
   const [visibilityLoading, setVisibilityLoading] = useState(false)
+  const [activeState, setActiveState] = useState(isActive)
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const router = useRouter()
 
+  useEffect(() => {
+    setActiveState(isActive)
+  }, [isActive])
+
   async function updateVisibility(nextIsActive: boolean) {
     setVisibilityLoading(true)
-    const res = await fetch(`/api/admin/stores/${storeId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: nextIsActive }),
-    })
-    setVisibilityLoading(false)
-    if (!res.ok) { toast.error("Error al actualizar"); return }
-    router.refresh()
+    try {
+      const res = await fetch(`/api/admin/stores/${storeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: nextIsActive }),
+      })
+      if (!res.ok) { toast.error("Error al actualizar"); return }
+
+      const updatedStore = await res.json()
+      setActiveState(typeof updatedStore.isActive === "boolean" ? updatedStore.isActive : nextIsActive)
+      router.refresh()
+    } finally {
+      setVisibilityLoading(false)
+    }
   }
 
   async function sendVerificationEmail() {
@@ -52,8 +63,8 @@ export function StoreToggles({ storeId, isActive, isVerified }: Props) {
   return (
     <div className="flex items-center gap-2">
       <ToggleStatusButton
-        active={isActive}
-        onClick={() => updateVisibility(!isActive)}
+        active={activeState}
+        onClick={() => updateVisibility(!activeState)}
         loading={visibilityLoading}
         disabled={deleteLoading}
         activeLabel="Visible"

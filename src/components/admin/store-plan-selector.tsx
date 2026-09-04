@@ -20,13 +20,26 @@ type Props = {
   currentPlanId?: string | null
 }
 
+const NO_PLAN = "__none__"
+
 export function StorePlanSelector({ storeId, plans, currentPlanId }: Props) {
   const router = useRouter()
-  const [selected, setSelected] = useState(currentPlanId ?? "")
+  const [selected, setSelected] = useState(currentPlanId ?? NO_PLAN)
   const [loading, setLoading] = useState(false)
 
+  async function removePlan() {
+    setLoading(true)
+    const res = await fetch(`/api/admin/stores/${storeId}/subscription`, { method: "DELETE" })
+    setLoading(false)
+    if (!res.ok) { toast.error("Error al quitar plan"); return }
+    setSelected(NO_PLAN)
+    toast.success("Plan desasignado")
+    router.refresh()
+  }
+
   async function assign() {
-    if (!selected) return
+    if (selected === NO_PLAN) return removePlan()
+    if (selected === currentPlanId) return
     setLoading(true)
     const res = await fetch(`/api/admin/stores/${storeId}/subscription`, {
       method: "POST",
@@ -46,6 +59,7 @@ export function StorePlanSelector({ storeId, plans, currentPlanId }: Props) {
           <SelectValue placeholder="Sin plan" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value={NO_PLAN} className="text-xs">Sin plan</SelectItem>
           {plans.map((p) => (
             <SelectItem key={p.id} value={p.id} className="text-xs">
               {p.name} - directa {(p.commissionRate * 100).toFixed(2)}%
@@ -53,9 +67,14 @@ export function StorePlanSelector({ storeId, plans, currentPlanId }: Props) {
           ))}
         </SelectContent>
       </Select>
-      {selected !== (currentPlanId ?? "") && (
+      {selected !== (currentPlanId ?? NO_PLAN) && (
         <Button size="sm" className="h-7 text-xs px-2" disabled={loading} onClick={assign}>
-          Asignar
+          {selected === NO_PLAN ? "Quitar" : "Asignar"}
+        </Button>
+      )}
+      {currentPlanId && selected === currentPlanId && (
+        <Button variant="outline" size="sm" className="h-7 text-xs px-2" disabled={loading} onClick={removePlan}>
+          Quitar
         </Button>
       )}
     </div>
