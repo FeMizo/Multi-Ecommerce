@@ -25,6 +25,16 @@ type Subscription = {
   stripeSubscriptionId: string | null
 } | null
 
+function getSubscriptionStatusLabel(status: string) {
+  return {
+    ACTIVE: "Activo",
+    TRIALING: "En prueba",
+    PAST_DUE: "Pago pendiente",
+    UNPAID: "Pago vencido",
+    CANCELLED: "Cancelado",
+  }[status] ?? status
+}
+
 export function SubscriptionManager({
   storeSlug,
   plans,
@@ -60,9 +70,9 @@ export function SubscriptionManager({
           <CardTitle className="text-base">Plan y facturación</CardTitle>
           {subscription && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Estado: {subscription.status}
-              {subscription.currentPeriodEnd ? ` · Periodo hasta ${new Date(subscription.currentPeriodEnd).toLocaleDateString("es-MX")}` : ""}
-              {subscription.cancelAtPeriodEnd ? " · Se cancelará al terminar el periodo" : ""}
+              {subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd
+                ? `Activo hasta ${new Date(subscription.currentPeriodEnd).toLocaleDateString("es-MX")} · No se renovará`
+                : `Estado: ${getSubscriptionStatusLabel(subscription.status)}${subscription.currentPeriodEnd ? ` · Periodo hasta ${new Date(subscription.currentPeriodEnd).toLocaleDateString("es-MX")}` : ""}`}
             </p>
           )}
         </div>
@@ -75,7 +85,7 @@ export function SubscriptionManager({
       <CardContent className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
           const hasPaidEntitlements = subscription && ["ACTIVE", "TRIALING"].includes(subscription.status)
-          const current = hasPaidEntitlements ? subscription.planId === plan.id : false
+          const current = hasPaidEntitlements && !subscription.cancelAtPeriodEnd ? subscription.planId === plan.id : false
           return (
             <div key={plan.id} className={`rounded-lg border p-4 ${current ? "border-primary" : ""}`}>
               <div className="flex items-center justify-between gap-2">
