@@ -12,8 +12,14 @@ import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 import { formatVariantSelection } from "@/lib/product-variants"
 import { buildTransferReference } from "@/lib/transfer-details"
+import { OrderHashRedirect } from "@/components/orders/order-hash-redirect"
+import { DELIVERY_STATUS_LABELS, formatDeliveryMethodLabel, buildGoogleMapsSearchUrl } from "@/lib/delivery"
 
 type SearchParams = { id?: string }
+
+function normalizeOrderLookupId(value: string) {
+  return value.trim().replace(/^#/, "")
+}
 
 export default async function PublicOrderPage({
   searchParams,
@@ -21,10 +27,12 @@ export default async function PublicOrderPage({
   searchParams: Promise<SearchParams>
 }) {
   const { id } = await searchParams
+  const lookupId = id ? normalizeOrderLookupId(id) : ""
 
-  if (!id) {
+  if (!lookupId) {
     return (
       <div className="container mx-auto px-4 py-16 max-w-2xl">
+        <OrderHashRedirect />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -49,9 +57,9 @@ export default async function PublicOrderPage({
     where: {
       deletedAt: null,
       OR: [
-        { id },
-        { id: { endsWith: id.toLowerCase() } },
-        { id: { endsWith: id.toUpperCase() } },
+        { id: lookupId },
+        { id: { endsWith: lookupId.toLowerCase() } },
+        { id: { endsWith: lookupId.toUpperCase() } },
       ],
     },
     include: {
@@ -71,6 +79,30 @@ export default async function PublicOrderPage({
         include: { product: { select: { name: true, images: true, slug: true } } },
       },
       payment: { select: { status: true, stripePaymentIntentId: true, stripeRefundId: true } },
+      coupon: {
+        select: {
+          code: true,
+          name: true,
+          type: true,
+          value: true,
+        },
+      },
+      delivery: {
+        select: {
+          status: true,
+          method: true,
+          formattedAddress: true,
+          lat: true,
+          lng: true,
+          notes: true,
+          driver: {
+            select: {
+              name: true,
+              status: true,
+            },
+          },
+        },
+      },
     },
   })
 
@@ -86,6 +118,13 @@ export default async function PublicOrderPage({
   }
   const paymentLabel = PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS] ?? order.paymentMethod
   const transferReference = buildTransferReference(order.store.transferReferencePrefix, order.store.transferReferenceExtra)
+  const mapsUrl = order.delivery
+    ? buildGoogleMapsSearchUrl({
+        formattedAddress: order.delivery.formattedAddress,
+        lat: order.delivery.lat,
+        lng: order.delivery.lng,
+      })
+    : null
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-4xl">
@@ -192,6 +231,19 @@ export default async function PublicOrderPage({
         <div className="space-y-6">
           <Card>
             <CardHeader>
+              <CardTitle className="text-base">Pedido</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm text-muted-foreground">
+              <p className="font-mono text-foreground">#{order.id}</p>
+              <p>Creado: {new Date(order.createdAt).toLocaleString("es-MX")}</p>
+              {order.paidAt && <p>Pagado: {new Date(order.paidAt).toLocaleString("es-MX")}</p>}
+              {order.couponCode && <p>Cupón: {order.couponCode}</p>}
+              {order.coupon && <p>Promoción: {order.coupon.name}</p>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle className="text-base">Contacto</CardTitle>
             </CardHeader>
           <CardContent className="space-y-1 text-sm">
@@ -215,6 +267,48 @@ export default async function PublicOrderPage({
               {order.transferCode && <p className="font-mono text-xs text-muted-foreground">Código: {order.transferCode}</p>}
             </CardContent>
           </Card>
+
+          {order.delivery && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Entrega</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">
+                    {DELIVERY_STATUS_LABELS[order.delivery.status as keyof typeof DELIVERY_STATUS_LABELS] ?? order.delivery.status}
+                  </Badge>
+                  <Badge variant="secondary">{formatDeliveryMethodLabel(order.delivery.method)}</Badge>
+                </div>
+                <div className="space-y-1">
+                  {order.delivery.formattedAddress ? (
+                    <p className="text-muted-foreground">{order.delivery.formattedAddress}</p>
+                  ) : (
+                    <p className="text-muted-foreground">Sin dirección registrada</p>
+                  )}
+                  {order.delivery.lat !== null && order.delivery.lng !== null && (
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {order.delivery.lat.toFixed(6)}, {order.delivery.lng.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+                {mapsUrl && (
+                  <Button asChild variant="outline" size="sm" className="w-fit">
+                    <a href={mapsUrl} target="_blank" rel="noreferrer">
+                      Abrir en Google Maps
+                    </a>
+                  </Button>
+                )}
+                {order.delivery.notes && (
+                  <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+                    <p className="text-xs font-medium text-foreground">Contexto adicional</p>
+                    <p className="text-xs text-muted-foreground">{order.delivery.notes}</p>
+                  </div>
+                )}
+                {order.delivery.driver && <p className="text-muted-foreground">Repartidor: {order.delivery.driver.name}</p>}
+              </CardContent>
+            </Card>
+          )}
 
           {(order.store.transferAccountName || order.store.transferAccountNumber || order.store.transferBank || transferReference) && (
             <Card>

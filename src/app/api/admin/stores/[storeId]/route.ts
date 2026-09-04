@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
 
 const schema = z.object({
+  isActive: z.boolean().optional(),
   cityId: z.string().nullable().optional(),
   featuredPosition: z.coerce.number().int().min(1).nullable().optional(),
 })
@@ -35,10 +36,11 @@ export async function PATCH(
     const store = await db.store.update({
       where: { id: storeId },
       data: {
-        cityId: parsed.data.cityId ?? null,
-        featuredPosition: parsed.data.featuredPosition ?? null,
+        ...(parsed.data.isActive !== undefined && { isActive: parsed.data.isActive }),
+        ...(parsed.data.cityId !== undefined && { cityId: parsed.data.cityId }),
+        ...(parsed.data.featuredPosition !== undefined && { featuredPosition: parsed.data.featuredPosition }),
       },
-      select: { id: true, cityId: true, featuredPosition: true },
+      select: { id: true, isActive: true, cityId: true, featuredPosition: true },
     })
 
     return NextResponse.json(store)

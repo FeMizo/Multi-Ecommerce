@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { signOut } from "next-auth/react"
-import { User, Package, LogOut, LayoutDashboard, Heart } from "lucide-react"
+import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard, Heart, Truck } from "lucide-react"
 import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 import {
   Menu as MorphMenu,
@@ -347,6 +347,12 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                         </Link>
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/rider" className="flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
+                        Panel de repartidor
+                      </Link>
+                    </DropdownMenuItem>
                     {sessionUser.globalRole === "PLATFORM_ADMIN" && (
                       <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                         <Link href="/admin" className="flex items-center gap-2">

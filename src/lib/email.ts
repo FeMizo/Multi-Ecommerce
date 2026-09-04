@@ -364,7 +364,7 @@ export async function sendOrderConfirmationEmail({
       summaryRows,
       infoBlocks: buildPaymentDetails({ paymentMethodLabel, transferCode, transferDetails, customerInfo }),
       ctaLabel: "Ver mis pedidos",
-      ctaHref: `${appUrl}/orders?id=${orderId}`,
+      ctaHref: `${appUrl}/orders/${orderId}`,
       footerNote: "Gracias por comprar con nosotros.",
     }),
   }, { idempotencyKey: `order-confirmation/${orderId}` })
@@ -419,7 +419,7 @@ export async function sendOrderReceivedEmail({
       summaryRows,
       infoBlocks: buildPaymentDetails({ paymentMethodLabel, transferCode, transferDetails, customerInfo }),
       ctaLabel: "Ver mis pedidos",
-      ctaHref: `${appUrl}/orders?id=${orderId}`,
+      ctaHref: `${appUrl}/orders/${orderId}`,
       footerNote: "Si necesitas ayuda, responde este correo o contacta a la tienda.",
     }),
   }, { idempotencyKey: `order-received/${orderId}` })
@@ -507,7 +507,7 @@ export async function sendOrderDeliveredEmail({
         <p>Gracias por comprar con nosotros.</p>
       `,
       ctaLabel: "Ver mis pedidos",
-      ctaHref: `${appUrl}/orders?id=${orderId}`,
+      ctaHref: `${appUrl}/orders/${orderId}`,
     }),
   }, { idempotencyKey: `order-delivered/${orderId}` })
   if (error) throw new Error(error.message)

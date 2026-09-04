@@ -33,3 +33,15 @@ export async function POST(
 
   return NextResponse.json(sub)
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ storeId: string }> }
+) {
+  if (!await requireAdmin()) return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+
+  const { storeId } = await params
+  await db.storeSubscription.deleteMany({ where: { storeId } })
+
+  return NextResponse.json({ ok: true })
+}

@@ -8,8 +8,7 @@ import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ORDER_STATUS_LABELS } from "@/components/shared/order-status-badge"
 import { type OrderStatus } from "@/lib/order-status"
-import { OrderDetailsSheet, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet"
-import { PanelRightOpen } from "lucide-react"
+import { OrderDetailsSheetButton, type OrderDetailsSheetOrder } from "@/components/orders/order-details-sheet-client"
 
 const ALL_STATUSES = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]
 
@@ -42,7 +41,7 @@ export default async function OrdersPage({
 
   const where = { storeId: store.id, deletedAt: null, ...(statusFilter ? { status: statusFilter } : {}) }
 
-  const [orders, total] = await Promise.all([
+  const [orders, total, drivers] = await Promise.all([
     db.order.findMany({
       where,
       include: {
@@ -58,6 +57,36 @@ export default async function OrdersPage({
           },
         },
         payment: { select: { status: true, stripePaymentIntentId: true, stripeRefundId: true } },
+        coupon: {
+          select: {
+            code: true,
+            name: true,
+            type: true,
+            value: true,
+          },
+        },
+        delivery: {
+          select: {
+            id: true,
+            driverId: true,
+            status: true,
+            method: true,
+            formattedAddress: true,
+            lat: true,
+            lng: true,
+            notes: true,
+            driver: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                plate: true,
+                licenseNumber: true,
+                status: true,
+              },
+            },
+          },
+        },
         store: {
           select: {
             name: true,
@@ -75,6 +104,20 @@ export default async function OrdersPage({
       skip,
     }),
     db.order.count({ where }),
+    db.driver.findMany({
+      where: {
+        OR: [{ storeId: store.id }, { storeId: null }],
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        plate: true,
+        licenseNumber: true,
+        status: true,
+      },
+      orderBy: { name: "asc" },
+    }),
   ])
 
   const pages = Math.ceil(total / take)
@@ -87,6 +130,15 @@ export default async function OrdersPage({
     platformFee: order.platformFee,
     discountAmount: order.discountAmount,
     total: order.total,
+    couponCode: order.couponCode,
+    coupon: order.coupon
+      ? {
+          code: order.coupon.code,
+          name: order.coupon.name,
+          type: order.coupon.type,
+          value: order.coupon.value,
+        }
+      : null,
     notes: order.notes,
     transferCode: order.transferCode,
     createdAtLabel: new Date(order.createdAt).toLocaleString("es-MX", {
@@ -108,6 +160,7 @@ export default async function OrdersPage({
     customerEmail: order.customerEmail,
     customerInfo: order.customerInfo as OrderDetailsSheetOrder["customerInfo"],
     payment: order.payment,
+    delivery: order.delivery,
     items: order.items,
   })
 
@@ -190,16 +243,11 @@ export default async function OrdersPage({
                     />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <OrderDetailsSheet
+                    <OrderDetailsSheetButton
                       mode="dashboard"
                       storeSlug={storeSlug}
                       order={orderDetails(order)}
-                      trigger={
-                        <Button variant="ghost" size="sm" className="h-8 gap-1 px-3">
-                          <PanelRightOpen className="h-3.5 w-3.5" />
-                          Ver
-                        </Button>
-                      }
+                      drivers={drivers}
                     />
                   </td>
                 </tr>

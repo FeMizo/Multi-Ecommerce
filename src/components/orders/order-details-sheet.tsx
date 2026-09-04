@@ -24,6 +24,9 @@ import { buildTransferReference } from "@/lib/transfer-details"
 import { formatVariantSelection } from "@/lib/product-variants"
 import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
 import { RefundButton } from "@/components/dashboard/refund-button"
+import { DELIVERY_STATUS_LABELS, DRIVER_STATUS_LABELS, formatDeliveryMethodLabel, buildGoogleMapsSearchUrl } from "@/lib/delivery"
+import { AdminUnassignDriverButton } from "@/components/orders/admin-unassign-driver-button"
+import { DeliveryAssignmentPanel, type DriverOption } from "@/components/delivery/delivery-assignment-panel"
 
 type CustomerInfo = {
   name?: string
@@ -52,6 +55,13 @@ export type OrderDetailsSheetOrder = {
   discountAmount: number
   total: number
   notes: string | null
+  couponCode: string | null
+  coupon: {
+    code: string
+    name: string
+    type: string
+    value: number
+  } | null
   transferCode: string | null
   createdAtLabel: string
   paidAtLabel: string | null
@@ -76,6 +86,24 @@ export type OrderDetailsSheetOrder = {
     stripePaymentIntentId: string | null
     stripeRefundId: string | null
   } | null
+  delivery?: {
+    id?: string
+    driverId?: string | null
+    status: string
+    method: string
+    formattedAddress: string | null
+    lat: number | null
+    lng: number | null
+    notes: string | null
+    driver: {
+      id?: string
+      name: string
+      phone: string | null
+      plate: string
+      licenseNumber: string
+      status: string
+    } | null
+  } | null
   items: OrderDetailsItem[]
 }
 
@@ -84,19 +112,25 @@ export type OrderDetailsSheetProps = {
   trigger: ReactNode
   mode?: "admin" | "dashboard"
   storeSlug?: string
+  drivers?: DriverOption[]
 }
 
-export function OrderDetailsSheet({ order, trigger, mode = "admin", storeSlug }: OrderDetailsSheetProps) {
+export function OrderDetailsSheet({ order, trigger, mode = "admin", storeSlug, drivers = [] }: OrderDetailsSheetProps) {
   const paymentLabel = PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS] ?? order.paymentMethod
   const transferReference = buildTransferReference(
     order.store.transferReferencePrefix,
     order.store.transferReferenceExtra
   )
+  const mapsUrl = order.delivery ? buildGoogleMapsSearchUrl(order.delivery) : null
   const showDashboardActions = mode === "dashboard" && storeSlug
   const canRefund = showDashboardActions && order.paymentMethod === "STRIPE" && order.payment?.status === "SUCCEEDED"
   const customerName = order.customer?.name ?? order.customerInfo?.fullName ?? order.customerInfo?.name ?? "Sin nombre"
   const customerEmail = order.customer?.email ?? order.customerEmail ?? "Sin correo"
   const customerPhone = order.customer?.phone ?? order.customerInfo?.phone ?? null
+  const deliveryStoreSlug = storeSlug ?? order.store.slug
+  const canManageDelivery =
+    Boolean(order.delivery?.id && typeof order.delivery?.driverId !== "undefined" && drivers.length > 0) &&
+    (mode === "admin" || mode === "dashboard")
 
   return (
     <Sheet>
@@ -117,6 +151,7 @@ export function OrderDetailsSheet({ order, trigger, mode = "admin", storeSlug }:
             <OrderStatusBadge status={order.status} />
             <Badge variant="outline">{paymentLabel}</Badge>
             {order.paidAtLabel && <Badge variant="secondary">Pagado {order.paidAtLabel}</Badge>}
+            {order.couponCode && <Badge variant="secondary">Cupón {order.couponCode}</Badge>}
           </div>
 
           {showDashboardActions && (
@@ -206,6 +241,36 @@ export function OrderDetailsSheet({ order, trigger, mode = "admin", storeSlug }:
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Pedido</p>
+              <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <p className="font-mono text-foreground">#{order.id}</p>
+                <p>Creado: {order.createdAtLabel}</p>
+                {order.paidAtLabel && <p>Pagado: {order.paidAtLabel}</p>}
+              </div>
+            </div>
+            <div className="rounded-2xl border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Promoción</p>
+              <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                {order.coupon ? (
+                  <>
+                    <p className="text-foreground">{order.coupon.name}</p>
+                    <p>Código: {order.coupon.code}</p>
+                    <p>Descuento: - {formatPrice(order.discountAmount)}</p>
+                  </>
+                ) : order.couponCode ? (
+                  <>
+                    <p>Código: {order.couponCode}</p>
+                    <p>Descuento: - {formatPrice(order.discountAmount)}</p>
+                  </>
+                ) : (
+                  <p>Sin cupón aplicado</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border bg-card p-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Cliente</p>
               <p className="mt-2 font-medium">{customerName}</p>
               <p className="text-sm text-muted-foreground">{customerEmail}</p>
@@ -253,6 +318,87 @@ export function OrderDetailsSheet({ order, trigger, mode = "admin", storeSlug }:
               </div>
             </div>
           </div>
+
+          {order.delivery && (
+            <div className="rounded-2xl border bg-card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Delivery</p>
+                <div className="flex gap-2">
+                  <Badge variant="outline">{DELIVERY_STATUS_LABELS[order.delivery.status as keyof typeof DELIVERY_STATUS_LABELS] ?? order.delivery.status}</Badge>
+                  <Badge variant="secondary">{formatDeliveryMethodLabel(order.delivery.method)}</Badge>
+                </div>
+              </div>
+              <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+                {order.delivery.formattedAddress ? <p>{order.delivery.formattedAddress}</p> : <p>Sin dirección registrada</p>}
+                {order.delivery.lat !== null && order.delivery.lng !== null && (
+                  <p className="font-mono text-xs">{order.delivery.lat.toFixed(6)}, {order.delivery.lng.toFixed(6)}</p>
+                )}
+                {mapsUrl && (
+                  <Button asChild variant="outline" size="sm" className="w-fit">
+                    <a href={mapsUrl} target="_blank" rel="noreferrer">Abrir en Google Maps</a>
+                  </Button>
+                )}
+                {order.delivery.notes && (
+                  <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+                    <p className="text-xs font-medium text-foreground">Contexto adicional</p>
+                    <p className="text-xs text-muted-foreground">{order.delivery.notes}</p>
+                  </div>
+                )}
+                {order.delivery.driver && (
+                  <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+                    <div>
+                      <p className="text-xs font-medium text-foreground">Repartidor asignado</p>
+                      <p>{order.delivery.driver.name} - {DRIVER_STATUS_LABELS[order.delivery.driver.status as keyof typeof DRIVER_STATUS_LABELS] ?? order.delivery.driver.status}</p>
+                    </div>
+                    {order.delivery.driver.phone && <p>{order.delivery.driver.phone}</p>}
+                    {mode === "admin" && !canManageDelivery && <AdminUnassignDriverButton orderId={order.id} />}
+                  </div>
+                )}
+                {!order.delivery.driver && (
+                  <div className="rounded-lg border bg-muted/40 p-3">
+                    <p className="text-xs font-medium text-foreground">Sin repartidor asignado</p>
+                    <p className="text-xs text-muted-foreground">Este pedido vuelve a aparecer como pendiente en Delivery.</p>
+                  </div>
+                )}
+                {order.delivery.driver?.plate && <p>Placa: {order.delivery.driver.plate}</p>}
+                {order.delivery.driver?.licenseNumber && <p>Licencia: {order.delivery.driver.licenseNumber}</p>}
+                {canManageDelivery && order.delivery.id && typeof order.delivery.driverId !== "undefined" && (
+                  <DeliveryAssignmentPanel
+                    storeSlug={deliveryStoreSlug}
+                    delivery={{
+                      id: order.delivery.id,
+                      status: order.delivery.status,
+                      formattedAddress: order.delivery.formattedAddress,
+                      lat: order.delivery.lat,
+                      lng: order.delivery.lng,
+                      notes: order.delivery.notes,
+                      driverId: order.delivery.driverId,
+                      driver: order.delivery.driver?.id
+                        ? {
+                            id: order.delivery.driver.id,
+                            name: order.delivery.driver.name,
+                            phone: order.delivery.driver.phone ?? "",
+                            plate: order.delivery.driver.plate,
+                            licenseNumber: order.delivery.driver.licenseNumber,
+                            status: order.delivery.driver.status as DriverOption["status"],
+                          }
+                        : null,
+                      order: {
+                        id: order.id,
+                        total: order.total,
+                        customerEmail: order.customerEmail,
+                        customer: {
+                          name: customerName,
+                          phone: customerPhone,
+                        },
+                      },
+                    }}
+                    drivers={drivers}
+                  />
+                )}
+              </div>
+            </div>
+          )}
 
           {order.notes && (
             <div className="rounded-2xl border bg-card p-4">

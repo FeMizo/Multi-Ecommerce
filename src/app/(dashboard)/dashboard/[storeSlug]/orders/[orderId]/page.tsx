@@ -6,6 +6,8 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getEffectivePlan } from "@/lib/plan-limits"
 import { formatPrice } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { OrderStatusUpdater } from "@/components/dashboard/order-status-updater"
@@ -15,6 +17,7 @@ import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
 import { buildTransferReference } from "@/lib/transfer-details"
 import { formatVariantSelection } from "@/lib/product-variants"
+import { DELIVERY_STATUS_LABELS, formatDeliveryMethodLabel, buildGoogleMapsSearchUrl } from "@/lib/delivery"
 
 type CustomerInfo = {
   name?: string
@@ -45,6 +48,33 @@ export default async function OrderDetailPage({
         include: { product: { select: { name: true, images: true, slug: true } } },
       },
       payment: { select: { status: true, stripePaymentIntentId: true } },
+      coupon: {
+        select: {
+          code: true,
+          name: true,
+          type: true,
+          value: true,
+        },
+      },
+      delivery: {
+        select: {
+          status: true,
+          method: true,
+          formattedAddress: true,
+          lat: true,
+          lng: true,
+          notes: true,
+            driver: {
+              select: {
+                name: true,
+                phone: true,
+                plate: true,
+                licenseNumber: true,
+                status: true,
+              },
+            },
+        },
+      },
       store: {
         select: {
           transferAccountName: true,
@@ -60,6 +90,13 @@ export default async function OrderDetailPage({
   if (!order) notFound()
 
   const customerInfo = order.customerInfo as CustomerInfo
+  const mapsUrl = order.delivery
+    ? buildGoogleMapsSearchUrl({
+        formattedAddress: order.delivery.formattedAddress,
+        lat: order.delivery.lat,
+        lng: order.delivery.lng,
+      })
+    : null
 
   return (
     <div className="space-y-6">
@@ -148,6 +185,12 @@ export default async function OrderDetailPage({
                     <span>{formatPrice(order.platformFee)}</span>
                   </div>
                 )}
+                {order.discountAmount > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Descuento</span>
+                    <span>- {formatPrice(order.discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-base pt-1 border-t">
                   <span>Total</span>
                   <span>{formatPrice(order.total)}</span>
@@ -155,6 +198,48 @@ export default async function OrderDetailPage({
               </div>
             </CardContent>
             </Card>
+
+          {order.delivery && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Entrega</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">
+                    {DELIVERY_STATUS_LABELS[order.delivery.status as keyof typeof DELIVERY_STATUS_LABELS] ?? order.delivery.status}
+                  </Badge>
+                  <Badge variant="secondary">{formatDeliveryMethodLabel(order.delivery.method)}</Badge>
+                </div>
+                <div className="space-y-1">
+                  {order.delivery.formattedAddress ? (
+                    <p className="text-muted-foreground">{order.delivery.formattedAddress}</p>
+                  ) : (
+                    <p className="text-muted-foreground">Sin dirección registrada</p>
+                  )}
+                  {order.delivery.lat !== null && order.delivery.lng !== null && (
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {order.delivery.lat.toFixed(6)}, {order.delivery.lng.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+                {mapsUrl && (
+                  <Button asChild variant="outline" size="sm" className="w-fit">
+                    <a href={mapsUrl} target="_blank" rel="noreferrer">
+                      Abrir en Google Maps
+                    </a>
+                  </Button>
+                )}
+                {order.delivery.notes && (
+                  <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+                    <p className="text-xs font-medium text-foreground">Contexto adicional</p>
+                    <p className="text-xs text-muted-foreground">{order.delivery.notes}</p>
+                  </div>
+                )}
+                {order.delivery.driver && <p className="text-muted-foreground">Repartidor: {order.delivery.driver.name}</p>}
+              </CardContent>
+            </Card>
+          )}
 
           {order.notes && (
             <Card>
