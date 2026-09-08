@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getDuplicateVariantNames, normalizeVariantOptions, sumVariantQuantities } from "@/lib/product-variants"
-import { productUpdateSchema } from "@/lib/schemas"
+import { productStatusUpdateSchema, productUpdateSchema } from "@/lib/schemas"
 
 async function getMembership(userId: string, storeSlug: string) {
   return db.storeMember.findFirst({
@@ -32,6 +32,25 @@ export async function PATCH(
   if (!product) return NextResponse.json({ message: "Producto no encontrado" }, { status: 404 })
 
   const body = await req.json()
+  if (
+    body &&
+    typeof body === "object" &&
+    Object.keys(body).length === 1 &&
+    Object.prototype.hasOwnProperty.call(body, "status")
+  ) {
+    const statusParsed = productStatusUpdateSchema.safeParse(body)
+    if (!statusParsed.success) {
+      return NextResponse.json({ message: statusParsed.error.issues[0].message }, { status: 422 })
+    }
+
+    const updated = await db.product.update({
+      where: { id: productId },
+      data: { status: statusParsed.data.status },
+    })
+
+    return NextResponse.json({ id: updated.id, slug: updated.slug })
+  }
+
   const parsed = productUpdateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })

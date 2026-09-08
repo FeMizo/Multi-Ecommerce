@@ -95,3 +95,6 @@ export const productCreateSchema = productSchema.extend({
 
 export const productUpdateSchema = productSchema
 
+export const productStatusUpdateSchema = z.object({
+  status: z.enum(["DRAFT", "ACTIVE", "PAUSED"]),
+})
