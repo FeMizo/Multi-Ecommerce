@@ -1,3 +1,5 @@
+import socialMarketingConfig from "@/config/social-marketing.json"
+
 export const SOCIAL_CHANNELS = ["FACEBOOK", "INSTAGRAM"] as const
 
 export type SocialChannel = (typeof SOCIAL_CHANNELS)[number]
@@ -21,16 +23,17 @@ export type SocialCampaign = {
   destinationUrl: string
   layout?: "sales" | "style"
   styleVariant?: "monday" | "friday"
+  contentPillar?: "seller" | "shopping" | "questions"
 }
 
-export const DEFAULT_SOCIAL_DESTINATION = "https://shop.aionsite.com.mx"
+export const DEFAULT_SOCIAL_DESTINATION = socialMarketingConfig.brand.canonicalUrl
 export const DEFAULT_SOCIAL_ASSET_BASE_URL = (
   process.env.APP_URL?.trim() ||
   process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-  "https://aionsite.com.mx"
+  socialMarketingConfig.brand.assetBaseUrl
 ).replace(/\/$/, "")
 
-export const SOCIAL_TOPICS: SocialTopic[] = [
+const LEGACY_SOCIAL_TOPICS: SocialTopic[] = [
   {
     id: "launch",
     label: "Lanzamiento",
@@ -163,7 +166,7 @@ export const SOCIAL_TOPICS: SocialTopic[] = [
   },
 ]
 
-export const SOCIAL_THEME_ROTATION = [
+const LEGACY_SOCIAL_THEME_ROTATION = [
   "launch",
   "featured",
   "store",
@@ -177,13 +180,17 @@ export const SOCIAL_THEME_ROTATION = [
   "community",
 ] as const
 
-export const SOCIAL_STYLE_ROTATION = [
+const LEGACY_SOCIAL_STYLE_ROTATION = [
   "brand",
   "showcase",
   "featured",
   "trust",
   "community",
 ] as const
+
+export const SOCIAL_TOPICS = socialMarketingConfig.topics as SocialTopic[]
+export const SOCIAL_THEME_ROTATION = socialMarketingConfig.rotations.sales
+export const SOCIAL_STYLE_ROTATION = socialMarketingConfig.rotations.style
 
 export function getSocialTopic(topicId: string) {
   return SOCIAL_TOPICS.find((topic) => topic.id === topicId) ?? SOCIAL_TOPICS[0]
@@ -203,6 +210,20 @@ export function normalizeChannels(value: unknown): SocialChannel[] {
 
 export function requiresImage(channels: SocialChannel[]) {
   return channels.includes("INSTAGRAM")
+}
+
+type ContentPillar = (typeof socialMarketingConfig.contentMix)[number]
+
+function pickContentPillar(): ContentPillar {
+  const total = socialMarketingConfig.contentMix.reduce((sum, pillar) => sum + pillar.weight, 0)
+  let cursor = Math.random() * total
+
+  for (const pillar of socialMarketingConfig.contentMix) {
+    cursor -= pillar.weight
+    if (cursor < 0) return pillar
+  }
+
+  return socialMarketingConfig.contentMix[0]
 }
 
 function pad(value: number) {
@@ -266,7 +287,8 @@ function buildBrandIconGroup(x: number, y: number, size: number, accent = "#f05f
 }
 
 export function buildScheduledSocialCampaign(date = new Date()): SocialCampaign {
-  const topicId = SOCIAL_THEME_ROTATION[Math.floor(Math.random() * SOCIAL_THEME_ROTATION.length)]
+  const pillar = pickContentPillar()
+  const topicId = pillar.topics[Math.floor(Math.random() * pillar.topics.length)]
   const topic = getSocialTopic(topicId)
 
   const titleByTopic: Record<string, string> = {
@@ -311,13 +333,14 @@ export function buildScheduledSocialCampaign(date = new Date()): SocialCampaign 
     community: "Un solo sitio para apoyar lo local",
   }
 
-  const title = titleByTopic[topicId] ?? titleByTopic.launch
-  const imageHeadline = headlineByTopic[topicId] ?? headlineByTopic.launch
-  const imageSubheadline = subheadlineByTopic[topicId] ?? subheadlineByTopic.launch
+  const title = socialMarketingConfig.campaignText.salesTitles[topicId as keyof typeof socialMarketingConfig.campaignText.salesTitles] ?? socialMarketingConfig.campaignText.salesTitles.launch
+  const imageHeadline = pillar.imageHooks[Math.floor(Math.random() * pillar.imageHooks.length)]
+  const imageSubheadline = socialMarketingConfig.campaignText.salesSubheadlines[topicId as keyof typeof socialMarketingConfig.campaignText.salesSubheadlines] ?? socialMarketingConfig.campaignText.salesSubheadlines.launch
 
-  const imageFooter = "Multi Shop by AionSite"
+  const imageFooter = socialMarketingConfig.campaignText.footer
   const destinationUrl = DEFAULT_SOCIAL_DESTINATION
-  const caption = `${buildSocialCopy(topicId, Math.floor(Math.random() * topic.copy.length), destinationUrl)}\n\nMulti Shop by AionSite\n${destinationUrl}`
+  const hook = pillar.hooks[Math.floor(Math.random() * pillar.hooks.length)]
+  const caption = `${hook}\n\n${buildSocialCopy(topicId, Math.floor(Math.random() * topic.copy.length), destinationUrl)}\n\nMulti Shop by AionSite\n${destinationUrl}`
 
   const stamp = `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}-${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}`
 
@@ -332,6 +355,7 @@ export function buildScheduledSocialCampaign(date = new Date()): SocialCampaign 
     imageFileName: `promo-${topic.id}-${stamp}.png`,
     destinationUrl,
     layout: "sales",
+    contentPillar: pillar.id as SocialCampaign["contentPillar"],
   }
 }
 
@@ -342,18 +366,18 @@ export function buildScheduledStyleCampaign(date = new Date()): SocialCampaign {
   const topic = getSocialTopic(topicId)
 
   const title = styleVariant === "monday"
-    ? "Lunes de marca local"
-    : "Viernes de escaparate local"
+    ? socialMarketingConfig.campaignText.style.mondayTitle
+    : socialMarketingConfig.campaignText.style.fridayTitle
 
   const imageHeadline = styleVariant === "monday"
-    ? "Compra local"
-    : "Multi Shop"
+    ? socialMarketingConfig.campaignText.style.mondayHeadline
+    : socialMarketingConfig.campaignText.style.fridayHeadline
 
   const imageSubheadline = styleVariant === "monday"
-    ? "en un solo lugar"
-    : "de AionSite"
+    ? socialMarketingConfig.campaignText.style.mondaySubheadline
+    : socialMarketingConfig.campaignText.style.fridaySubheadline
 
-  const imageFooter = "Multi Shop by AionSite"
+  const imageFooter = socialMarketingConfig.campaignText.footer
   const destinationUrl = DEFAULT_SOCIAL_DESTINATION
   const caption = `${buildSocialCopy(topicId, Math.floor(Math.random() * topic.copy.length), destinationUrl)}\n\nMulti Shop by AionSite\n${destinationUrl}`
   const stamp = `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}-${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}`

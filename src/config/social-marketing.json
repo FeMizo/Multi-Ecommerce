@@ -1,0 +1,131 @@
+{
+  "brand": {
+    "name": "AionSite Shop",
+    "displayName": "Multi Shop de AionSite",
+    "canonicalUrl": "https://shop.aionsite.com.mx",
+    "assetBaseUrl": "https://aionsite.com.mx",
+    "positioning": "Marketplace local para descubrir tiendas, productos y ofertas en un solo lugar."
+  },
+  "channels": ["FACEBOOK", "INSTAGRAM"],
+  "contentMix": [
+    {
+      "id": "seller",
+      "label": "Vendedores",
+      "weight": 50,
+      "topics": ["launch", "store", "new", "product", "service", "trust"],
+      "hooks": ["¿Tus productos todavía solo se venden por WhatsApp?", "Tus productos merecen llegar más lejos.", "Tu negocio ya existe. Ahora hazlo visible.", "Crea un catálogo que trabaje por ti.", "Haz que tu negocio se vea profesional."],
+      "imageHooks": ["Vende en línea", "Haz visible tu negocio", "Crea tu catálogo", "Llega a más clientes", "Muestra tus productos"],
+      "visualGuidance": "Persona emprendedora mostrando productos, celular con tienda en línea, catálogo visual y CTA para crear tienda."
+    },
+    {
+      "id": "shopping",
+      "label": "Compras locales",
+      "weight": 30,
+      "topics": ["launch", "featured", "store", "new", "offer", "seasonal", "product", "top", "community"],
+      "hooks": ["Compra local en un solo lugar.", "Descubre tiendas cerca de ti.", "Más opciones locales, menos vueltas.", "Tu próxima compra puede estar en tu ciudad."],
+      "imageHooks": ["Compra local", "Descubre opciones", "Encuentra lo que buscas"],
+      "visualGuidance": "Productos variados, escaparate local, bolsas de compra, categorías y señales de cercanía."
+    },
+    {
+      "id": "questions",
+      "label": "Preguntas frecuentes",
+      "weight": 20,
+      "topics": ["trust", "service", "launch"],
+      "hooks": ["¿Cómo creo mi tienda en línea?", "¿Cuánto cuesta vender en Multi Shop?", "¿Qué productos puedo mostrar?", "¿Puedo vender desde Ciudad del Carmen?"],
+      "imageHooks": ["¿Cómo crear tu tienda?", "¿Cuánto cuesta vender?", "¿Qué puedes mostrar?"],
+      "visualGuidance": "Diseño tipo pregunta y respuesta, texto grande, pocos elementos y CTA para visitar el sitio."
+    }
+  ],
+  "contentRules": {
+    "primaryAudience": "vendedores locales",
+    "location": "Ciudad del Carmen",
+    "excludedThemes": ["testimonios", "detras de camaras"],
+    "requiredDestinationUrl": "https://shop.aionsite.com.mx",
+    "localHashtags": ["#Carmen", "#CdCarmen", "#CiudadDelCarmen", "#Campeche", "#ComprasLocales", "#EmprendedoresCarmen"]
+  },
+  "faqs": [
+    { "question": "¿Cómo puedo crear mi tienda en línea?", "answer": "Regístrate en shop.aionsite.com.mx, elige un plan y agrega los datos, imágenes, precios y productos de tu negocio." },
+    { "question": "¿Cuánto cuesta vender en la plataforma?", "answer": "Hay planes desde $50 MXN al mes. La comisión por venta directa depende del plan y va de 3% a 0%." },
+    { "question": "¿Qué tipo de productos se pueden mostrar?", "answer": "Puedes mostrar productos y servicios de categorías como alimentos, ropa, electrónica, hogar, artesanías, mascotas, deportes y papelería." }
+  ],
+  "topics": [
+    { "id": "launch", "label": "Lanzamiento", "description": "Anuncio de presencia y descubrimiento local.", "copy": ["Compra local en un solo lugar. Entra a shop.aionsite.com.mx.", "Ya esta listo tu mercado local: shop.aionsite.com.mx.", "Descubre tiendas y ofertas cercanas en shop.aionsite.com.mx."] },
+    { "id": "brand", "label": "Marca", "description": "Posts de estilo y presencia visual.", "copy": ["Multi Shop de AionSite: compra local en un solo lugar.", "Una marca para descubrir lo local en shop.aionsite.com.mx.", "Tu escaparate local con identidad propia en shop.aionsite.com.mx."] },
+    { "id": "showcase", "label": "Escaparate", "description": "Presentación visual de la propuesta.", "copy": ["Tu escaparate local, más claro y más visual.", "Una forma simple de ver lo local en shop.aionsite.com.mx.", "Productos, tiendas y comunidad reunidos en un solo estilo."] },
+    { "id": "featured", "label": "Destacado", "description": "Resalta una selección principal o tienda estrella.", "copy": ["Hoy destaca una opción local en shop.aionsite.com.mx.", "Encuentra lo mejor de tu zona en shop.aionsite.com.mx.", "Una selección local para comprar mejor en shop.aionsite.com.mx."] },
+    { "id": "store", "label": "Tienda destacada", "description": "Para mostrar tiendas y opciones cercanas.", "copy": ["Apoya tiendas locales y compara opciones en shop.aionsite.com.mx.", "Tu proxima compra local puede estar en shop.aionsite.com.mx.", "Explora marcas cercanas en un solo sitio: shop.aionsite.com.mx."] },
+    { "id": "new", "label": "Novedad", "description": "Anuncia productos o tiendas recién agregadas.", "copy": ["Nuevas opciones locales ya están en shop.aionsite.com.mx.", "Revisa lo nuevo de tu zona en shop.aionsite.com.mx.", "Llegaron más productos locales a shop.aionsite.com.mx."] },
+    { "id": "offer", "label": "Oferta", "description": "Promociones y descuentos con enfoque local.", "copy": ["Encuentra ofertas locales y compra con confianza en shop.aionsite.com.mx.", "Mas opciones, menos vueltas: shop.aionsite.com.mx.", "Las mejores ofertas locales te esperan en shop.aionsite.com.mx."] },
+    { "id": "seasonal", "label": "Temporada", "description": "Contenido ligado a temporada o momento del mes.", "copy": ["Aprovecha la temporada con shop.aionsite.com.mx.", "Ideas locales para esta semana en shop.aionsite.com.mx.", "Tu compra de temporada empieza en shop.aionsite.com.mx."] },
+    { "id": "product", "label": "Producto", "description": "Para destacar un producto puntual.", "copy": ["Descubre productos utiles y cercanos en shop.aionsite.com.mx.", "Un solo sitio para comparar productos locales: shop.aionsite.com.mx.", "Compra mejor con opciones locales en shop.aionsite.com.mx."] },
+    { "id": "top", "label": "Top ventas", "description": "Para lo más vendido o lo más buscado.", "copy": ["Lo más buscado de tu zona está en shop.aionsite.com.mx.", "Los favoritos locales te esperan en shop.aionsite.com.mx.", "Descubre lo más vendido en shop.aionsite.com.mx."] },
+    { "id": "trust", "label": "Confianza", "description": "Enfatiza seguridad y cercania.", "copy": ["Compra con calma: tiendas, productos y ofertas en shop.aionsite.com.mx.", "Mas claridad para comprar local: shop.aionsite.com.mx.", "Tu comunidad compra mejor en shop.aionsite.com.mx."] },
+    { "id": "service", "label": "Servicio", "description": "Enfatiza atención, contacto y acompañamiento.", "copy": ["Compra local con mejor atención en shop.aionsite.com.mx.", "Más confianza para comprar en shop.aionsite.com.mx.", "Encuentra opciones con apoyo local en shop.aionsite.com.mx."] },
+    { "id": "community", "label": "Comunidad", "description": "Apoyo a negocios locales.", "copy": ["Apoya lo local y descubre opciones cercanas en shop.aionsite.com.mx.", "La comunidad local compra mejor en shop.aionsite.com.mx.", "Todo tu mercado local reunido en shop.aionsite.com.mx."] }
+  ],
+  "rotations": {
+    "sales": ["launch", "featured", "store", "new", "offer", "seasonal", "product", "top", "trust", "service", "community"],
+    "style": ["brand", "showcase", "featured", "trust", "community"]
+  },
+  "campaignText": {
+    "salesTitles": {
+      "launch": "Compra local en un solo lugar", "featured": "Descubre lo destacado de hoy", "store": "Explora tiendas locales", "new": "Novedades locales disponibles", "offer": "Compra con ofertas locales", "seasonal": "Aprovecha la temporada", "product": "Compra productos locales", "top": "Los favoritos de tu zona", "trust": "Compra con más confianza", "service": "Mejor atención local", "community": "Apoya negocios cercanos"
+    },
+    "salesHeadlines": {
+      "launch": "Compra local", "featured": "Destacado local", "store": "Tiendas cercanas", "new": "Nuevas opciones", "offer": "Ofertas locales", "seasonal": "Temporada local", "product": "Producto local", "top": "Top ventas", "trust": "Compra segura", "service": "Mejor atención", "community": "Apoya lo local"
+    },
+    "salesSubheadlines": {
+      "launch": "Tiendas, productos y ofertas en un solo sitio", "featured": "Una selección lista para descubrir", "store": "Comparar nunca fue tan fácil", "new": "Lo nuevo de tu zona en un solo lugar", "offer": "Promociones para comprar hoy", "seasonal": "Compra pensando en la temporada", "product": "Encuentra opciones útiles y cercanas", "top": "Lo más buscado de tu zona", "trust": "Más claridad para comprar local", "service": "Compra con acompañamiento local", "community": "Un solo sitio para apoyar lo local"
+    },
+    "footer": "Multi Shop by AionSite",
+    "style": {
+      "mondayTitle": "Lunes de marca local", "fridayTitle": "Viernes de escaparate local", "mondayHeadline": "Compra local", "fridayHeadline": "Multi Shop", "mondaySubheadline": "en un solo lugar", "fridaySubheadline": "de AionSite"
+    }
+  },
+  "palette": {
+    "cream": "#fffdf8", "creamBackground": "#fff8ef", "orange": "#f05f1d", "orangeDark": "#d84912", "brown": "#5a2a13", "olive": "#a5ba76", "oliveDark": "#668052"
+  },
+  "marketingKit": {
+    "linkTargets": [
+      { "label": "Inicio", "href": "https://shop.aionsite.com.mx/" },
+      { "label": "Tiendas", "href": "https://shop.aionsite.com.mx/stores" },
+      { "label": "Productos", "href": "https://shop.aionsite.com.mx/search" },
+      { "label": "Ofertas", "href": "https://shop.aionsite.com.mx/offers" },
+      { "label": "Categorías", "href": "https://shop.aionsite.com.mx/categories" }
+    ],
+    "bios": [
+      { "platform": "Facebook Page", "text": "Marketplace local de AionSite Shop. Tiendas, productos y ofertas en shop.aionsite.com.mx." },
+      { "platform": "Instagram", "text": "Compra local en un solo lugar. Descubre tiendas y ofertas en shop.aionsite.com.mx." }
+    ],
+    "snippets": {
+      "groups": [
+        { "label": "Grupo corto", "text": "Compra local desde un solo lugar. Entra a shop.aionsite.com.mx y descubre tiendas, productos y ofertas cerca de ti." },
+        { "label": "Grupo con CTA", "text": "Ya puedes explorar tiendas y productos en shop.aionsite.com.mx. Entra, compara y compra local desde un solo lugar." },
+        { "label": "Grupo de lanzamiento", "text": "Lanzamos shop.aionsite.com.mx para reunir tiendas, productos y ofertas locales en un solo sitio. Entra y revisa lo que hay cerca de ti." }
+      ],
+      "facebook": [
+        { "label": "Post principal", "text": "AionSite Shop ya está listo para ayudarte a comprar local en un solo lugar. Descubre tiendas, productos y ofertas en shop.aionsite.com.mx." },
+        { "label": "Post con beneficio", "text": "Menos vueltas, más opciones locales. Entra a shop.aionsite.com.mx y encuentra tiendas, productos y ofertas cerca de ti." }
+      ],
+      "instagram": [
+        { "label": "Caption breve", "text": "Compra local en un solo lugar. Descubre tiendas, productos y ofertas en shop.aionsite.com.mx. #AionSiteShop #CompraLocal #Mexico" },
+        { "label": "Caption lanzamiento", "text": "Hoy lanzamos una forma más simple de descubrir opciones locales. Entra a shop.aionsite.com.mx y revisa tiendas, productos y ofertas cerca de ti. #AionSiteShop #ShopLocal #CompraLocal" }
+      ]
+    },
+    "creativeIdeas": [
+      "Vendedores (50%): problema concreto, producto real, solución y CTA para crear una tienda.",
+      "Compras locales (30%): productos, tiendas, ofertas y categorías cercanas.",
+      "Preguntas frecuentes (20%): costos, creación de tienda, productos permitidos y funcionamiento."
+    ],
+    "checklist": [
+      "Crear la Facebook Page con el nombre AionSite Shop.",
+      "Crear el Instagram profesional con el mismo nombre o uno muy cercano.",
+      "Poner shop.aionsite.com.mx como sitio web principal en ambos perfiles.",
+      "Usar el mismo logo, colores y tono en portada, bio y destacados.",
+      "Publicar primero un post fijado con enlace al sitio.",
+      "Probar el enlace desde móvil antes de compartir en grupos.",
+      "Revisar reglas de cada grupo local antes de publicar.",
+      "Guardar cada copy usado para reutilizar versiones futuras."
+    ]
+  }
+}
