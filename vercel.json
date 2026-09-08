@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/internal/social-publish-due",
-      "schedule": "0 17 * * 2,4"
-    }
-  ]
-}
+{}
