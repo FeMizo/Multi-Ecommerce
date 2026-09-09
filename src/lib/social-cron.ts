@@ -47,6 +47,7 @@ export async function publishUploadedSocialPromotion(input: {
   destinationUrl?: string
   imageFileName: string
   imageBuffer: Buffer
+  placement?: "FEED" | "STORIES"
 }) {
   const now = input.now ?? new Date()
   const created = await db.socialPost.create({
@@ -71,6 +72,7 @@ export async function publishUploadedSocialPromotion(input: {
       channels: input.channels,
       imageUrl: upload.publicUrl,
       destinationUrl: input.destinationUrl,
+      placement: input.placement,
     })
 
     const finalPost = await db.socialPost.findUniqueOrThrow({ where: { id: created.id } })

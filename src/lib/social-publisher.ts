@@ -6,6 +6,7 @@ type PublishInput = {
   channels: SocialChannel[]
   imageUrl?: string | null
   destinationUrl?: string | null
+  placement?: "FEED" | "STORIES"
 }
 
 type PublishResult = {
@@ -115,6 +116,25 @@ export async function publishFacebookPagePost({ caption, imageUrl, destinationUr
   return { facebookPostId: typeof data.id === "string" ? data.id : null }
 }
 
+async function publishFacebookPageStory({ imageUrl }: PublishInput): Promise<PublishResult> {
+  const { pageId, pageAccessToken } = requireMetaEnv()
+  if (!imageUrl?.trim()) throw new Error("Facebook Story requiere una imagen publica")
+
+  const photo = await postGraph(`${pageId}/photos`, pageAccessToken, new URLSearchParams({
+    url: imageUrl.trim(),
+    published: "false",
+    access_token: pageAccessToken,
+  }))
+  const photoId = typeof photo.id === "string" ? photo.id : null
+  if (!photoId) throw new Error("No se pudo preparar la imagen para Facebook Story")
+
+  const story = await postGraph(`${pageId}/photo_stories`, pageAccessToken, new URLSearchParams({
+    photo_id: photoId,
+    access_token: pageAccessToken,
+  }))
+  return { facebookPostId: typeof story.id === "string" ? story.id : photoId }
+}
+
 export async function publishInstagramPost({ caption, imageUrl }: PublishInput): Promise<PublishResult> {
   const { igUserId, pageAccessToken } = requireMetaEnv()
   const publicImageUrl = imageUrl?.trim()
@@ -144,12 +164,34 @@ export async function publishInstagramPost({ caption, imageUrl }: PublishInput):
   return { instagramMediaId: typeof published.id === "string" ? published.id : null }
 }
 
+async function publishInstagramStory({ imageUrl }: PublishInput): Promise<PublishResult> {
+  const { igUserId, pageAccessToken } = requireMetaEnv()
+  const publicImageUrl = imageUrl?.trim()
+  if (!publicImageUrl) throw new Error("Instagram Story requiere una imagen publica")
+
+  const creation = await postGraph(`${igUserId}/media`, pageAccessToken, new URLSearchParams({
+    image_url: publicImageUrl,
+    media_type: "STORIES",
+    access_token: pageAccessToken,
+  }))
+  const creationId = typeof creation.id === "string" ? creation.id : null
+  if (!creationId) throw new Error("No se pudo crear el contenedor de Instagram Story")
+
+  await waitForInstagramContainer(creationId, pageAccessToken)
+  const published = await postGraph(`${igUserId}/media_publish`, pageAccessToken, new URLSearchParams({
+    creation_id: creationId,
+    access_token: pageAccessToken,
+  }))
+  return { instagramMediaId: typeof published.id === "string" ? published.id : null }
+}
+
 export async function publishSocialPost(post: {
   id: string
   caption: string
   channels: SocialChannel[]
   imageUrl?: string | null
   destinationUrl?: string | null
+  placement?: "FEED" | "STORIES"
 }) {
   if (requiresImage(post.channels) && !post.imageUrl?.trim()) {
     throw new Error("Instagram requiere imagen para publicar")
@@ -160,7 +202,9 @@ export async function publishSocialPost(post: {
 
   if (post.channels.includes("FACEBOOK")) {
     try {
-      const facebook = await publishFacebookPagePost(post)
+      const facebook = post.placement === "STORIES"
+        ? await publishFacebookPageStory(post)
+        : await publishFacebookPagePost(post)
       result.facebookPostId = facebook.facebookPostId ?? null
     } catch (error) {
       failures.push(error instanceof Error ? error.message : "No se pudo publicar en Facebook")
@@ -169,7 +213,9 @@ export async function publishSocialPost(post: {
 
   if (post.channels.includes("INSTAGRAM")) {
     try {
-      const instagram = await publishInstagramPost(post)
+      const instagram = post.placement === "STORIES"
+        ? await publishInstagramStory(post)
+        : await publishInstagramPost(post)
       result.instagramMediaId = instagram.instagramMediaId ?? null
     } catch (error) {
       failures.push(error instanceof Error ? error.message : "No se pudo publicar en Instagram")

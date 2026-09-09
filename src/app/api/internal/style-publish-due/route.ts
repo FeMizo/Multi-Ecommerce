@@ -52,6 +52,7 @@ async function publish(req: Request) {
       destinationUrl: String(form.get("destinationUrl") ?? "https://shop.aionsite.com.mx"),
       imageFileName: filename,
       imageBuffer,
+      placement: String(form.get("placement") ?? "FEED").toUpperCase() === "STORIES" ? "STORIES" : "FEED",
     })
 
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
