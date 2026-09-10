@@ -49,7 +49,6 @@ async function getFeaturedProducts() {
   return db.product.findMany({
     where: {
       status: "ACTIVE",
-      featured: true,
       store: { isActive: true, deletedAt: null },
     },
     include: { store: { select: { name: true, primaryColor: true } }, category: true },
@@ -412,7 +411,7 @@ export default async function HomePage() {
                   <Sparkles className="mr-1 h-3 w-3" />
                   Productos seleccionados
                 </Badge>
-                <h2 className="editorial-title text-4xl md:text-5xl">Productos destacados</h2>
+                <h2 className="editorial-title text-4xl md:text-5xl">Productos</h2>
               </div>
               <MorphLink
                 href="/search"
