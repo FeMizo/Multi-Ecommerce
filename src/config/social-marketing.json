@@ -12,9 +12,9 @@
       "id": "seller",
       "label": "Vendedores",
       "weight": 50,
-      "topics": ["launch", "store", "new", "product", "service", "trust"],
-      "hooks": ["¿Tus productos todavía solo se venden por WhatsApp?", "Tus productos merecen llegar más lejos.", "Tu negocio ya existe. Ahora hazlo visible.", "Crea un catálogo que trabaje por ti.", "Haz que tu negocio se vea profesional."],
-      "imageHooks": ["Vende en línea", "Haz visible tu negocio", "Crea tu catálogo", "Llega a más clientes", "Muestra tus productos"],
+      "topics": ["launch", "store", "new", "product", "service", "trust", "concrete-problem", "consistency", "cta"],
+      "hooks": ["¿Tus productos todavía solo se venden por WhatsApp?", "Tus productos merecen llegar más lejos.", "Tu negocio ya existe. Ahora hazlo visible.", "Crea un catálogo que trabaje por ti.", "Haz que tu negocio se vea profesional.", "No hables solo de tu negocio: muestra qué problema resuelves.", "Publicar con un ritmo claro ayuda a que te recuerden.", "Una publicación funciona mejor cuando indica el siguiente paso."],
+      "imageHooks": ["Vende en línea", "Haz visible tu negocio", "Crea tu catálogo", "Llega a más clientes", "Muestra tus productos", "Resuelve un problema concreto", "Publica con constancia", "Dile qué hacer"],
       "visualGuidance": "Persona emprendedora mostrando productos, celular con tienda en línea, catálogo visual y CTA para crear tienda."
     },
     {
@@ -61,7 +61,10 @@
     { "id": "top", "label": "Top ventas", "description": "Para lo más vendido o lo más buscado.", "copy": ["Lo más buscado de tu zona está en shop.aionsite.com.mx.", "Los favoritos locales te esperan en shop.aionsite.com.mx.", "Descubre lo más vendido en shop.aionsite.com.mx."] },
     { "id": "trust", "label": "Confianza", "description": "Enfatiza seguridad y cercania.", "copy": ["Compra con calma: tiendas, productos y ofertas en shop.aionsite.com.mx.", "Mas claridad para comprar local: shop.aionsite.com.mx.", "Tu comunidad compra mejor en shop.aionsite.com.mx."] },
     { "id": "service", "label": "Servicio", "description": "Enfatiza atención, contacto y acompañamiento.", "copy": ["Compra local con mejor atención en shop.aionsite.com.mx.", "Más confianza para comprar en shop.aionsite.com.mx.", "Encuentra opciones con apoyo local en shop.aionsite.com.mx."] },
-    { "id": "community", "label": "Comunidad", "description": "Apoyo a negocios locales.", "copy": ["Apoya lo local y descubre opciones cercanas en shop.aionsite.com.mx.", "La comunidad local compra mejor en shop.aionsite.com.mx.", "Todo tu mercado local reunido en shop.aionsite.com.mx."] }
+    { "id": "community", "label": "Comunidad", "description": "Apoyo a negocios locales.", "copy": ["Apoya lo local y descubre opciones cercanas en shop.aionsite.com.mx.", "La comunidad local compra mejor en shop.aionsite.com.mx.", "Todo tu mercado local reunido en shop.aionsite.com.mx."] },
+    { "id": "concrete-problem", "label": "Problema concreto", "description": "Explica cómo el negocio resuelve una necesidad específica.", "copy": ["No digas solo qué vendes: explica qué problema ayudas a resolver.", "Muestra una necesidad concreta y presenta tu producto como solución.", "Tu cliente conecta más cuando entiende cómo puedes ayudarle."] },
+    { "id": "consistency", "label": "Constancia", "description": "Promueve un ritmo sostenible de publicación.", "copy": ["No necesitas publicar todos los días: elige dos o tres y mantén el ritmo.", "La constancia vale más que publicar mucho una sola semana.", "Elige tus días, organiza tus ideas y mantén presencia local."] },
+    { "id": "cta", "label": "Llamada a la acción", "description": "Indica con claridad el siguiente paso para el cliente.", "copy": ["Dile exactamente qué hacer: escríbenos por WhatsApp, visita la página o pide cotización.", "Una buena publicación termina con un siguiente paso claro.", "Invita a tu cliente a contactarte, visitar tu página o pedir una cotización."] }
   ],
   "rotations": {
     "sales": ["launch", "featured", "store", "new", "offer", "seasonal", "product", "top", "trust", "service", "community"],
@@ -69,13 +72,13 @@
   },
   "campaignText": {
     "salesTitles": {
-      "launch": "Compra local en un solo lugar", "featured": "Descubre lo destacado de hoy", "store": "Explora tiendas locales", "new": "Novedades locales disponibles", "offer": "Compra con ofertas locales", "seasonal": "Aprovecha la temporada", "product": "Compra productos locales", "top": "Los favoritos de tu zona", "trust": "Compra con más confianza", "service": "Mejor atención local", "community": "Apoya negocios cercanos"
+      "launch": "Compra local en un solo lugar", "featured": "Descubre lo destacado de hoy", "store": "Explora tiendas locales", "new": "Novedades locales disponibles", "offer": "Compra con ofertas locales", "seasonal": "Aprovecha la temporada", "product": "Compra productos locales", "top": "Los favoritos de tu zona", "trust": "Compra con más confianza", "service": "Mejor atención local", "community": "Apoya negocios cercanos", "concrete-problem": "Resuelve una necesidad concreta", "consistency": "Publica con constancia", "cta": "Dile a tu cliente qué hacer"
     },
     "salesHeadlines": {
-      "launch": "Compra local", "featured": "Destacado local", "store": "Tiendas cercanas", "new": "Nuevas opciones", "offer": "Ofertas locales", "seasonal": "Temporada local", "product": "Producto local", "top": "Top ventas", "trust": "Compra segura", "service": "Mejor atención", "community": "Apoya lo local"
+      "launch": "Compra local", "featured": "Destacado local", "store": "Tiendas cercanas", "new": "Nuevas opciones", "offer": "Ofertas locales", "seasonal": "Temporada local", "product": "Producto local", "top": "Top ventas", "trust": "Compra segura", "service": "Mejor atención", "community": "Apoya lo local", "concrete-problem": "Resuelve un problema", "consistency": "Mantén el ritmo", "cta": "Indica el siguiente paso"
     },
     "salesSubheadlines": {
-      "launch": "Tiendas, productos y ofertas en un solo sitio", "featured": "Una selección lista para descubrir", "store": "Comparar nunca fue tan fácil", "new": "Lo nuevo de tu zona en un solo lugar", "offer": "Promociones para comprar hoy", "seasonal": "Compra pensando en la temporada", "product": "Encuentra opciones útiles y cercanas", "top": "Lo más buscado de tu zona", "trust": "Más claridad para comprar local", "service": "Compra con acompañamiento local", "community": "Un solo sitio para apoyar lo local"
+      "launch": "Tiendas, productos y ofertas en un solo sitio", "featured": "Una selección lista para descubrir", "store": "Comparar nunca fue tan fácil", "new": "Lo nuevo de tu zona en un solo lugar", "offer": "Promociones para comprar hoy", "seasonal": "Compra pensando en la temporada", "product": "Encuentra opciones útiles y cercanas", "top": "Lo más buscado de tu zona", "trust": "Más claridad para comprar local", "service": "Compra con acompañamiento local", "community": "Un solo sitio para apoyar lo local", "concrete-problem": "Explica cómo ayudas a tu cliente", "consistency": "Dos o tres días pueden bastar", "cta": "WhatsApp, página o cotización"
     },
     "footer": "Multi Shop by AionSite",
     "style": {
