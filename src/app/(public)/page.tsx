@@ -163,7 +163,7 @@ async function getHomeStats() {
 const highlights = [
   "Compra protegida",
   "Tiendas verificadas",
-  "Catálogo local curado",
+  "Catálogo local selecto",
   "Soporte por WhatsApp",
 ]
 
@@ -218,7 +218,7 @@ export default async function HomePage() {
                   Compra local con una experiencia que se siente top.
                 </h1>
                 <p className="max-w-2xl text-lg leading-8 text-muted-foreground md:text-xl">
-                  Un marketplace curado para descubrir productos, comparar tiendas y comprar con más confianza.
+                  Un marketplace selecto para descubrir productos, comparar tiendas y comprar con más confianza.
                 </p>
               </div>
 
@@ -278,7 +278,7 @@ export default async function HomePage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Confianza</p>
-                      <p className="mt-1 text-2xl font-semibold">Tiendas verificadas y catálogo curado</p>
+                      <p className="mt-1 text-2xl font-semibold">Tiendas verificadas y catálogo selecto</p>
                     </div>
                     <div className="hidden sm:flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
                       <Shield className="h-7 w-7" />
@@ -410,7 +410,7 @@ export default async function HomePage() {
               <div>
                 <Badge variant="secondary" className="mb-3 bg-primary/10 text-primary border-0">
                   <Sparkles className="mr-1 h-3 w-3" />
-                  Selección curada
+                  Productos seleccionados
                 </Badge>
                 <h2 className="editorial-title text-4xl md:text-5xl">Productos destacados</h2>
               </div>

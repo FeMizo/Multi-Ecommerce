@@ -12,6 +12,7 @@ type SearchParams = {
   category?: string
   min?: string
   max?: string
+  availability?: "available" | "out-of-stock"
   page?: string
 }
 
@@ -63,8 +64,8 @@ export function SearchForm({ initialParams }: { initialParams: SearchParams }) {
   }
 
   return (
-    <form key={initialParams.q ?? ""} onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <div className="relative flex-1">
+    <form key={initialParams.q ?? ""} onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row flex-wrap sm:items-center">
+      <div className="relative flex-1 w-full">
         <MorphIcon
           icon={MorphSearch}
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -83,6 +84,24 @@ export function SearchForm({ initialParams }: { initialParams: SearchParams }) {
           </button>
         )}
       </div>
+      <select
+        name="availability"
+        value={searchParams.get("availability") ?? ""}
+        onChange={(event) => {
+          const params = new URLSearchParams(searchParams.toString())
+          const availability = event.target.value
+          if (availability) params.set("availability", availability)
+          else params.delete("availability")
+          params.delete("page")
+          startTransition(() => router.replace(`/search?${params.toString()}`))
+        }}
+        className="h-10 rounded-full border border-input bg-background px-4 text-sm"
+        aria-label="Filtrar disponibilidad"
+      >
+        <option value="">Disponibilidad</option>
+        <option value="available">Disponibles</option>
+        <option value="out-of-stock">Agotados</option>
+      </select>
       <Button type="submit" className="sm:w-auto">
         Buscar
       </Button>

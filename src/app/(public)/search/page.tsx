@@ -1,12 +1,13 @@
 import Link from "next/link"
 import type { Metadata } from "next"
-import { ArrowRight, Filter, PackageSearch, Sparkles, Store, X } from "lucide-react"
+import { ArrowRight, Filter, PackageSearch, Sparkles, X } from "lucide-react"
 import { db } from "@/lib/db"
 import { ProductCard } from "@/components/products/product-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { buildKeywords } from "@/lib/seo"
 import { SearchForm } from "@/components/public/search-form"
+import { normalizeVariantOptions } from "@/lib/product-variants"
 
 export const metadata: Metadata = {
   title: "Productos",
@@ -19,7 +20,21 @@ export const metadata: Metadata = {
   },
 }
 
-type SearchParams = { q?: string; category?: string; min?: string; max?: string; page?: string }
+type SearchParams = { q?: string; category?: string; min?: string; max?: string; availability?: "available" | "out-of-stock"; page?: string }
+
+function isProductAvailable(product: { manageStock: boolean; stock: number; variantOptions: unknown }) {
+  if (!product.manageStock) return true
+  const options = normalizeVariantOptions(product.variantOptions ?? [])
+  if (!options.length) return product.stock > 0
+
+  const hasVariantQuantities = options.some((option) => option.values.some((value) => value.quantity !== null && value.quantity !== undefined))
+  if (!hasVariantQuantities) return product.stock > 0
+
+  return options.every((option) => {
+    const quantities = option.values.map((value) => value.quantity).filter((quantity): quantity is number => typeof quantity === "number")
+    return quantities.length === 0 || quantities.some((quantity) => quantity > 0)
+  })
+}
 
 async function searchProducts(params: SearchParams) {
   const page = Number(params.page ?? 1)
@@ -40,24 +55,50 @@ async function searchProducts(params: SearchParams) {
     }
   }
 
-  const [products, total] = await Promise.all([
-    db.product.findMany({
-      where,
+  const availabilityFilter = params.availability
+  const shouldFilterAvailability = availabilityFilter === "available" || availabilityFilter === "out-of-stock"
+  const availabilityWhere = shouldFilterAvailability ? { ...where } : where
+
+  const allProducts = await db.product.findMany({
+      where: availabilityWhere,
       include: { store: { select: { name: true, primaryColor: true, slug: true } }, category: true },
-      take,
-      skip,
       orderBy: { createdAt: "desc" },
-    }),
-    db.product.count({ where }),
-  ])
+    })
+  const filteredProducts = shouldFilterAvailability
+    ? allProducts.filter((product) => isProductAvailable(product) === (availabilityFilter === "available"))
+    : allProducts
+  const products = filteredProducts.slice(skip, skip + take)
+  const total = filteredProducts.length
 
   return { products, total, page, pages: Math.ceil(total / take) }
 }
 
 async function getCategories() {
   return db.category.findMany({
-    where: { active: true, parentId: null },
-    include: { _count: { select: { products: true } } },
+    where: {
+      active: true,
+      parentId: null,
+      products: {
+        some: {
+          status: "ACTIVE",
+          deletedAt: null,
+          store: { isActive: true, deletedAt: null },
+        },
+      },
+    },
+    include: {
+      _count: {
+        select: {
+          products: {
+            where: {
+              status: "ACTIVE",
+              deletedAt: null,
+              store: { isActive: true, deletedAt: null },
+            },
+          },
+        },
+      },
+    },
     orderBy: { name: "asc" },
   })
 }
@@ -93,7 +134,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               </Badge>
               <h1 className="editorial-title text-4xl md:text-5xl">Encuentra lo correcto, más rápido.</h1>
               <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
-                Filtra por producto, categoría y rango. El catálogo está curado para que el usuario llegue antes a la compra.
+                Filtra por producto, categoría y rango. El catálogo está seleccionado para que el usuario llegue antes a la compra.
               </p>
             </div>
 
@@ -178,6 +219,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                       <Link href={buildUrl({ ...params, category: undefined, page: undefined })} aria-label="Quitar categoría">
                         <X className="h-3.5 w-3.5" />
                       </Link>
+                    </Badge>
+                  )}
+                  {params.availability && (
+                    <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary border-0">
+                      {params.availability === "available" ? "Disponibles" : "Agotados"}
                     </Badge>
                   )}
                   <Badge variant="secondary" className="rounded-full bg-muted text-muted-foreground border-0">

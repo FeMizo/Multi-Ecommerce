@@ -41,7 +41,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus?: boolean; submitLabel?: string }) {
   const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -60,7 +59,7 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
 
     startTransition(() => {
       const qs = params.toString()
-      router.replace(`${pathname}${qs ? `?${qs}` : ""}`)
+      router.replace(`/search${qs ? `?${qs}` : ""}`)
     })
   }
 
