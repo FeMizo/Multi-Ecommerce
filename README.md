@@ -89,7 +89,8 @@ Eventos requeridos: `checkout.session.completed`, `checkout.session.async_paymen
 | Comando | Descripción |
 |---------|-------------|
 | `npm run dev` | Dev server (puerto 1500) |
-| `npm run build` | Generate Prisma + migrate + build |
+| `npm run build` | Generate Prisma + build |
+| `npm run db:migrate` | Apply production migrations |
 | `npm run start` | Servidor producción |
 | `npm run lint` | ESLint |
 | `npm run db:push` | Sync schema (solo dev) |
@@ -113,7 +114,7 @@ Eventos requeridos: `checkout.session.completed`, `checkout.session.async_paymen
 1. Conectar repo a Vercel
 2. PostgreSQL managed (Vercel Postgres o Neon)
 3. Configurar todas las env vars de `.env.example`
-4. Build: `prisma generate && prisma migrate deploy && next build --webpack`
+4. Build: `prisma generate && next build --webpack`
 5. Webhook Stripe apuntando a `https://tudominio.com/api/webhooks/stripe`
 6. Google OAuth redirect: `https://tudominio.com/api/auth/callback/google`
 7. Usar exclusivamente `sk_live_...` y `pk_live_...`; el runtime rechaza claves test bajo `NODE_ENV=production`

@@ -14,7 +14,7 @@ Marketplace multi-tenant (México, MXN). Vendedores = `StoreMember` con rol `OWN
 
 - **Moneda:** siempre MXN (`formatPrice` en `src/lib/utils.ts`, checkout Stripe `currency: "mxn"`)
 - **Puerto dev:** 1500 (`npm run dev`)
-- **Auth:** NextAuth v5 JWT en `src/lib/auth.ts`; middleware en `src/middleware.ts`
+- **Auth:** NextAuth v5 JWT en `src/lib/auth.ts`; proxy en `src/proxy.ts`
 - **DB:** Prisma client en `src/lib/db.ts`; migraciones en `prisma/migrations/`
 - **Pagos:** Stripe en `src/lib/stripe.ts`; webhook en `src/app/api/webhooks/stripe/route.ts`
 - **Límites de plan:** helper en `src/lib/plan-limits.ts`
@@ -30,7 +30,7 @@ Marketplace multi-tenant (México, MXN). Vendedores = `StoreMember` con rol `OWN
 ## Archivos clave
 
 - Schema: `prisma/schema.prisma`
-- Auth: `src/lib/auth.ts`, `src/middleware.ts`
+- Auth: `src/lib/auth.ts`, `src/proxy.ts`
 - Stripe: `src/lib/stripe.ts`, `src/app/api/checkout/route.ts`
 - Connect: `src/app/api/stores/[storeSlug]/stripe/`
 - Emails: `src/lib/email.ts`

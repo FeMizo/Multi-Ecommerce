@@ -3,9 +3,11 @@
   "version": "1.2.20",
   "packageManager": "pnpm@9.15.5",
   "private": true,
+  "engines": { "node": ">=22" },
   "scripts": {
     "dev": "next dev --port 1500",
-    "build": "prisma generate && prisma migrate deploy && next build --webpack",
+    "build": "prisma generate && next build --webpack",
+    "db:migrate": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",

@@ -20,6 +20,7 @@ import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from
 import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
 import { DELIVERY_METHODS } from "@/lib/delivery"
 import { createLogger, serializeError } from "@/lib/observability"
+import { checkRateLimit, getClientAddress } from "@/lib/rate-limit"
 
 const logger = createLogger("checkout")
 
@@ -88,6 +89,8 @@ async function loadCoupon(storeId: string, code: string) {
 }
 
 export async function POST(req: Request) {
+  const rate = checkRateLimit(`checkout:${getClientAddress(req)}`, 20, 10 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ message: "Demasiadas solicitudes" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } })
   const session = await auth()
 
   try {

@@ -3,12 +3,15 @@ import { db } from "@/lib/db"
 import { z } from "zod"
 import crypto from "crypto"
 import { sendPasswordResetEmail } from "@/lib/email"
+import { checkRateLimit, getClientAddress } from "@/lib/rate-limit"
 
 const schema = z.object({
   email: z.string().email(),
 })
 
 export async function POST(req: Request) {
+  const rate = checkRateLimit(`forgot-password:${getClientAddress(req)}`, 3, 15 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ success: true }, { headers: { "Retry-After": String(rate.retryAfter) } })
   const body = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {

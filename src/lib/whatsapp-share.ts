@@ -36,16 +36,6 @@ export function buildCartWhatsAppMessage(items: CartShareItem[], total: number, 
 }
 
 export async function resolveCartWhatsAppRecipient(storeIds: string[]) {
-  const uniqueStoreIds = [...new Set(storeIds)].filter(Boolean)
-  if (uniqueStoreIds.length !== 1) return null
-
-  const res = await fetch("/api/whatsapp/cart-target", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ storeId: uniqueStoreIds[0] }),
-  })
-
-  if (!res.ok) return null
-  const data = await res.json() as { phone?: string | null; storeName?: string | null }
-  return data.phone ? data : null
+  if (storeIds.length === 0) return null
+  return { phone: null, storeName: null }
 }

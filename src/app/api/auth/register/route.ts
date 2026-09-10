@@ -4,6 +4,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { sendWelcomeEmail } from "@/lib/email"
 import { buildDriverEmail, normalizeDriverPhone } from "@/lib/delivery"
+import { checkRateLimit, getClientAddress } from "@/lib/rate-limit"
 
 const accountTypes = ["SELLER", "RIDER", "BUYER"] as const
 
@@ -29,6 +30,8 @@ const riderSchema = z.object({
 const schema = z.discriminatedUnion("accountType", [sellerBuyerSchema, riderSchema])
 
 export async function POST(req: Request) {
+  const rate = checkRateLimit(`register:${getClientAddress(req)}`, 5, 15 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ message: "Demasiadas solicitudes" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } })
   const body = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ message: "Datos invalidos" }, { status: 400 })

@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState, type DragEvent } from "react"
+import { useState, type DragEvent } from "react"
 import { ArrowRight as MorphArrowRight, GripVertical as MorphGripVertical, Minus as MorphMinus, Plus as MorphPlus, ShoppingCart as MorphShoppingCart, SquareArrowOutUpRight as MorphArrowOutUpRight, X as MorphX } from "lucide"
 import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 import { Button } from "@/components/ui/button"
@@ -15,46 +15,20 @@ import {
 import { useCartStore } from "@/stores/cart"
 import { formatPrice } from "@/lib/utils"
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/placeholders"
-import { buildCartWhatsAppMessage, buildWhatsAppChatUrl, resolveCartWhatsAppRecipient } from "@/lib/whatsapp-share"
+import { buildCartWhatsAppMessage, buildWhatsAppShareUrl } from "@/lib/whatsapp-share"
 import { formatVariantSelection } from "@/lib/product-variants"
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, moveItemRelative, total } = useCartStore()
-  const [whatsappPhone, setWhatsappPhone] = useState<string | null>(null)
-  const [whatsappLoading, setWhatsappLoading] = useState(false)
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null)
   const [dropHint, setDropHint] = useState<{ id: string; position: "before" | "after" } | null>(null)
   const [exploreHovered, setExploreHovered] = useState(false)
   const [checkoutHovered, setCheckoutHovered] = useState(false)
 
-  useEffect(() => {
-    let active = true
-
-    async function loadRecipient() {
-      if (items.length === 0) {
-        setWhatsappPhone(null)
-        return
-      }
-
-      setWhatsappLoading(true)
-      const recipient = await resolveCartWhatsAppRecipient(items.map((item) => item.storeId))
-      if (!active) return
-      setWhatsappPhone(recipient?.phone ?? null)
-      setWhatsappLoading(false)
-    }
-
-    loadRecipient()
-
-    return () => {
-      active = false
-    }
-  }, [items])
-
   async function shareCartByWhatsApp() {
-    if (!whatsappPhone) return
     const message = buildCartWhatsAppMessage(items, total(), formatPrice)
     const popup = window.open("about:blank", "_blank")
-    const url = buildWhatsAppChatUrl(whatsappPhone, message)
+    const url = buildWhatsAppShareUrl(message)
     if (popup) {
       popup.location.href = url
       popup.opener = null
@@ -273,19 +247,9 @@ export function CartDrawer() {
                     />
                   </Link>
                 </Button>
-                {whatsappLoading || whatsappPhone ? (
-                  <div className="space-y-2">
-                    {whatsappLoading ? (
-                      <Button type="button" variant="outline" className="w-full h-11 rounded-xl" disabled>
-                        Verificando WhatsApp...
-                      </Button>
-                    ) : (
-                      <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={shareCartByWhatsApp}>
-                        Enviar por WhatsApp
-                      </Button>
-                    )}
-                  </div>
-                ) : null}
+                <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={shareCartByWhatsApp}>
+                  Compartir carrito por WhatsApp
+                </Button>
                 <Button variant="outline" className="w-full h-11 rounded-xl" onClick={closeCart} asChild>
                   <Link href="/cart">Ver carrito completo</Link>
                 </Button>

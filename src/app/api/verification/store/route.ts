@@ -1,8 +1,11 @@
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { checkRateLimit, getClientAddress } from "@/lib/rate-limit"
 
 export async function GET(req: NextRequest) {
+  const rate = checkRateLimit(`store-verification:${getClientAddress(req)}`, 10, 15 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ message: "Demasiadas solicitudes" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } })
   const url = new URL(req.url)
   const storeId = url.searchParams.get("storeId")
   const token = url.searchParams.get("token")

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { z } from "zod"
 import crypto from "crypto"
+import { checkRateLimit, getClientAddress } from "@/lib/rate-limit"
 
 const schema = z.object({
   token: z.string().min(1),
@@ -10,6 +11,8 @@ const schema = z.object({
 })
 
 export async function POST(req: Request) {
+  const rate = checkRateLimit(`reset-password:${getClientAddress(req)}`, 5, 15 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ message: "Demasiadas solicitudes" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } })
   const body = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {
