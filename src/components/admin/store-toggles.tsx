@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -16,10 +16,6 @@ export function StoreToggles({ storeId, isActive, isVerified }: Props) {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    setActiveState(isActive)
-  }, [isActive])
-
   async function updateVisibility(nextIsActive: boolean) {
     setVisibilityLoading(true)
     try {
@@ -30,8 +26,8 @@ export function StoreToggles({ storeId, isActive, isVerified }: Props) {
       })
       if (!res.ok) { toast.error("Error al actualizar"); return }
 
-      const updatedStore = await res.json()
-      setActiveState(typeof updatedStore.isActive === "boolean" ? updatedStore.isActive : nextIsActive)
+      await res.json()
+      setActiveState(nextIsActive)
       router.refresh()
     } finally {
       setVisibilityLoading(false)

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm, useWatch, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -83,7 +83,7 @@ export function ProspectEditorForm({
   const schema = useMemo(() => prospectCreateSchema, [])
   const endpoint = mode === "create" ? "/api/admin/prospects" : `/api/admin/prospects/${prospectId}`
   const { register, handleSubmit, control, formState: { errors }, setValue } = useForm<ProspectFormValues>({
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema) as Resolver<ProspectFormValues>,
     defaultValues: {
       businessName: "",
       city: "",
