@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import {
+  publishGeneratedSocialPromotion,
   publishUploadedSocialPromotion,
   runStylePromotionCron,
   runStylePromotionCronInternal,
@@ -55,6 +56,21 @@ async function publish(req: Request) {
       placement: String(form.get("placement") ?? "FEED").toUpperCase() === "STORIES" ? "STORIES" : "FEED",
     })
 
+    return NextResponse.json(result, { status: result.ok ? 200 : 500 })
+  }
+
+  if (req.method === "POST" && req.headers.get("content-type")?.includes("application/json")) {
+    const body = await req.json() as {
+      channels?: unknown
+      placement?: unknown
+      layout?: unknown
+    }
+    const channels = Array.isArray(body.channels)
+      ? body.channels.filter((channel): channel is SocialChannel => channel === "FACEBOOK" || channel === "INSTAGRAM")
+      : undefined
+    const placement = body.placement === "STORIES" ? "STORIES" : "FEED"
+    const layout = body.layout === "style" ? "style" : "sales"
+    const result = await publishGeneratedSocialPromotion({ channels, placement, layout })
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   }
 

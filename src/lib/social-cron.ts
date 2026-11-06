@@ -99,6 +99,35 @@ export async function publishUploadedSocialPromotion(input: {
   }
 }
 
+export async function publishGeneratedSocialPromotion(input: {
+  now?: Date
+  channels?: SocialChannel[]
+  placement?: "FEED" | "STORIES"
+  layout?: "sales" | "style"
+}) {
+  const now = input.now ?? new Date()
+  const campaign = input.layout === "style"
+    ? buildScheduledStyleCampaign(now)
+    : buildScheduledSocialCampaign(now)
+  const customCampaign = {
+    ...campaign,
+    channels: input.channels?.length ? input.channels : campaign.channels,
+    imageFileName: campaign.imageFileName.replace(/^style-/, input.layout === "style" ? "style-" : "promo-").replace(/\.png$/, `-${input.placement?.toLowerCase() ?? "feed"}.png`),
+  }
+
+  return publishUploadedSocialPromotion({
+    now,
+    title: customCampaign.title,
+    topicId: customCampaign.topicId,
+    channels: customCampaign.channels,
+    caption: customCampaign.caption,
+    destinationUrl: customCampaign.destinationUrl,
+    imageFileName: customCampaign.imageFileName,
+    imageBuffer: await renderSocialImageBuffer(customCampaign),
+    placement: input.placement ?? "FEED",
+  })
+}
+
 export async function runSocialPromotionCron(now = new Date()) {
   return runSocialPromotionCronInternal(now, false)
 }
