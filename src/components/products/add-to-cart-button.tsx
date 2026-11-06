@@ -37,14 +37,15 @@ export function AddToCartButton({ product }: Props) {
   const [initialized] = useState(() => defaultVariantSelection(variantOptions))
   const currentSelection = selected.length > 0 ? selected : initialized
   const stockLimit = product.manageStock
-    ? (getVariantQuantityLimit(variantOptions, currentSelection) ?? product.stock)
+    ? Math.min(getVariantQuantityLimit(variantOptions, currentSelection) ?? product.stock, product.stock)
     : 30
-  const maxQty = stockLimit
+  const maxQty = Math.max(0, stockLimit)
+  const effectiveQty = Math.min(qty, maxQty)
 
   function handleAdd() {
-    if (qty < 1) return
+    if (!canAdd || effectiveQty < 1) return
     const variantKey = variantSelectionKey(currentSelection)
-    for (let i = 0; i < qty; i++) {
+    for (let i = 0; i < effectiveQty; i++) {
       addItem({
         id: `${product.id}:${variantKey}`,
         variantKey,
@@ -68,17 +69,16 @@ export function AddToCartButton({ product }: Props) {
         <div className="space-y-3">
           {variantOptions.map((option, index) => (
             <div key={option.name} className="space-y-1">
-              <label className="text-sm font-medium">{option.name}</label>
+              <label htmlFor={`${product.id}-variant-${index}`} className="text-sm font-medium">{option.name}</label>
               <select
+                id={`${product.id}-variant-${index}`}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={currentSelection[index]?.value ?? option.values[0]?.value ?? ""}
                 onChange={(event) => {
                   const value = event.target.value
-                  setSelected((prev) => {
-                    const next = [...prev]
-                    next[index] = { name: option.name, value }
-                    return next
-                  })
+                  const next = [...currentSelection]
+                  next[index] = { name: option.name, value }
+                  setSelected(next)
                 }}
               >
                 {option.values.map((value) => (
@@ -102,16 +102,18 @@ export function AddToCartButton({ product }: Props) {
         <div className="flex items-center border rounded-md">
           <button
             type="button"
-            onClick={() => setQty((q) => Math.max(0, q - 1))}
+            onClick={() => setQty(Math.max(1, effectiveQty - 1))}
+            disabled={effectiveQty <= 1}
             className="h-9 w-9 flex items-center justify-center hover:bg-accent rounded-l-md"
             aria-label="Disminuir cantidad"
           >
             <Minus className="h-4 w-4" />
           </button>
-          <span className="h-9 w-10 flex items-center justify-center text-sm font-medium">{qty}</span>
+          <span aria-live="polite" className="h-9 w-10 flex items-center justify-center text-sm font-medium">{effectiveQty}</span>
           <button
             type="button"
-            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+            onClick={() => setQty(Math.min(maxQty, effectiveQty + 1))}
+            disabled={effectiveQty >= maxQty}
             className="h-9 w-9 flex items-center justify-center hover:bg-accent rounded-r-md"
             aria-label="Aumentar cantidad"
           >
@@ -119,7 +121,7 @@ export function AddToCartButton({ product }: Props) {
           </button>
         </div>
       </div>
-      <Button size="lg" className="w-full" onClick={handleAdd} disabled={!canAdd || qty < 1}>
+      <Button size="lg" className="w-full" onClick={handleAdd} disabled={!canAdd || effectiveQty < 1}>
         <ShoppingCart className="mr-2 h-5 w-5" />
         {product.manageStock && stockLimit === 0 ? "Sin stock" : "Agregar al carrito"}
       </Button>

@@ -59,13 +59,15 @@ export const useCartStore = create<CartStore>()(
         }),
       removeItem: (itemId) =>
         set((state) => ({ items: state.items.filter((i) => i.id !== itemId) })),
-      updateQuantity: (itemId, quantity) =>
+      updateQuantity: (itemId, quantity) => {
+        if (!Number.isSafeInteger(quantity) || quantity < 0) return
         set((state) => ({
           items:
             quantity === 0
               ? state.items.filter((i) => i.id !== itemId)
               : state.items.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
-        })),
+        }))
+      },
       moveItemRelative: (itemId, targetId, position) =>
         set((state) => {
           const sourceIndex = state.items.findIndex((item) => item.id === itemId)
@@ -100,10 +102,20 @@ export const useCartStore = create<CartStore>()(
     {
       name: "cart-store",
       version: 2,
+      merge: (persistedState, currentState) => {
+        if (persistedState === undefined) return currentState
+        const state = persistedState as Partial<CartStore> | null
+        return {
+          ...currentState,
+          items: Array.isArray(state?.items)
+            ? state.items.filter((item) => item && typeof item === "object" && Number.isSafeInteger(item.quantity) && item.quantity > 0)
+            : [],
+        }
+      },
       migrate: (persistedState) => {
         const state = persistedState as Partial<CartStore> & { items?: Partial<CartItem>[] } | undefined
         return {
-          items: (state?.items ?? []).map((item) => ({
+          items: (Array.isArray(state?.items) ? state.items : []).filter((item) => item && typeof item === "object").map((item) => ({
             id: item.id ?? item.productId ?? crypto.randomUUID(),
             productId: item.productId ?? item.id ?? crypto.randomUUID(),
             storeId: item.storeId ?? "",
