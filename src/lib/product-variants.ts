@@ -89,6 +89,12 @@ export function formatVariantSelection(selection: ProductVariantSelection[]) {
   return selection.map((entry) => `${entry.name}: ${entry.value}`).join(" · ")
 }
 
+export function productVariantIdentity(productId: string, selection: ProductVariantSelection[]) {
+  const entries = selection.map((entry) => [entry.name.trim().toLowerCase(), entry.value.trim().toLowerCase()])
+  entries.sort(([left], [right]) => left.localeCompare(right))
+  return JSON.stringify([productId, entries])
+}
+
 export function getDuplicateVariantNames(options: ProductVariantOption[]) {
   const seen = new Set<string>()
   const duplicates = new Set<string>()
@@ -106,13 +112,27 @@ export function getDuplicateVariantNames(options: ProductVariantOption[]) {
   return [...duplicates]
 }
 
+export function isValidVariantSelection(options: ProductVariantOption[], selection: unknown): selection is ProductVariantSelection[] {
+  if (!Array.isArray(selection) || selection.length !== options.length) return false
+  if (!selection.every((entry): entry is ProductVariantSelection =>
+    entry !== null && typeof entry === "object" && typeof entry.name === "string" && typeof entry.value === "string"
+  )) return false
+  const selectedNames = new Map(selection.map((entry) => [entry.name.trim().toLowerCase(), entry.value.trim().toLowerCase()]))
+  return selectedNames.size === options.length && options.every((option) =>
+    option.values.some((value) => value.value.trim().toLowerCase() === selectedNames.get(option.name.trim().toLowerCase()))
+  )
+}
+
 export function getVariantQuantityLimit(options: ProductVariantOption[], selection: ProductVariantSelection[]) {
+  if (!options.length) return null
+  if (!isValidVariantSelection(options, selection)) return 0
   const selectedNames = new Map(selection.map((entry) => [entry.name.trim().toLowerCase(), entry.value.trim().toLowerCase()]))
   const quantities = options
     .map((option) => {
       const selectedValue = selectedNames.get(option.name.trim().toLowerCase())
-      if (!selectedValue) return null
+      if (!selectedValue) return 0
       const match = option.values.find((value) => value.value.trim().toLowerCase() === selectedValue)
+      if (!match) return 0
       return normalizeQuantity(match?.quantity)
     })
     .filter((value): value is number => typeof value === "number")

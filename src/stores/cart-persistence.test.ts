@@ -44,6 +44,25 @@ test("restaura el carrito con almacenamiento sintético local", async (t) => {
       assert.equal(useCartStore.getState().total(), 200)
     })
 
+    await t.test("descarta artículos con precios o metadatos dañados conservando los válidos", async () => {
+      const invalid = [
+        { price: "100" }, { price: -1 }, { price: null }, { price: Number.MAX_VALUE },
+        { id: "" }, { productId: " " }, { storeId: null }, { name: {} }, { image: [] },
+        { storeName: false }, { variantKey: null }, { variantSelection: "M" },
+        { variantSelection: [null] }, { variantSelection: [{ name: "Talla", value: 1 }] },
+      ]
+      await restore({ items: [
+        ...invalid.map((fields) => ({ ...item, ...fields })),
+        { ...item, id: "product-b:default", storeId: "store-b", variantSelection: [{ name: "Talla", value: "M" }] },
+      ] })
+      assert.deepEqual(useCartStore.getState().items.map((entry) => entry.storeId), ["store-b"])
+      assert.equal(useCartStore.getState().total(), 200)
+      await useCartStore.persist.rehydrate()
+      assert.equal(useCartStore.getState().total(), 200)
+      useCartStore.getState().removeStoreItems("store-a")
+      assert.equal(useCartStore.getState().items.length, 1)
+    })
+
     await t.test("tolera colección inválida y conserva la migración de cantidades omitidas", async () => {
       await restore({ items: null })
       assert.deepEqual(useCartStore.getState().items, [])
@@ -51,6 +70,26 @@ test("restaura el carrito con almacenamiento sintético local", async (t) => {
       assert.equal(useCartStore.getState().items.length, 1)
       assert.equal(useCartStore.getState().items[0].quantity, 1)
       assert.equal(useCartStore.getState().total(), 100)
+    })
+
+    await t.test("migraciones antiguas no inventan precio ni identificadores ausentes", async () => {
+      for (const version of [0, 1]) {
+        await restore({ items: [
+          { ...item, price: undefined },
+          { ...item, price: null },
+          { ...item, id: undefined, productId: undefined },
+          { ...item, id: "legacy-id", productId: undefined, quantity: undefined },
+          { ...item, id: undefined, productId: "legacy-product", price: 0 },
+        ] }, version)
+        assert.deepEqual(useCartStore.getState().items.map((entry) => entry.id), ["legacy-id", "legacy-product"])
+        assert.equal(useCartStore.getState().items[0].productId, "legacy-id")
+        assert.equal(useCartStore.getState().items[0].quantity, 1)
+        assert.equal(useCartStore.getState().items[1].price, 0)
+        assert.equal(useCartStore.getState().total(), 100)
+        await useCartStore.persist.rehydrate()
+        assert.equal(useCartStore.getState().items.length, 2)
+        assert.equal(useCartStore.getState().total(), 100)
+      }
     })
 
     await t.test("una segunda recarga conserva cantidades válidas y permite eliminar por tienda", async () => {

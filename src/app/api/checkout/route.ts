@@ -17,7 +17,7 @@ import { generateTransferCode, PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/
 import { sendOrderReceivedEmail, sendSellerNewOrderEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from "@/lib/store-coupons"
-import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
+import { getVariantQuantityLimit, isValidVariantSelection, normalizeVariantOptions, productVariantIdentity } from "@/lib/product-variants"
 import { DELIVERY_METHODS } from "@/lib/delivery"
 import { createLogger, serializeError } from "@/lib/observability"
 import { checkRateLimit, getClientAddress } from "@/lib/rate-limit"
@@ -241,7 +241,7 @@ export async function POST(req: Request) {
           getEffectivePlan(storeId, tx),
         ])
         if (!orderLimit.ok) throw new Error(`ORDER_LIMIT:${orderLimit.count}:${orderLimit.max}`)
-        if (products.length !== items.length) throw new Error("PRODUCTS_UNAVAILABLE")
+        if (products.length !== new Set(items.map((item) => item.productId)).size) throw new Error("PRODUCTS_UNAVAILABLE")
 
         const subtotalCents = items.reduce((sum, item) => {
           const product = products.find((candidate) => candidate.id === item.productId)!
@@ -256,10 +256,15 @@ export async function POST(req: Request) {
         if (requestedCouponCode && !coupon) throw new Error("COUPON_NOT_FOUND")
         if (requestedCouponCode && discountAmount === 0) throw new Error("COUPON_INVALID")
 
+        const requestedVariants = new Set<string>()
         for (const item of items) {
           const product = products.find((candidate) => candidate.id === item.productId)!
-          if (!product.manageStock) continue
           const variantOptions = normalizeVariantOptions(product.variantOptions ?? [])
+          if (!isValidVariantSelection(variantOptions, item.variantSelection ?? [])) throw new Error("VARIANT_UNAVAILABLE")
+          const variantIdentity = productVariantIdentity(product.id, item.variantSelection ?? [])
+          if (requestedVariants.has(variantIdentity)) throw new Error("VARIANT_UNAVAILABLE")
+          requestedVariants.add(variantIdentity)
+          if (!product.manageStock) continue
           const variantLimit = getVariantQuantityLimit(variantOptions, item.variantSelection ?? [])
           const stockLimit = variantOptions.length > 0 && variantLimit !== null ? variantLimit : product.stock
           if (stockLimit < item.quantity) throw new Error("STOCK_UNAVAILABLE")
@@ -398,6 +403,9 @@ export async function POST(req: Request) {
       }
       if (error instanceof Error && error.message === "STOCK_UNAVAILABLE") {
         return NextResponse.json({ message: "Stock insuficiente" }, { status: 409 })
+      }
+      if (error instanceof Error && error.message === "VARIANT_UNAVAILABLE") {
+        return NextResponse.json({ message: "Revisa las opciones seleccionadas de tus productos" }, { status: 400 })
       }
       if (error instanceof Error && error.message === "COUPON_NOT_FOUND") {
         return NextResponse.json({ message: "El cupon no existe para esta tienda" }, { status: 409 })

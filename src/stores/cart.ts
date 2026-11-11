@@ -15,6 +15,21 @@ type CartItem = {
   variantSelection: ProductVariantSelection[]
 }
 
+function isPersistedCartItem(value: unknown): value is CartItem {
+  if (!value || typeof value !== "object") return false
+  const item = value as Partial<CartItem>
+  return [item.id, item.productId, item.storeId, item.variantKey].every((field) => typeof field === "string" && field.trim().length > 0)
+    && [item.name, item.image, item.storeName].every((field) => typeof field === "string")
+    && typeof item.quantity === "number" && Number.isSafeInteger(item.quantity) && item.quantity > 0
+    && typeof item.price === "number" && Number.isFinite(item.price) && item.price >= 0
+    && Number.isFinite(item.price * item.quantity)
+    && Array.isArray(item.variantSelection) && item.variantSelection.every((selection) =>
+      selection && typeof selection === "object"
+      && typeof selection.name === "string" && selection.name.trim().length > 0
+      && typeof selection.value === "string" && selection.value.trim().length > 0
+    )
+}
+
 interface CartStore {
   items: CartItem[]
   isOpen: boolean
@@ -108,7 +123,7 @@ export const useCartStore = create<CartStore>()(
         return {
           ...currentState,
           items: Array.isArray(state?.items)
-            ? state.items.filter((item) => item && typeof item === "object" && Number.isSafeInteger(item.quantity) && item.quantity > 0)
+            ? state.items.filter(isPersistedCartItem)
             : [],
         }
       },
@@ -116,17 +131,17 @@ export const useCartStore = create<CartStore>()(
         const state = persistedState as Partial<CartStore> & { items?: Partial<CartItem>[] } | undefined
         return {
           items: (Array.isArray(state?.items) ? state.items : []).filter((item) => item && typeof item === "object").map((item) => ({
-            id: item.id ?? item.productId ?? crypto.randomUUID(),
-            productId: item.productId ?? item.id ?? crypto.randomUUID(),
+            id: item.id ?? item.productId ?? "",
+            productId: item.productId ?? item.id ?? "",
             storeId: item.storeId ?? "",
             name: item.name ?? "",
-            price: item.price ?? 0,
+            price: item.price,
             image: item.image ?? "",
             quantity: item.quantity ?? 1,
             storeName: item.storeName ?? "",
             variantKey: item.variantKey ?? item.productId ?? item.id ?? "default",
             variantSelection: item.variantSelection ?? [],
-          })),
+          })).filter(isPersistedCartItem),
           isOpen: false,
         }
       },

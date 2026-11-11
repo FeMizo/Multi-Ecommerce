@@ -9,7 +9,7 @@ import { sendOrderConfirmationEmail, sendSellerNewOrderEmail } from "@/lib/email
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { getCurrentPeriodEnd } from "@/lib/billing-rules"
 import { toMinorUnits } from "@/lib/money"
-import { getVariantQuantityLimit, normalizeVariantOptions } from "@/lib/product-variants"
+import { getVariantQuantityLimit, isValidVariantSelection, normalizeVariantOptions, productVariantIdentity } from "@/lib/product-variants"
 import { createLogger, serializeError } from "@/lib/observability"
 
 const logger = createLogger("stripe-webhook")
@@ -89,7 +89,7 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
     where: { id: { in: items.map((item) => item.productId) }, storeId: metadata.storeId, deletedAt: null },
     select: { id: true, price: true, images: true, sku: true, name: true, manageStock: true, stock: true, variantOptions: true },
   })
-  if (products.length !== items.length) throw new Error("Productos de checkout no encontrados")
+  if (products.length !== new Set(items.map((item) => item.productId)).size) throw new Error("Productos de checkout no encontrados")
 
   const total = (session.amount_total ?? 0) / 100
   const subtotal = items.reduce((sum, item) => sum + products.find((product) => product.id === item.productId)!.price * item.quantity, 0)
@@ -98,10 +98,15 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
 
   try {
     await db.$transaction(async (tx) => {
+      const requestedVariants = new Set<string>()
       for (const item of items) {
         const product = products.find((candidate) => candidate.id === item.productId)!
-        if (!product.manageStock) continue
         const variantOptions = normalizeVariantOptions(product.variantOptions ?? [])
+        if (!isValidVariantSelection(variantOptions, item.variantSelection ?? [])) throw new Error("Variante no disponible al confirmar el pago")
+        const variantIdentity = productVariantIdentity(product.id, item.variantSelection ?? [])
+        if (requestedVariants.has(variantIdentity)) throw new Error("Variante duplicada al confirmar el pago")
+        requestedVariants.add(variantIdentity)
+        if (!product.manageStock) continue
         const variantLimit = getVariantQuantityLimit(variantOptions, item.variantSelection ?? [])
         const stockLimit = variantOptions.length > 0 && variantLimit !== null ? variantLimit : product.stock
         if (stockLimit < item.quantity) throw new Error("Stock insuficiente al confirmar el pago")
