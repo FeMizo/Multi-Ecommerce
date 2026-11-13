@@ -1,4 +1,4 @@
-import { isStripeTestMode } from "@/lib/stripe-test-mode"
+import { stripePaymentAvailability } from "@/lib/stripe-payment-policy"
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ message: "Tienda no encontrada" }, { status: 404 })
   }
 
-  return NextResponse.json({ ...store, stripeOnboarded: isStripeTestMode() })
+  return NextResponse.json({ ...store, ...stripePaymentAvailability(store.stripeOnboarded) })
 }
 
 export async function POST(req: Request) {

@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { isStripeTestMode } from "@/lib/stripe-test-mode"
 import { isLaunchOpen, LAUNCH_CODE, LAUNCH_END, launchBaseSlug, launchPrice } from "@/lib/launch-promo"
-import { toMinorUnits } from "@/lib/money"
+import { stripeTestMisconfigured, subscriptionLineItem } from "@/lib/stripe-payment-policy"
 import { stripe } from "@/lib/stripe"
 import { isMatchingMonthlyMxnPrice } from "@/lib/stripe-billing"
 
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: RouteContext<"/api/stor
   if (!membership) return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
   const origin = isStripeTestMode() ? req.nextUrl.origin : process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin
 
-  if (!isStripeTestMode()) return NextResponse.json({ message: "Facturación habilitada únicamente en Stripe TEST para esta revisión" }, { status: 409 })
+  if (stripeTestMisconfigured()) return NextResponse.json({ message: "Configura claves Stripe TEST válidas para usar el modo de prueba" }, { status: 409 })
 
   const customerId = await getOrCreateCustomer({
     storeId: membership.store.id,
@@ -97,12 +97,12 @@ export async function POST(req: NextRequest, { params }: RouteContext<"/api/stor
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription", customer: customerId, client_reference_id: membership.store.id,
     // Charge the normal recurring price with a three-month discount; Stripe restores it automatically.
-    line_items: [{ price_data: { currency: "mxn", unit_amount: toMinorUnits(base.priceMonthly), recurring: { interval: "month" }, product_data: { name: plan.name } }, quantity: 1 }], locale: "es",
+    line_items: [subscriptionLineItem(isStripeTestMode() ? { ...base, name: plan.name } : plan, isStripeTestMode())], locale: "es",
     payment_method_types: ["card"],
     ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
     success_url: `${origin}/dashboard/${storeSlug}/planes?subscription=success`, cancel_url: `${origin}/dashboard/${storeSlug}/planes?subscription=cancelled`,
     metadata: { storeId: membership.store.id, requestedPlanId: plan.id },
-    subscription_data: { metadata: { storeId: membership.store.id, testPlanId: base.id, launchCode: couponId ?? "" } },
+    subscription_data: { metadata: { storeId: membership.store.id, ...(isStripeTestMode() ? { testPlanId: base.id, launchCode: couponId ?? "" } : {}) } },
   }, { idempotencyKey: `subscription-checkout:${membership.store.id}:${plan.id}:${input.data.checkoutToken}` })
   return NextResponse.json({ url: checkout.url })
 }

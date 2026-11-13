@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { createTestCheckout, TestCheckoutExpiredError } from "@/lib/test-checkout"
 import { isStripeTestMode } from "@/lib/stripe-test-mode"
+import { stripeTestMisconfigured } from "@/lib/stripe-payment-policy"
 import { stripe } from "@/lib/stripe"
 import { checkOrderLimit, getEffectivePlan } from "@/lib/plan-limits"
 import {
@@ -103,8 +104,8 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ message: "Carrito o datos invalidos" }, { status: 422 })
 
   const { checkoutToken, items, storeId, customerInfo, paymentMethod, deliveryMethod, deliveryLocation, couponCode: rawCouponCode } = parsed.data
-  if (paymentMethod === "STRIPE" && !isStripeTestMode()) {
-    return NextResponse.json({ message: "Tarjeta disponible únicamente con claves Stripe TEST" }, { status: 409 })
+  if (paymentMethod === "STRIPE" && stripeTestMisconfigured()) {
+    return NextResponse.json({ message: "Configura claves Stripe TEST válidas para usar el modo de prueba" }, { status: 409 })
   }
   const origin = isStripeTestMode() ? new URL(req.url).origin : process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   let requestedCouponCode = rawCouponCode ? normalizeCouponCode(rawCouponCode) : null

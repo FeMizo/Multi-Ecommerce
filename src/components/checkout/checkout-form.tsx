@@ -31,6 +31,7 @@ import {
   type DeliveryMethodValue,
 } from "@/lib/delivery"
 import {
+  stripePaymentPresentation,
   PAYMENT_METHOD_DESCRIPTIONS,
   PAYMENT_METHOD_LABELS,
   type PaymentMethodValue,
@@ -42,6 +43,7 @@ type FormData = z.infer<typeof schema>
 
 type StoreOptions = StoreFulfillment & {
   cashOnDeliveryEnabled: boolean
+  stripeTestMode?: boolean
   stripeOnboarded: boolean
   transferEnabled: boolean
 }
@@ -205,6 +207,7 @@ export default function CheckoutForm({ storeId }: { storeId: string | null }) {
   }
 
   const hasPendingItems = checkoutItems.length !== items.length
+  const stripeCard = stripePaymentPresentation(Boolean(storeOptions?.stripeTestMode))
   const canUseStripe = Boolean(storeOptions?.stripeOnboarded)
   const canUseCashOnDelivery = Boolean(storeOptions?.cashOnDeliveryEnabled)
   const canUseTransfer = Boolean(storeOptions?.transferEnabled)
@@ -256,7 +259,7 @@ export default function CheckoutForm({ storeId }: { storeId: string | null }) {
   const finalTotal = quote?.total ?? checkoutTotal + deliveryFee
   const blockedReason = optionsLoading || profileLoading ? "Estamos cargando los datos de tu compra." : !hasAnyPayment ? "Esta tienda no tiene métodos de pago disponibles." : !isValid ? "Completa nombre, correo, teléfono y ciudad para continuar." : !deliveryReady ? "Selecciona una ubicación válida y revisa la entrega local." : couponPending ? "Aplica o elimina el cupón antes de confirmar." : !quote ? quoteError ?? "Estamos calculando el total de tu compra." : ""
   const canSubmit = !loading && !blockedReason && Boolean(quote)
-  const actionLabel = loading ? "Procesando…" : selectedPaymentMethod === "TRANSFER" ? "Generar referencia" : selectedPaymentMethod === "STRIPE" ? "Pagar con tarjeta (TEST)" : "Confirmar pedido"
+  const actionLabel = loading ? "Procesando…" : selectedPaymentMethod === "TRANSFER" ? "Generar referencia" : selectedPaymentMethod === "STRIPE" ? storeOptions?.stripeTestMode ? "Pagar con tarjeta (TEST)" : "Pagar con Stripe" : "Confirmar pedido"
   function applyCoupon() { setRequestedCoupon(normalizedCoupon); setRevision((value) => value + 1) }
   const priceBreakdown = <dl className="space-y-2 text-sm tabular-nums"><div className="flex justify-between gap-3"><dt>Productos</dt><dd>{formatPrice(quote?.subtotal ?? checkoutTotal)}</dd></div>{Boolean(quote?.discountAmount) && <div className="flex justify-between gap-3"><dt>Descuento ({quote?.couponCode})</dt><dd>−{formatPrice(quote?.discountAmount ?? 0)}</dd></div>}<div className="flex justify-between gap-3"><dt>{deliveryMethod === "PICKUP" ? "Recogida" : "Envío local"}</dt><dd>{deliveryMethod === "PICKUP" ? "Sin costo" : storeOptions?.deliveryFee == null ? "Sin configurar" : formatPrice(quote?.shippingFee ?? deliveryFee)}</dd></div><div className="flex justify-between gap-3 border-t pt-3 text-lg font-semibold"><dt>Total</dt><dd>{quote ? formatPrice(finalTotal) : "Calculando…"}</dd></div></dl>
 
@@ -283,7 +286,7 @@ export default function CheckoutForm({ storeId }: { storeId: string | null }) {
           <div className="mt-3">{optionsLoading ? <p role="status" className="text-sm">Consultando datos de entrega…</p> : deliveryMethod === "PICKUP" ? <StoreFulfillmentInfo store={storeOptions ?? {}} pickup plain /> : <div className="space-y-4"><StoreFulfillmentInfo store={storeOptions ?? {}} plain />{storeOptions?.latitude != null && storeOptions.longitude != null ? <DeliveryLocationPicker storeCenter={{ lat: storeOptions.latitude, lng: storeOptions.longitude }} value={deliveryLocation} onChange={setDeliveryLocation} disabled={loading} showErrorDetails={showMapsErrorDetails} /> : <p role="status">La tienda aún no configura su ubicación para entrega local.</p>}</div>}</div>
         </fieldset>
         <Separator />
-        <fieldset><legend className="mb-3 text-xl font-semibold">Pago</legend>{!canUseStripe && !optionsLoading && <label className="flex min-h-14 items-start gap-3 py-3 text-muted-foreground"><input type="radio" disabled className="mt-1 h-5 w-5 shrink-0" name="payment-method" /><span><span className="block font-medium">Tarjeta (TEST)</span><span className="text-sm">Pendiente configurar Stripe TEST. Sin cargos reales.</span></span></label>}{optionsLoading ? <p role="status">Cargando métodos de pago…</p> : <div className="divide-y">{availablePaymentMethods.map((method) => <label key={method} className="flex min-h-14 cursor-pointer items-start gap-3 py-3"><input type="radio" className="mt-1 h-5 w-5 shrink-0 accent-primary" name="payment-method" value={method} checked={selectedPaymentMethod === method} onChange={() => setPaymentMethod(method)} /><span><span className="block font-medium">{PAYMENT_METHOD_CARDS[method].label}</span><span className="text-sm text-muted-foreground">{method === "CASH_ON_DELIVERY" ? "Pagas al recibir tu pedido." : PAYMENT_METHOD_CARDS[method].description}</span></span></label>)}</div>}</fieldset>
+        <fieldset><legend className="mb-3 text-xl font-semibold">Pago</legend>{storeOptions?.stripeTestMode && !canUseStripe && !optionsLoading && <label className="flex min-h-14 items-start gap-3 py-3 text-muted-foreground"><input type="radio" disabled className="mt-1 h-5 w-5 shrink-0" name="payment-method" /><span><span className="block font-medium">Tarjeta (TEST)</span><span className="text-sm">Pendiente configurar Stripe TEST. Sin cargos reales.</span></span></label>}{optionsLoading ? <p role="status">Cargando métodos de pago…</p> : <div className="divide-y">{availablePaymentMethods.map((method) => <label key={method} className="flex min-h-14 cursor-pointer items-start gap-3 py-3"><input type="radio" className="mt-1 h-5 w-5 shrink-0 accent-primary" name="payment-method" value={method} checked={selectedPaymentMethod === method} onChange={() => setPaymentMethod(method)} /><span><span className="block font-medium">{method === "STRIPE" ? stripeCard.label : PAYMENT_METHOD_CARDS[method].label}</span><span className="text-sm text-muted-foreground">{method === "CASH_ON_DELIVERY" ? "Pagas al recibir tu pedido." : method === "STRIPE" ? stripeCard.description : PAYMENT_METHOD_CARDS[method].description}</span></span></label>)}</div>}</fieldset>
         <Separator />
         <details><summary className="flex min-h-11 cursor-pointer items-center font-medium">{quote?.couponCode ? "Cupón aplicado: " + quote.couponCode : "Añadir cupón (opcional)"}</summary><div className="space-y-2 pb-3 pt-2"><Label htmlFor="coupon-code">Código de cupón</Label><div className="flex gap-2"><Input id="coupon-code" value={couponCode} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); applyCoupon() } }} className="h-11" autoComplete="off" aria-describedby="coupon-feedback" /><Button type="button" className="min-h-11" onClick={applyCoupon}>Aplicar</Button></div><p id="coupon-feedback" role="status" className="text-sm">{couponPending ? "Aplica el código para revisar el descuento antes de confirmar." : quoteError ?? (quote?.couponCode ? "Descuento incluido en el total." : "El descuento se mostrará antes de confirmar.")}</p>{(couponCode || requestedCoupon) && <Button type="button" variant="ghost" className="min-h-11" onClick={() => { setCouponCode(""); setRequestedCoupon("") }}>Eliminar cupón</Button>}</div></details>
         <div className="border-t pt-4 lg:hidden">{priceBreakdown}</div>
