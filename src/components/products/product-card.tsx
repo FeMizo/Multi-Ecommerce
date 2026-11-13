@@ -18,6 +18,7 @@ import { DEFAULT_PRODUCT_IMAGE, withProductPlaceholder } from "@/lib/placeholder
 import type { FavoriteProduct } from "@/lib/favorites"
 import {
   defaultVariantSelection,
+  getVariantImage,
   getVariantQuantityLimit,
   normalizeVariantOptions,
   variantSelectionKey,
@@ -84,7 +85,8 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : null
 
-  const href = storeSlug ? `/${storeSlug}/${product.slug}` : `/products/${product.slug}`
+  const resolvedStoreSlug = storeSlug ?? product.store.slug
+  const href = resolvedStoreSlug ? `/${resolvedStoreSlug}/${product.slug}` : `/products/${product.slug}`
   const favorites = useSyncExternalStore(subscribeToFavorites, readFavoritesFromStorage, () => EMPTY_FAVORITES)
   const isLiked = favorites.some((favorite) => favorite.id === product.id)
   const canUseFavorites = Boolean(session?.user)
@@ -129,7 +131,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
       storeId: product.storeId,
       name: product.name,
       price: product.price,
-      image: imageSrc,
+      image: withProductPlaceholder([getVariantImage(variantOptions, selectedVariant, product.images)].filter(Boolean)),
       storeName: product.store.name,
     })
     setVariantDialogOpen(false)

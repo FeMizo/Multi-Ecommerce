@@ -50,6 +50,7 @@ type FormData = z.infer<typeof schema>
 type Category = { id: string; name: string; parent?: { name: string } | null }
 
 type VariantValueDraft = {
+  imageUrl?: string | null
   value: string
   quantityEnabled: boolean
   quantityText: string
@@ -101,6 +102,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
       valuesText: option.values.map((value) => value.value).join(", "),
       values: option.values.map((value) => ({
         value: value.value,
+        imageUrl: value.imageUrl,
         quantityEnabled: typeof value.quantity === "number" && value.quantity > 0,
         quantityText: typeof value.quantity === "number" && value.quantity > 0 ? String(value.quantity) : "",
       })),
@@ -234,6 +236,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
       values: draft.values.map((entry) => ({
         value: entry.value,
         quantity: entry.quantityEnabled ? Number(entry.quantityText) : null,
+        imageUrl: entry.imageUrl || null,
       })),
     }))
 
@@ -546,7 +549,7 @@ export function ProductForm({ storeSlug, categories, initialData, mode }: Props)
                         <div className="grid gap-3">
                           {draft.values.map((valueDraft, valueIndex) => (
                             <div key={`${valueDraft.value}-${valueIndex}`} className="grid gap-3 md:grid-cols-[1fr_auto_120px] md:items-center">
-                              <div className="text-sm font-medium">{valueDraft.value}</div>
+                              <div className="text-sm font-medium">{valueDraft.value}<label className="mt-2 block text-xs font-normal">Imagen de esta variante<select className="mt-1 w-full rounded-md border bg-background p-2" value={valueDraft.imageUrl ?? ""} onChange={(event) => updateVariantValueDraft(index, valueIndex, { imageUrl: event.target.value || null })}><option value="">Imagen general del producto</option>{[...new Set([...images, ...(valueDraft.imageUrl ? [valueDraft.imageUrl] : [])])].map((image, imageIndex) => <option key={image} value={image}>Imagen {imageIndex + 1}</option>)}</select></label></div>
                               <Label htmlFor={`variant-qty-${index}-${valueIndex}`} className="flex items-center gap-2 text-sm">
                                 <input
                                   id={`variant-qty-${index}-${valueIndex}`}

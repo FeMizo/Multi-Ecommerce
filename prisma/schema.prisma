@@ -96,6 +96,13 @@ model Store {
   description             String?   @db.Text
   logoUrl                 String?
   bannerUrl               String?
+  address                 String?
+  phone                   String?
+  openingHours            String?
+  deliveryZone            String?
+  deliveryFee             Float?
+  latitude                Float?
+  longitude               Float?
   primaryColor            String?   @default("#000000")
   fontFamily              String?   @default("Inter")
   cityId                  String?
@@ -242,6 +249,20 @@ model StoreCoupon {
 
 // ─── Plans & Subscriptions ───────────────────────────────────────────────────
 
+// Isolated TEST attempts are not orders. An order is created only after Stripe confirms payment.
+model TestCheckoutDraft {
+  id            String   @id @default(cuid())
+  checkoutToken String   @unique
+  fingerprint   String
+  payload       Json
+  stripeSessionId String? @unique
+  orderId       String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+
+  @@map("test_checkout_drafts")
+}
+
 model Plan {
   id             String   @id @default(cuid())
   name           String
@@ -360,6 +381,7 @@ model Order {
   customerEmail         String?
   status                OrderStatus   @default(PENDING)
   subtotal              Float
+  shippingFee           Float         @default(0)
   platformFee           Float         @default(0)
   total                 Float
   couponId              String?

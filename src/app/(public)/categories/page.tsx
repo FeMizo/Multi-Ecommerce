@@ -1,3 +1,4 @@
+import { plural } from "@/lib/plural"
 import Link from "next/link"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { db } from "@/lib/db"
@@ -10,13 +11,13 @@ import { formatCategoryLabel } from "@/lib/categories"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Categorias",
-  description: "Explora productos de AionSite Shop por categoria.",
-  keywords: buildKeywords("Categorias", ["categorias de productos", "catalogo por categoria", "compras locales"]),
+  title: "Categorías",
+  description: "Explora productos de AionSite Shop por categoría.",
+  keywords: buildKeywords("Categorías", ["categorías de productos", "catalogo por categoría", "compras locales"]),
   alternates: { canonical: "/categories" },
   openGraph: {
-    title: "Categorias | AionSite Shop",
-    description: "Explora productos de AionSite Shop por categoria.",
+    title: "Categorías | AionSite Shop",
+    description: "Explora productos de AionSite Shop por categoría.",
     url: "/categories",
     siteName: "AionSite Shop",
     type: "website",
@@ -24,8 +25,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Categorias | AionSite Shop",
-    description: "Explora productos de AionSite Shop por categoria.",
+    title: "Categorías | AionSite Shop",
+    description: "Explora productos de AionSite Shop por categoría.",
     images: [absoluteUrl(DEFAULT_SHOP_BANNER)],
   },
 }
@@ -67,7 +68,7 @@ export default async function CategoriesPage() {
   })
   const breadcrumbs = breadcrumbJsonLd([
     { name: "Inicio", url: "https://shop.aionsite.com.mx" },
-    { name: "Categorias", url: "https://shop.aionsite.com.mx/categories" },
+    { name: "Categorías", url: "https://shop.aionsite.com.mx/categories" },
   ])
 
   return (
@@ -75,24 +76,24 @@ export default async function CategoriesPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbs) }} />
       <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary border-0">
         <Sparkles className="w-3 h-3 mr-1" />
-        Categorias
+        Categorías
       </Badge>
-      <h1 className="text-3xl md:text-4xl font-bold mb-3">Explora por categoria</h1>
+      <h1 className="text-3xl md:text-4xl font-bold mb-3">Explora por categoría</h1>
       <p className="text-muted-foreground text-lg mb-10">Encuentra productos por tipo, estilo o necesidad.</p>
       <div className="grid gap-4 lg:grid-cols-2">
-        {categories.map((category) => (
+        {categories.filter((category) => category._count.products > 0 || category.children.some((child) => child._count.products > 0)).map((category) => (
           <div key={category.id} className="rounded-2xl border bg-card p-6">
             <Link href={`/search?category=${category.slug}`} className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="font-semibold">{category.name}</h2>
-                <p className="text-sm text-muted-foreground">{category._count.products} productos</p>
+                <p className="text-sm text-muted-foreground">{plural(category._count.products + category.children.reduce((sum, child) => sum + child._count.products, 0), "producto")}</p>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </Link>
 
             {category.children.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
-                {category.children.map((child) => (
+                {category.children.filter((child) => child._count.products > 0).map((child) => (
                   <Link
                     key={child.id}
                     href={`/search?category=${child.slug}`}

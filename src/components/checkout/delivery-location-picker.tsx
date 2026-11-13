@@ -13,6 +13,7 @@ declare global {
 }
 
 type Props = {
+  storeCenter: { lat: number; lng: number }
   value: DeliveryLocationDraft
   onChange: (value: DeliveryLocationDraft) => void
   disabled?: boolean
@@ -155,9 +156,8 @@ async function waitForGoogleMapsApi(timeoutMs = 5000) {
   throw new Error("Google Maps no terminó de exponer sus librerías a tiempo.")
 }
 
-const DEFAULT_CENTER = { lat: 19.4326, lng: -99.1332 }
 
-export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDetails = false }: Props) {
+export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDetails = false, storeCenter }: Props) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
   const mapRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -212,7 +212,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDet
         const center =
           currentValue.lat !== null && currentValue.lng !== null
             ? { lat: currentValue.lat, lng: currentValue.lng }
-            : DEFAULT_CENTER
+            : { lat: storeCenter.lat, lng: storeCenter.lng }
 
         const map = new readyMapsApi.Map(mapRef.current, {
           center,
@@ -304,7 +304,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDet
       markerRef.current = null
       autocompleteRef.current = null
     }
-  }, [apiKey, retryCount])
+  }, [apiKey, retryCount, storeCenter.lat, storeCenter.lng])
 
   const statusMessage = !apiKey ? "Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY." : loadError
   const isLoading = Boolean(apiKey) && !mapsLoaded && !loadError
@@ -323,10 +323,11 @@ export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDet
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <label className="text-sm font-medium">Direccion</label>
+        <label htmlFor="delivery-address" className="text-sm font-medium">Dirección de entrega</label>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="delivery-address" autoComplete="street-address"
             ref={inputRef}
             value={value.formattedAddress}
             onChange={(event) => {
@@ -339,8 +340,8 @@ export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDet
               })
             }}
             disabled={disabled || !apiKey || isLoading}
-            className="pl-9"
-            placeholder="Busca una direccion"
+            className="h-11 pl-9"
+            placeholder="Busca una dirección"
           />
         </div>
         <p className="text-xs text-muted-foreground">
@@ -407,7 +408,7 @@ export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDet
           ) : mapsLoaded ? (
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-primary" />
-              <p>Haz clic en el mapa o arrastra el marcador para ajustar la ubicacion.</p>
+              <p>Haz clic en el mapa o arrastra el marcador para ajustar la ubicación.</p>
             </div>
           ) : (
             <p className="text-sm">Ingresa la clave de Google Maps para activar Places Autocomplete y el mapa.</p>
@@ -416,8 +417,8 @@ export function DeliveryLocationPicker({ value, onChange, disabled, showErrorDet
       )}
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Notas de entrega</label>
-        <Textarea
+        <label htmlFor="delivery-notes" className="text-sm font-medium">Notas de entrega</label>
+        <Textarea id="delivery-notes"
           value={value.notes}
           onChange={(event) =>
             onChangeRef.current({

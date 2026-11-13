@@ -1,16 +1,21 @@
 import Stripe from "stripe"
 
+import { isStripeTestMode } from "@/lib/stripe-test-mode"
+
 let stripeInstance: Stripe | null = null
 
 export function getStripe(): Stripe {
   if (!stripeInstance) {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const secretKey = process.env.STRIPE_MODE === "test"
+      ? (isStripeTestMode() ? process.env.STRIPE_TEST_SECRET_KEY : undefined)
+      : process.env.STRIPE_SECRET_KEY
+    if (!secretKey) {
       throw new Error("STRIPE_SECRET_KEY is not set")
     }
-    if (process.env.NODE_ENV === "production" && !process.env.STRIPE_SECRET_KEY.startsWith("sk_live_")) {
+    if (process.env.NODE_ENV === "production" && process.env.STRIPE_MODE !== "test" && !secretKey.startsWith("sk_live_")) {
       throw new Error("Producción requiere una STRIPE_SECRET_KEY live")
     }
-    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    stripeInstance = new Stripe(secretKey, {
       typescript: true,
       maxNetworkRetries: 2,
     })

@@ -1,3 +1,4 @@
+import { plural } from "@/lib/plural"
 import Link from "next/link"
 import Image from "next/image"
 import { Package, Store, Sparkles } from "lucide-react"
@@ -67,7 +68,7 @@ export default async function StoresPage() {
               Descubre tiendas locales
             </h1>
             <p className="text-muted-foreground text-lg">
-              {stores.length} tiendas activas listas para servirte. Apoya emprendedores de tu comunidad.
+              {plural(stores.length, "tienda activa", "tiendas activas")} {stores.length === 1 ? "lista" : "listas"} para servirte. Apoya emprendedores de tu comunidad.
             </p>
           </div>
         </div>
@@ -108,14 +109,14 @@ export default async function StoresPage() {
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
 
-                  <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+                  <div className="absolute z-30 top-3 right-3 flex flex-col items-end gap-2">
                     {index < 3 && (
                       <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-xs px-2.5 py-1 rounded-full">
                         <Sparkles className="w-3 h-3 mr-1" />
                         Destacada
                       </Badge>
                     )}
-                    {store.isVerified && <VerifiedBadge compact className="text-xs px-2.5 py-1 rounded-full" />}
+                    {store.isVerified && <VerifiedBadge compact className="bg-background/95 text-primary shadow-sm text-xs px-2.5 py-1 rounded-full" />}
                   </div>
                 </div>
 
@@ -143,7 +144,7 @@ export default async function StoresPage() {
 
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
                     <Package className="h-3.5 w-3.5" />
-                    {store._count.products} productos
+                    {plural(store._count.products, "producto")}
                   </div>
 
                   {store.description && (

@@ -15,6 +15,7 @@ export async function sendWhatsAppText({
   phone?: string | null
   message: string
 }) {
+  if (process.env.STRIPE_MODE === "test") return { ok: false, skipped: true }
   const to = normalizePhone(phone)
   if (!to || !whatsappToken || !whatsappPhoneNumberId) return { ok: false, skipped: true }
 

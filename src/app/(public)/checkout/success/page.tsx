@@ -1,4 +1,7 @@
-﻿import Link from "next/link"
+﻿import { isStripeTestMode } from "@/lib/stripe-test-mode"
+import { confirmTestCheckout } from "@/lib/test-checkout"
+import { stripe } from "@/lib/stripe"
+import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,6 +22,9 @@ export default async function CheckoutSuccessPage({
   searchParams: Promise<SearchParams>
 }) {
   const { payment_method: paymentMethod, order_id: orderId, session_id: sessionId } = await searchParams
+  if (sessionId && isStripeTestMode()) {
+    await confirmTestCheckout(await stripe.checkout.sessions.retrieve(sessionId))
+  }
   const order = orderId
     ? await db.order.findUnique({
         where: { id: orderId },
@@ -69,6 +75,10 @@ export default async function CheckoutSuccessPage({
         })
     : null
 
+  if (sessionId && isStripeTestMode() && !order) {
+    const draft = await db.testCheckoutDraft.findUnique({ where: { stripeSessionId: sessionId }, select: { status: true } })
+    return <div className="container mx-auto max-w-xl px-4 py-12"><h1 className="text-2xl font-bold">{draft?.status === "REFUNDED" ? "Pago TEST reembolsado" : "Esperando confirmación de pago TEST"}</h1><p className="mt-4">{draft?.status === "REFUNDED" ? "La disponibilidad cambió durante el pago. No se creó ningún pedido. El pago de prueba fue reembolsado." : "El pedido se crea únicamente al confirmar el pago. Sin cargos reales."}</p><Button asChild className="mt-6"><Link href={draft?.status === "REFUNDED" ? "/cart" : `/checkout/success?session_id=${encodeURIComponent(sessionId)}`}>{draft?.status === "REFUNDED" ? "Volver al carrito" : "Revisar confirmación"}</Link></Button></div>
+  }
   const effectiveMethod = order?.paymentMethod ?? paymentMethod?.toUpperCase()
   const deliveryMethod = order?.delivery?.method ?? null
   const isCashOnDelivery = effectiveMethod === "CASH_ON_DELIVERY"

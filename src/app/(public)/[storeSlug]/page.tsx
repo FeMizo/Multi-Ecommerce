@@ -1,3 +1,5 @@
+import { plural } from "@/lib/plural"
+import { StoreFulfillmentInfo } from "@/components/public/store-fulfillment"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -25,6 +27,7 @@ const getStore = cache(async (slug: string) => {
         name: true,
         slug: true,
         description: true,
+        address: true, phone: true, openingHours: true, deliveryZone: true, deliveryFee: true, latitude: true, longitude: true,
         city: { select: { name: true, state: true } },
         logoUrl: true,
         bannerUrl: true,
@@ -136,7 +139,7 @@ export default async function StorePage({
           src={store.bannerUrl || DEFAULT_SHOP_BANNER}
           alt={store.bannerUrl ? "" : `Banner genérico de ${store.name}`}
           fill
-          className="object-cover"
+          className="object-contain"
           priority
         />
         {/* Overlay */}
@@ -145,7 +148,7 @@ export default async function StorePage({
 
       {/* Store Header */}
       <div className="container mx-auto px-4">
-        <div className="relative -mt-20 md:-mt-24 mb-8">
+        <div className="relative mt-6 mb-8">
           <div className="bg-card rounded-2xl border border-border/50 p-6 md:p-8 shadow-xl shadow-primary/5">
             <div className="flex flex-col md:flex-row md:items-end gap-6">
               {/* Logo */}
@@ -188,7 +191,7 @@ export default async function StorePage({
                     <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1.5">
                         <Package className="h-4 w-4" />
-                        {store._count.products} productos
+                        {plural(store._count.products, "producto")}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Clock className="h-4 w-4" />
@@ -216,6 +219,7 @@ export default async function StorePage({
           </div>
         </div>
 
+        <div className="mb-8 grid gap-4 md:grid-cols-2"><StoreFulfillmentInfo store={store} pickup /><StoreFulfillmentInfo store={store} /></div>
         {/* Category filter */}
         {categories.length > 1 && (
           <div className="mb-8">

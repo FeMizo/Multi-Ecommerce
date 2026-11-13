@@ -22,6 +22,7 @@ export default async function SettingsPage({
       include: {
         store: {
           select: {
+            address: true, phone: true, openingHours: true, deliveryFee: true, deliveryZone: true, latitude: true, longitude: true,
             id: true,
             slug: true,
             name: true,
@@ -67,6 +68,8 @@ export default async function SettingsPage({
         stripeOnboarded={store.stripeOnboarded}
         cashOnDeliveryEnabled={store.cashOnDeliveryEnabled}
         initialData={{
+          address: store.address ?? "", phone: store.phone ?? "", openingHours: store.openingHours ?? "",
+          deliveryFee: store.deliveryFee, deliveryZone: store.deliveryZone ?? "", latitude: store.latitude, longitude: store.longitude,
           slug: store.slug,
           name: store.name,
           description: store.description ?? undefined,

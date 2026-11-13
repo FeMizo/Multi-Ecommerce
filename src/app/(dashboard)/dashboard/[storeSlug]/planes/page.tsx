@@ -1,3 +1,4 @@
+import { launchBaseSlug } from "@/lib/launch-promo"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
@@ -7,10 +8,13 @@ import { Button } from "@/components/ui/button"
 
 export default async function PlanesPage({
   params,
+  searchParams,
 }: {
+  searchParams: Promise<{ planId?: string }>
   params: Promise<{ storeSlug: string }>
 }) {
   const { storeSlug } = await params
+  const { planId: selectedPlanId } = await searchParams
   const session = await auth()
   if (!session?.user) redirect("/login")
 
@@ -42,7 +46,7 @@ export default async function PlanesPage({
     }),
     db.plan.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, priceMonthly: true, commissionRate: true, maxProducts: true, maxOrdersMonth: true, stripePriceId: true },
+      select: { id: true, name: true, slug: true, priceMonthly: true, commissionRate: true, maxProducts: true, maxOrdersMonth: true, stripePriceId: true },
       orderBy: { priceMonthly: "asc" },
     }),
   ])
@@ -64,8 +68,9 @@ export default async function PlanesPage({
 
       <SubscriptionManager
         storeSlug={storeSlug}
+        selectedPlanId={selectedPlanId}
         isOwner={membership.role === "OWNER"}
-        plans={plans.map(({ stripePriceId, ...plan }) => ({ ...plan, availableInStripe: Boolean(stripePriceId) }))}
+        plans={plans.map(({ stripePriceId, ...plan }) => ({ ...plan, availableInStripe: Boolean(stripePriceId) || Boolean(launchBaseSlug(plan.slug)) }))}
         subscription={membership.store.subscription ? {
           ...membership.store.subscription,
           currentPeriodEnd: membership.store.subscription.currentPeriodEnd?.toISOString() ?? null,

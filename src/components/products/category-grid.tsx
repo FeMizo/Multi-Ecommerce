@@ -1,5 +1,6 @@
 "use client"
 
+import { plural } from "@/lib/plural"
 import type { ComponentType } from "react"
 import { useState } from "react"
 import Link from "next/link"
@@ -98,13 +99,13 @@ function CategoryCardLink({ cat, isFirst }: { cat: Category; isFirst: boolean })
             {cat.name}
           </h3>
           <p className={`text-muted-foreground mt-1 ${isFirst ? "text-sm" : "text-xs"}`}>
-            {cat._count.products} {cat._count.products === 1 ? "producto" : "productos"}
+            {plural(cat._count.products, "producto")}
           </p>
         </div>
 
         <div className="absolute right-4 bottom-4 flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-all">
           <span className={`font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ${isFirst ? "text-sm" : "text-xs"}`}>
-            Ver mas
+            Ver más
           </span>
           <div className={`rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-all ${isFirst ? "h-9 w-9" : "h-8 w-8"}`}>
               <InteractiveMorphIcon

@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { createTestCheckout, TestCheckoutExpiredError } from "@/lib/test-checkout"
+import { isStripeTestMode } from "@/lib/stripe-test-mode"
 import { stripe } from "@/lib/stripe"
 import { checkOrderLimit, getEffectivePlan } from "@/lib/plan-limits"
 import {
@@ -11,14 +13,15 @@ import {
   RESERVATION_TTL_MS,
   STRIPE_CHECKOUT_TTL_SECONDS,
 } from "@/lib/payment-lifecycle"
-import { fromMinorUnits, toMinorUnits } from "@/lib/money"
+import { fromMinorUnits, toMinorUnits, nonnegativeMxnSchema } from "@/lib/money"
 import { checkoutRecoveryAction } from "@/lib/checkout-recovery"
 import { generateTransferCode, PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/lib/payment-methods"
 import { sendOrderReceivedEmail, sendSellerNewOrderEmail } from "@/lib/email"
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { calculateCouponDiscount, ensureStripeCoupon, normalizeCouponCode } from "@/lib/store-coupons"
-import { getVariantQuantityLimit, isValidVariantSelection, normalizeVariantOptions, productVariantIdentity } from "@/lib/product-variants"
-import { DELIVERY_METHODS } from "@/lib/delivery"
+import { accumulateVariantQuantities, getVariantQuantityLimit, isValidVariantSelection, normalizeVariantOptions, productVariantIdentity } from "@/lib/product-variants"
+import { DELIVERY_METHODS, isLocalDeliveryConfigured } from "@/lib/delivery"
+import { checkoutCustomerSchema } from "@/lib/checkout-customer"
 import { createLogger, serializeError } from "@/lib/observability"
 import { checkRateLimit, getClientAddress } from "@/lib/rate-limit"
 
@@ -26,23 +29,18 @@ const logger = createLogger("checkout")
 
 const checkoutSchema = z.object({
   checkoutToken: z.string().uuid(),
+  expectedTotal: nonnegativeMxnSchema.optional(),
   storeId: z.string().min(1),
   paymentMethod: z.enum(PAYMENT_METHODS).default("STRIPE"),
   deliveryMethod: z.enum(DELIVERY_METHODS).default("PICKUP"),
   deliveryLocation: z.object({
-    formattedAddress: z.string().min(3).max(255),
-    lat: z.number(),
-    lng: z.number(),
+    formattedAddress: z.string().trim().min(3).max(255),
+    lat: z.number().finite().min(-90).max(90),
+    lng: z.number().finite().min(-180).max(180),
     notes: z.string().max(500).optional().default(""),
   }).nullable().optional(),
   couponCode: z.string().max(32).optional(),
-  customerInfo: z.object({
-    fullName: z.string().min(3).max(120),
-    email: z.string().email().max(120),
-    phone: z.string().min(9).max(30),
-    city: z.string().min(2).max(100),
-    notes: z.string().max(500).optional(),
-  }),
+  customerInfo: checkoutCustomerSchema,
   items: z.array(z.object({
     id: z.string().min(1),
     productId: z.string().min(1),
@@ -105,7 +103,10 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ message: "Carrito o datos invalidos" }, { status: 422 })
 
   const { checkoutToken, items, storeId, customerInfo, paymentMethod, deliveryMethod, deliveryLocation, couponCode: rawCouponCode } = parsed.data
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
+  if (paymentMethod === "STRIPE" && !isStripeTestMode()) {
+    return NextResponse.json({ message: "Tarjeta disponible únicamente con claves Stripe TEST" }, { status: 409 })
+  }
+  const origin = isStripeTestMode() ? new URL(req.url).origin : process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   let requestedCouponCode = rawCouponCode ? normalizeCouponCode(rawCouponCode) : null
   const customerEmail = customerInfo.email.trim().toLowerCase()
   const sessionEmail = session?.user?.email?.trim().toLowerCase() ?? null
@@ -115,6 +116,15 @@ export async function POST(req: Request) {
   }
 
   const customerId = session?.user?.id ?? null
+  if (paymentMethod === "STRIPE" && isStripeTestMode()) {
+    try {
+      return NextResponse.json({ url: await createTestCheckout(parsed.data, customerId, origin) })
+    } catch (error) {
+      logger.error("test-checkout-failed", { error: serializeError(error) })
+      if (error instanceof TestCheckoutExpiredError) return NextResponse.json({ message: error.message, code: "TEST_CHECKOUT_EXPIRED" }, { status: 409 })
+      return NextResponse.json({ message: "No pudimos iniciar el pago TEST. Revisa disponibilidad, total y configuración." }, { status: 422 })
+    }
+  }
 
   let order = await db.order.findUnique({
     where: { checkoutToken },
@@ -127,6 +137,8 @@ export async function POST(req: Request) {
       couponCode: true,
       stripeSessionId: true,
       platformFee: true,
+      shippingFee: true,
+      total: true,
       status: true,
       items: {
         select: {
@@ -167,6 +179,8 @@ export async function POST(req: Request) {
         couponCode: true,
         stripeSessionId: true,
         platformFee: true,
+        shippingFee: true,
+        total: true,
         status: true,
         items: {
           select: {
@@ -201,6 +215,10 @@ export async function POST(req: Request) {
 
   if (order && order.storeId !== storeId) {
     return NextResponse.json({ message: "Token de checkout invalido" }, { status: 409 })
+  }
+
+  if (order && parsed.data.expectedTotal !== undefined && toMinorUnits(order.total) !== toMinorUnits(parsed.data.expectedTotal)) {
+    return NextResponse.json({ message: "El importe de este intento cambió. Revisa el total actualizado antes de confirmar." }, { status: 409 })
   }
 
   if (order && order.paymentMethod !== paymentMethod) {
@@ -251,12 +269,18 @@ export async function POST(req: Request) {
         const discountAmount = coupon ? calculateCouponDiscount(coupon, subtotal) ?? 0 : 0
         const discountCents = toMinorUnits(discountAmount)
         const finalSubtotalCents = Math.max(0, subtotalCents - discountCents)
-        const finalSubtotal = fromMinorUnits(finalSubtotalCents)
+        const fulfillment = await tx.store.findFirst({ where: { id: storeId, isActive: true, deletedAt: null }, select: { deliveryFee: true, deliveryZone: true, latitude: true, longitude: true } })
+        if (!fulfillment) throw new Error("PRODUCTS_UNAVAILABLE")
+        if (deliveryMethod === "LOCAL_DELIVERY" && !isLocalDeliveryConfigured(fulfillment)) throw new Error("DELIVERY_NOT_CONFIGURED")
+        const shippingCents = deliveryMethod === "LOCAL_DELIVERY" ? toMinorUnits(fulfillment.deliveryFee ?? 0) : 0
+        const finalSubtotal = fromMinorUnits(finalSubtotalCents + shippingCents)
+        if (parsed.data.expectedTotal !== undefined && toMinorUnits(parsed.data.expectedTotal) !== toMinorUnits(finalSubtotal)) throw new Error("CHECKOUT_TOTAL_CHANGED")
 
         if (requestedCouponCode && !coupon) throw new Error("COUPON_NOT_FOUND")
         if (requestedCouponCode && discountAmount === 0) throw new Error("COUPON_INVALID")
 
         const requestedVariants = new Set<string>()
+        const requestedVariantQuantities = new Map<string, number>()
         for (const item of items) {
           const product = products.find((candidate) => candidate.id === item.productId)!
           const variantOptions = normalizeVariantOptions(product.variantOptions ?? [])
@@ -267,7 +291,7 @@ export async function POST(req: Request) {
           if (!product.manageStock) continue
           const variantLimit = getVariantQuantityLimit(variantOptions, item.variantSelection ?? [])
           const stockLimit = variantOptions.length > 0 && variantLimit !== null ? variantLimit : product.stock
-          if (stockLimit < item.quantity) throw new Error("STOCK_UNAVAILABLE")
+          if (stockLimit < item.quantity || !accumulateVariantQuantities(product.id, variantOptions, item.variantSelection ?? [], item.quantity, requestedVariantQuantities)) throw new Error("STOCK_UNAVAILABLE")
           const changed = await tx.product.updateMany({
             where: { id: item.productId, storeId, status: "ACTIVE", deletedAt: null, stock: { gte: item.quantity } },
             data: { stock: { decrement: item.quantity } },
@@ -319,6 +343,7 @@ export async function POST(req: Request) {
             subtotal,
             platformFee,
             total: finalSubtotal,
+            shippingFee: fromMinorUnits(shippingCents),
             couponId: coupon?.id ?? null,
             couponCode: coupon?.code ?? null,
             discountAmount,
@@ -416,6 +441,12 @@ export async function POST(req: Request) {
       if (error instanceof Error && error.message === "COUPON_LIMIT") {
         return NextResponse.json({ message: "El cupon ya alcanzo su limite de usos" }, { status: 409 })
       }
+      if (error instanceof Error && error.message === "CHECKOUT_TOTAL_CHANGED") {
+        return NextResponse.json({ message: "El total cambió. Revisa el importe actualizado antes de confirmar." }, { status: 409 })
+      }
+      if (error instanceof Error && error.message === "DELIVERY_NOT_CONFIGURED") {
+        return NextResponse.json({ message: "La tienda aún no configura costo, zona y ubicación de entrega local" }, { status: 422 })
+      }
       if (error instanceof Error && error.message === "DELIVERY_LOCATION_REQUIRED") {
         return NextResponse.json({ message: "Selecciona una ubicacion valida para entrega local" }, { status: 422 })
       }
@@ -477,7 +508,7 @@ export async function POST(req: Request) {
       },
     })
 
-    if (orderForEmail) {
+    if (orderForEmail && !isStripeTestMode()) {
       const contactEmail = orderForEmail.customer?.email ?? orderForEmail.customerEmail ?? customerEmail
       const sellerEmails = orderForEmail.store.members.map((member) => member.user.email)
       const results = await Promise.allSettled([
@@ -616,7 +647,7 @@ export async function POST(req: Request) {
       },
     })
 
-    if (orderForEmail) {
+    if (orderForEmail && !isStripeTestMode()) {
       const contactEmail = orderForEmail.customer?.email ?? orderForEmail.customerEmail ?? customerEmail
       const sellerEmails = orderForEmail.store.members.map((member) => member.user.email)
       const results = await Promise.allSettled([
@@ -736,7 +767,7 @@ export async function POST(req: Request) {
     where: { id: storeId },
     select: { stripeAccountId: true, stripeOnboarded: true },
   })
-  if (!store?.stripeAccountId || !store.stripeOnboarded) {
+  if (!isStripeTestMode() && (!store?.stripeAccountId || !store.stripeOnboarded)) {
     await releaseOrderReservation(order.id)
     return NextResponse.json({ message: "La tienda aun no puede recibir pagos" }, { status: 409 })
   }
@@ -763,13 +794,19 @@ export async function POST(req: Request) {
 
   const checkoutParams = {
     mode: "payment",
+    payment_method_types: ["card"] as Array<"card">,
+    customer_email: customerEmail,
     client_reference_id: order.id,
     line_items: lineItems,
+    ...(order.shippingFee > 0 ? { shipping_options: [{ shipping_rate_data: { type: "fixed_amount" as const, display_name: "Envío local", fixed_amount: { currency: "mxn", amount: toMinorUnits(order.shippingFee) } } }] } : {}),
     expires_at: Math.floor(Date.now() / 1000) + STRIPE_CHECKOUT_TTL_SECONDS,
     ...(coupon?.stripeCouponId ? { discounts: [{ coupon: coupon.stripeCouponId }] } : {}),
     payment_intent_data: {
-      application_fee_amount: toMinorUnits(order.platformFee),
-      transfer_data: { destination: store.stripeAccountId },
+      // Sandbox charges stay on the TEST platform; never use a seller live account.
+      ...(!isStripeTestMode() && store?.stripeAccountId ? {
+        application_fee_amount: toMinorUnits(order.platformFee),
+        transfer_data: { destination: store.stripeAccountId },
+      } : {}),
       metadata: { orderId: order.id, storeId },
     },
     success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,

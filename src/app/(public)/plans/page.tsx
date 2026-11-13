@@ -1,3 +1,4 @@
+import { LAUNCH_LABEL, launchBaseSlug } from "@/lib/launch-promo"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { CheckCircle2 } from "lucide-react"
@@ -22,6 +23,7 @@ export default async function PlansPage() {
     select: {
       id: true,
       name: true,
+      slug: true,
       priceMonthly: true,
       maxProducts: true,
       maxOrdersMonth: true,
@@ -43,12 +45,15 @@ export default async function PlansPage() {
         <p className="text-muted-foreground text-lg">
           Elige el plan para tu tienda. La comision aplica solo en ventas directas pagadas en la pagina.
         </p>
+        <p className="mt-4 text-sm text-muted-foreground">Lanzamiento para pequeñas empresas en Ciudad del Carmen, Mérida, Villahermosa y Cancún. Altas del 13 al 30 de noviembre de 2026. LANZAMIENTO20: 20% durante los primeros 3 meses; después, precio normal mensual. Pagos con tarjeta en TEST.</p>
       </div>
 
       <div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => {
+          const baseSlug = launchBaseSlug(plan.slug)
+          const normal = baseSlug ? plans.find((p) => p.slug === baseSlug) : null
           const href = membership
-            ? `/dashboard/${membership.store.slug}/planes`
+            ? `/dashboard/${membership.store.slug}/planes?planId=${plan.id}`
             : session?.user?.id
               ? `/onboarding?planId=${plan.id}`
               : `/register?planId=${plan.id}`
@@ -56,10 +61,12 @@ export default async function PlansPage() {
           return (
             <div key={plan.id} className="rounded-2xl border bg-card p-6">
               <h2 className="font-semibold text-lg">{plan.name}</h2>
+              {normal && <><span className="mt-2 inline-block rounded bg-primary/10 px-2 py-1 text-sm">{LAUNCH_LABEL}</span><p className="mt-2 text-sm text-muted-foreground"><s>{formatPrice(normal.priceMonthly)}/mes</s> · Ahorra {formatPrice(normal.priceMonthly - plan.priceMonthly)}/mes</p></>}
               <p className="mt-3 text-3xl font-bold">
                 {formatPrice(plan.priceMonthly)}
                 <span className="text-sm font-normal text-muted-foreground">/mes</span>
               </p>
+              {normal && <p className="mt-2 text-sm text-muted-foreground">Primeros 3 meses; después {formatPrice(normal.priceMonthly)}/mes.</p>}
               <ul className="mt-6 space-y-3 text-sm text-muted-foreground">
                 <li className="flex gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />

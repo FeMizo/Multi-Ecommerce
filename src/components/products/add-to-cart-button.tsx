@@ -1,5 +1,6 @@
 "use client"
 
+import { useProductSelection } from "@/components/products/product-selection"
 import { useMemo, useState } from "react"
 import { ShoppingCart, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -7,6 +8,7 @@ import { useCartStore } from "@/stores/cart"
 import { withProductPlaceholder } from "@/lib/placeholders"
 import {
   defaultVariantSelection,
+  getVariantImage,
   formatVariantSelection,
   getVariantQuantityLimit,
   normalizeVariantOptions,
@@ -30,7 +32,10 @@ type Props = {
 
 export function AddToCartButton({ product }: Props) {
   const [qty, setQty] = useState(1)
-  const [selected, setSelected] = useState<ProductVariantSelection[]>([])
+  const [localSelected, setLocalSelected] = useState<ProductVariantSelection[]>([])
+  const context = useProductSelection()
+  const selected = context?.selected ?? localSelected
+  const setSelected = context?.setSelected ?? setLocalSelected
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
@@ -54,7 +59,7 @@ export function AddToCartButton({ product }: Props) {
         storeId: product.storeId,
         name: product.name,
         price: product.price,
-        image: withProductPlaceholder(product.images),
+        image: withProductPlaceholder([getVariantImage(variantOptions, currentSelection, product.images)].filter(Boolean)),
         storeName: product.store.name,
       })
     }

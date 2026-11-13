@@ -347,3 +347,12 @@ a:active svg:not([data-morph-icon]),
 .btn-shine:hover::before {
   left: 100%;
 }
+
+/* Keep focused checkout fields clear of the mobile confirmation bar. */
+html:has(.checkout-flow) { scroll-padding-top: 6rem; scroll-padding-bottom: 11rem; }
+.checkout-flow :is(input, textarea, select, summary, button, a) { scroll-margin-block: 6rem 11rem; }
+.checkout-flow :focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+
+.checkout-flow input:not([type="radio"]), .checkout-flow textarea, .checkout-flow select, .registration-flow input, .search-form input, .search-form select {
+  border-color: color-mix(in srgb, var(--muted-foreground) 75%, var(--background));
+}

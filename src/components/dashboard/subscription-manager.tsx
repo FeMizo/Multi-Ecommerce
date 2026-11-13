@@ -1,5 +1,6 @@
 "use client"
 
+import { LAUNCH_LABEL, launchBaseSlug } from "@/lib/launch-promo"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,7 @@ import { formatPrice } from "@/lib/utils"
 
 type Plan = {
   id: string
+  slug: string
   name: string
   priceMonthly: number
   commissionRate: number
@@ -36,11 +38,13 @@ function getSubscriptionStatusLabel(status: string) {
 }
 
 export function SubscriptionManager({
+  selectedPlanId,
   storeSlug,
   plans,
   subscription,
   isOwner,
 }: {
+  selectedPlanId?: string
   storeSlug: string
   plans: Plan[]
   subscription: Subscription
@@ -83,7 +87,9 @@ export function SubscriptionManager({
         )}
       </CardHeader>
       <CardContent className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-        {plans.map((plan) => {
+        {[...plans].sort((a, b) => Number(b.id === selectedPlanId) - Number(a.id === selectedPlanId)).map((plan) => {
+          const baseSlug = launchBaseSlug(plan.slug)
+          const normal = baseSlug ? plans.find((p) => p.slug === baseSlug) : null
           const hasPaidEntitlements = subscription && ["ACTIVE", "TRIALING"].includes(subscription.status)
           const current = hasPaidEntitlements && !subscription.cancelAtPeriodEnd ? subscription.planId === plan.id : false
           return (
@@ -91,7 +97,9 @@ export function SubscriptionManager({
               <div className="flex items-center justify-between gap-2">
                 <p className="font-semibold">{plan.name}</p>
                 {current && <Badge>Actual</Badge>}
+                {plan.id === selectedPlanId && !current && <Badge>Seleccionado</Badge>}
               </div>
+              {normal && <p className="mt-2 text-sm">{LAUNCH_LABEL} · <s>{formatPrice(normal.priceMonthly)}/mes</s><br />3 meses; después {formatPrice(normal.priceMonthly)}/mes.</p>}
               <p className="mt-2 text-2xl font-bold">{formatPrice(plan.priceMonthly)}<span className="text-xs font-normal text-muted-foreground">/mes</span></p>
               <p className="mt-3 text-xs text-muted-foreground">
                 {plan.maxProducts ?? "Productos ilimitados"} {plan.maxProducts !== null ? "productos" : ""}<br />

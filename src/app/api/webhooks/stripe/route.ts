@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import Stripe from "stripe"
 import { db } from "@/lib/db"
+import { confirmTestCheckout } from "@/lib/test-checkout"
+import { isStripeTestMode } from "@/lib/stripe-test-mode"
 import { stripe } from "@/lib/stripe"
 import { completeFullRefund, releaseOrderReservation } from "@/lib/payment-lifecycle"
 import { PAYMENT_METHOD_LABELS } from "@/lib/payment-methods"
@@ -9,7 +11,7 @@ import { sendOrderConfirmationEmail, sendSellerNewOrderEmail } from "@/lib/email
 import { sendWhatsAppText } from "@/lib/whatsapp"
 import { getCurrentPeriodEnd } from "@/lib/billing-rules"
 import { toMinorUnits } from "@/lib/money"
-import { getVariantQuantityLimit, isValidVariantSelection, normalizeVariantOptions, productVariantIdentity } from "@/lib/product-variants"
+import { accumulateVariantQuantities, getVariantQuantityLimit, isValidVariantSelection, normalizeVariantOptions, productVariantIdentity } from "@/lib/product-variants"
 import { createLogger, serializeError } from "@/lib/observability"
 
 const logger = createLogger("stripe-webhook")
@@ -99,6 +101,7 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
   try {
     await db.$transaction(async (tx) => {
       const requestedVariants = new Set<string>()
+      const requestedVariantQuantities = new Map<string, number>()
       for (const item of items) {
         const product = products.find((candidate) => candidate.id === item.productId)!
         const variantOptions = normalizeVariantOptions(product.variantOptions ?? [])
@@ -109,7 +112,7 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
         if (!product.manageStock) continue
         const variantLimit = getVariantQuantityLimit(variantOptions, item.variantSelection ?? [])
         const stockLimit = variantOptions.length > 0 && variantLimit !== null ? variantLimit : product.stock
-        if (stockLimit < item.quantity) throw new Error("Stock insuficiente al confirmar el pago")
+        if (stockLimit < item.quantity || !accumulateVariantQuantities(product.id, variantOptions, item.variantSelection ?? [], item.quantity, requestedVariantQuantities)) throw new Error("Stock insuficiente al confirmar el pago")
         const changed = await tx.product.updateMany({
           where: { id: item.productId, storeId: metadata.storeId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } },
@@ -159,6 +162,10 @@ async function recordLegacyPaidCheckout(session: Stripe.Checkout.Session) {
 }
 
 async function recordPaidCheckout(session: Stripe.Checkout.Session) {
+  if (session.metadata?.testDraftId) {
+    await confirmTestCheckout(session)
+    return
+  }
   if (!await recordReservedCheckout(session)) await recordLegacyPaidCheckout(session)
   if (session.payment_status !== "paid") return
 
@@ -196,7 +203,7 @@ async function recordPaidCheckout(session: Stripe.Checkout.Session) {
       },
     },
   })
-  if (order) {
+  if (order && !isStripeTestMode()) {
     const customerInfo = order.customerInfo as { phone?: string }
     const orderItems = order.items.map((item) => {
       const snapshot = item.productSnapshot as {
@@ -296,7 +303,14 @@ async function syncSubscription(subscription: Stripe.Subscription) {
   const { storeId } = subscription.metadata
   if (!storeId) throw new Error("Suscripción sin metadatos requeridos")
   const stripePriceIds = [...new Set(subscription.items.data.map((item) => item.price.id))]
-  const plans = await db.plan.findMany({
+  const testPlan = !subscription.livemode && isStripeTestMode() && subscription.metadata.testPlanId
+    ? await db.plan.findFirst({ where: { id: subscription.metadata.testPlanId, isActive: true } }) : null
+  if (testPlan && (subscription.items.data.length !== 1 || subscription.items.data.some(({ price, quantity }) =>
+    quantity !== 1 || price.currency !== "mxn" || price.unit_amount !== toMinorUnits(testPlan.priceMonthly)
+    || price.recurring?.interval !== "month" || price.recurring.interval_count !== 1))) {
+    throw new Error("Precio de suscripción TEST incompatible")
+  }
+  const plans = testPlan ? [testPlan] : await db.plan.findMany({
     where: { stripePriceId: { in: stripePriceIds }, isActive: true },
     select: { id: true },
   })
@@ -359,7 +373,7 @@ async function claimWebhookEvent(event: Stripe.Event) {
 
 export async function POST(req: Request) {
   const signature = req.headers.get("stripe-signature")
-  const secret = process.env.STRIPE_WEBHOOK_SECRET
+  const secret = process.env.STRIPE_MODE === "test" ? process.env.STRIPE_TEST_WEBHOOK_SECRET : process.env.STRIPE_WEBHOOK_SECRET
   if (!signature || !secret) return NextResponse.json({ error: "Webhook no configurado" }, { status: 400 })
 
   let event: Stripe.Event
@@ -369,6 +383,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Webhook inválido" }, { status: 400 })
   }
 
+  if (event.livemode === isStripeTestMode()) {
+    return NextResponse.json({ error: "Modo de webhook incompatible" }, { status: 400 })
+  }
   const claim = await claimWebhookEvent(event)
   if (claim !== "claimed") return NextResponse.json({ received: true, state: claim })
 

@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { ArrowLeft, CheckCircle2, Shield, Truck, User } from "lucide-react"
+import { Shield, Truck, User } from "lucide-react"
 import { ArrowLeft as MorphArrowLeft } from "lucide"
 import { MorphLink } from "@/components/ui/morph-link"
 import { Button } from "@/components/ui/button"
@@ -21,10 +21,10 @@ type AccountType = (typeof accountTypes)[number]
 
 const baseSchema = z.object({
   accountType: z.enum(accountTypes),
-  name: z.string().min(2, "Minimo 2 caracteres"),
-  phone: z.string().min(7, "Minimo 7 digitos"),
-  password: z.string().min(8, "Minimo 8 caracteres"),
-  email: z.string().email("Email invalido").optional(),
+  name: z.string().min(2, "Mínimo 2 caracteres"),
+  phone: z.string().min(7, "Mínimo 7 dígitos"),
+  password: z.string().min(8, "Mínimo 8 caracteres"),
+  email: z.string().email("Email inválido").optional(),
   plate: z.string().optional(),
   licenseNumber: z.string().optional(),
 })
@@ -32,13 +32,13 @@ const baseSchema = z.object({
 const schema = z.discriminatedUnion("accountType", [
   baseSchema.extend({
     accountType: z.literal("SELLER"),
-    email: z.string().email("Email invalido"),
+    email: z.string().email("Email inválido"),
     plate: z.string().optional(),
     licenseNumber: z.string().optional(),
   }),
   baseSchema.extend({
     accountType: z.literal("BUYER"),
-    email: z.string().email("Email invalido"),
+    email: z.string().email("Email inválido"),
     plate: z.string().optional(),
     licenseNumber: z.string().optional(),
   }),
@@ -58,7 +58,7 @@ const TYPE_META: Record<
 > = {
   SELLER: {
     title: "Vendedor",
-    description: "Crea tu tienda y habilita la administracion de productos y pedidos.",
+    description: "Crea tu tienda y habilita la administración de productos y pedidos.",
     icon: Shield,
     accent: "bg-primary/10 text-primary",
   },
@@ -70,7 +70,7 @@ const TYPE_META: Record<
   },
   BUYER: {
     title: "Comprador",
-    description: "Compra sin suscripcion y administra tus pedidos desde tu cuenta.",
+    description: "Compra sin suscripción y administra tus pedidos desde tu cuenta.",
     icon: User,
     accent: "bg-slate-500/10 text-slate-700",
   },
@@ -124,7 +124,7 @@ export function RegisterForm({ planId, role }: { planId: string | null; role: st
     })
 
     if (login?.error) {
-      toast.success("Cuenta creada. Inicia sesion.")
+      toast.success("Cuenta creada. Inicia sesión.")
       router.push("/login")
       return
     }
@@ -141,7 +141,7 @@ export function RegisterForm({ planId, role }: { planId: string | null; role: st
   const CurrentIcon = currentMeta.icon
 
   return (
-    <div className="min-h-screen flex">
+    <div className="registration-flow min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute -top-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
@@ -150,16 +150,17 @@ export function RegisterForm({ planId, role }: { planId: string | null; role: st
         <div className="relative z-10 flex flex-col justify-center px-12 lg:px-16">
           <Link href="/" className="flex items-center gap-3 mb-8">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden">
-              <Image src="/logo-icon.png" alt="AionSite" width={48} height={48} className="object-cover" />
+              <Image src="/logo-icon.png" alt="AionSite" width={48} height={48} preload className="object-cover" />
             </div>
             <span className="text-2xl font-bold text-primary-foreground">AionSite</span>
           </Link>
           <h1 className="text-4xl lg:text-5xl font-bold text-primary-foreground mb-4 max-w-md text-balance">
-            Unete a tu comunidad
+            Únete a tu comunidad
           </h1>
           <p className="text-primary-foreground/80 text-lg mb-8 max-w-md">
             Crea una cuenta de vendedor, repartidor o comprador en un solo flujo.
           </p>
+          <ul className="space-y-4 text-primary-foreground leading-7"><li>Compradores: descubre comercios y conserva tu historial.</li><li>Vendedores: administra catálogo, pedidos y entregas.</li><li>Repartidores: consulta tus entregas asignadas.</li></ul>
         </div>
       </div>
 
@@ -179,7 +180,7 @@ export function RegisterForm({ planId, role }: { planId: string | null; role: st
           <div className="w-full max-w-md">
             <div className="lg:hidden text-center mb-8">
               <Link href="/" className="inline-block">
-                <Image src="/logo.png" alt="AionSite" width={130} height={38} className="h-9 w-auto object-contain mx-auto" />
+                <Image src="/logo.png" alt="AionSite" width={130} height={38} preload className="h-9 w-auto object-contain mx-auto" />
               </Link>
             </div>
 
@@ -256,60 +257,60 @@ export function RegisterForm({ planId, role }: { planId: string | null; role: st
               )}
 
               <div className="space-y-2">
-                <Label>Nombre completo</Label>
-                <Input placeholder="Juan Perez" className="h-12 rounded-xl" {...register("name")} />
-                {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                <Label htmlFor="register-name">Nombre completo</Label>
+                <Input placeholder="Juan Pérez" className="h-12 rounded-xl" id="register-name" autoComplete="name" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? "register-name-error" : undefined} {...register("name")} />
+                {errors.name && <p id="register-name-error" role="alert" className="text-sm text-destructive">{errors.name.message}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>Telefono</Label>
+                <Label htmlFor="register-phone">Teléfono</Label>
                 <Input
                   type="tel"
                   inputMode="tel"
                   placeholder="55 1234 5678"
                   className="h-12 rounded-xl"
-                  {...register("phone")}
+                  id="register-phone" autoComplete="tel" aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? "register-phone-error" : undefined} {...register("phone")}
                 />
-                {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+                {errors.phone && <p id="register-phone-error" role="alert" className="text-sm text-destructive">{errors.phone.message}</p>}
               </div>
 
               {accountType !== "RIDER" && (
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label htmlFor="register-email">Email</Label>
                   <Input
                     type="email"
                     placeholder="tu@email.com"
                     className="h-12 rounded-xl"
-                    {...register("email")}
+                    id="register-email" autoComplete="email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "register-email-error" : undefined} {...register("email")}
                   />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                  {errors.email && <p id="register-email-error" role="alert" className="text-sm text-destructive">{errors.email.message}</p>}
                 </div>
               )}
 
               {accountType === "RIDER" && (
                 <>
                   <div className="space-y-2">
-                    <Label>Placa</Label>
-                    <Input placeholder="ABC-123" className="h-12 rounded-xl" {...register("plate")} />
-                    {errors.plate && <p className="text-xs text-destructive">{errors.plate.message}</p>}
+                    <Label htmlFor="register-plate">Placa</Label>
+                    <Input placeholder="ABC-123" className="h-12 rounded-xl" id="register-plate" autoComplete="off" aria-invalid={Boolean(errors.plate)} aria-describedby={errors.plate ? "register-plate-error" : undefined} {...register("plate")} />
+                    {errors.plate && <p id="register-plate-error" role="alert" className="text-sm text-destructive">{errors.plate.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label>Numero de licencia</Label>
-                    <Input placeholder="LIC-123456" className="h-12 rounded-xl" {...register("licenseNumber")} />
-                    {errors.licenseNumber && <p className="text-xs text-destructive">{errors.licenseNumber.message}</p>}
+                    <Label htmlFor="register-licenseNumber">Número de licencia</Label>
+                    <Input placeholder="LIC-123456" className="h-12 rounded-xl" id="register-licenseNumber" autoComplete="off" aria-invalid={Boolean(errors.licenseNumber)} aria-describedby={errors.licenseNumber ? "register-licenseNumber-error" : undefined} {...register("licenseNumber")} />
+                    {errors.licenseNumber && <p id="register-licenseNumber-error" role="alert" className="text-sm text-destructive">{errors.licenseNumber.message}</p>}
                   </div>
                 </>
               )}
 
               <div className="space-y-2">
-                <Label>Contrasena</Label>
+                <Label htmlFor="register-password">Contraseña</Label>
                 <Input
                   type="password"
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   className="h-12 rounded-xl"
-                  {...register("password")}
+                  id="register-password" autoComplete="new-password" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "register-password-error" : undefined} {...register("password")}
                 />
-                {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+                {errors.password && <p id="register-password-error" role="alert" className="text-sm text-destructive">{errors.password.message}</p>}
               </div>
 
               <Button type="submit" className="w-full h-12 rounded-xl text-base" disabled={loading}>

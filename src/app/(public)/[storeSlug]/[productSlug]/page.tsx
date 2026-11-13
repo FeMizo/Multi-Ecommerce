@@ -1,3 +1,5 @@
+import { ProductSelectionProvider, ProductGallery } from "@/components/products/product-selection"
+import { plural } from "@/lib/plural"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -99,7 +101,7 @@ export default async function StoreProductPage({
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : null
   const stockLabel = product.manageStock
-    ? (product.stock > 0 ? `${product.stock} disponibles` : "Sin stock")
+    ? (product.stock > 0 ? plural(product.stock, "disponible", "disponibles") : "Sin stock")
     : "Sin control de stock"
   const breadcrumbs = breadcrumbJsonLd([
     { name: "Inicio", url: "https://shop.aionsite.com.mx" },
@@ -142,29 +144,8 @@ export default async function StoreProductPage({
           Volver a {product.store.name}
         </Link>
 
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-sm">
-              <div className="relative aspect-square">
-                <Image
-                  src={product.images[0] || DEFAULT_PRODUCT_IMAGE}
-                  alt={product.images[0] ? product.name : `Imagen genérica de ${product.name}`}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            </div>
-            {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
-                {product.images.slice(1, 5).map((img, i) => (
-                  <div key={i} className="relative aspect-square overflow-hidden rounded-2xl border border-border/60 bg-card">
-                    <Image src={img} alt={`${product.name} ${i + 2}`} fill className="object-cover" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        <ProductSelectionProvider variantOptions={product.variantOptions}><div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <ProductGallery name={product.name} images={product.images} variantOptions={product.variantOptions} />
 
           <div className="space-y-5 rounded-[2rem] border border-border/60 bg-background/90 p-6 shadow-sm backdrop-blur">
             <div className="flex flex-wrap gap-2">
@@ -186,7 +167,7 @@ export default async function StoreProductPage({
                       <Star key={s} className={`h-4 w-4 ${s <= avgRating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
                     ))}
                   </div>
-                  <span>({product._count.reviews} reseñas)</span>
+                  <span>({plural(product._count.reviews, "reseña")})</span>
                 </div>
               )}
             </div>
@@ -262,12 +243,13 @@ export default async function StoreProductPage({
           </div>
         </div>
 
+        </ProductSelectionProvider>
         <div className="mt-10">
           {product.reviews.length > 0 && (
             <div className="space-y-5">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="editorial-title text-3xl md:text-4xl">Reseñas</h2>
-                <span className="text-sm text-muted-foreground">{product._count.reviews} opiniones</span>
+                <span className="text-sm text-muted-foreground">{plural(product._count.reviews, "opinión", "opiniones")}</span>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 {product.reviews.map((review) => (

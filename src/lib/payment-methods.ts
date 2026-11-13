@@ -3,14 +3,14 @@ export const PAYMENT_METHODS = ["STRIPE", "CASH_ON_DELIVERY", "TRANSFER"] as con
 export type PaymentMethodValue = (typeof PAYMENT_METHODS)[number]
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethodValue, string> = {
-  STRIPE: "Pago Stripe",
+  STRIPE: "Tarjeta (TEST)",
   CASH_ON_DELIVERY: "Pago contra entrega",
   TRANSFER: "Pago transferencia",
 }
 
 export const PAYMENT_METHOD_DESCRIPTIONS: Record<PaymentMethodValue, string> = {
-  STRIPE: "Pago en linea con tarjeta.",
-  CASH_ON_DELIVERY: "La tienda asume el riesgo y cobrara al recibir el pedido.",
+  STRIPE: "Pago de prueba con Stripe. Sin cargos reales.",
+  CASH_ON_DELIVERY: "La tienda asume el riesgo y cobrará al recibir el pedido.",
   TRANSFER: "Te mostraremos los datos bancarios y la referencia para transferir.",
 }
 

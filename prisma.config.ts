@@ -2,12 +2,15 @@
 // npm install --save-dev prisma dotenv
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
+import { getStripeTestDatabaseUrl } from "./src/lib/stripe-test-mode";
 
 config({ path: ".env.local" });
 config({ path: ".env" });
 
 function getMigrationUrl() {
-  const rawUrl = process.env["MULTI_POSTGRES_URL_NON_POOLING"] ?? process.env["DATABASE_URL"] ?? process.env["MULTI_POSTGRES_PRISMA_URL"];
+  const rawUrl = process.env["STRIPE_MODE"] === "test"
+    ? getStripeTestDatabaseUrl()
+    : process.env["MULTI_POSTGRES_URL_NON_POOLING"] ?? process.env["DATABASE_URL"] ?? process.env["MULTI_POSTGRES_PRISMA_URL"];
   if (!rawUrl) throw new Error("Set MULTI_POSTGRES_URL_NON_POOLING, DATABASE_URL, or MULTI_POSTGRES_PRISMA_URL");
   const url = new URL(rawUrl);
   url.searchParams.delete("sslmode");

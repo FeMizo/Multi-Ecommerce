@@ -43,6 +43,8 @@ export async function PATCH(
     where: { id: membership.store.id },
     data: {
       name: data.name,
+      address: data.address, phone: data.phone, openingHours: data.openingHours,
+      deliveryZone: data.deliveryZone, deliveryFee: data.deliveryFee, latitude: data.latitude, longitude: data.longitude,
       description: data.description ?? null,
       logoUrl: data.logoUrl ?? null,
       bannerUrl: data.bannerUrl ?? null,

@@ -1,3 +1,4 @@
+import { plural } from "@/lib/plural"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight as MorphArrowRight } from "lucide"
@@ -39,7 +40,7 @@ async function getFeaturedProducts() {
       status: "ACTIVE",
       store: { isActive: true, deletedAt: null },
     },
-    include: { store: { select: { name: true, primaryColor: true } }, category: true },
+    include: { store: { select: { name: true, slug: true, primaryColor: true } }, category: true },
     take: 8,
     orderBy: { createdAt: "desc" },
   })
@@ -238,7 +239,7 @@ export default async function HomePage() {
                       </div>
                       <div className="min-w-0 flex-1 pt-1">
                         <p className="truncate text-base font-semibold">{store.name}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{store.productCount} productos · {store.orderCount} ventas</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{plural(store.productCount, "producto")} · {plural(store.orderCount, "venta")}</p>
                       </div>
                     </div>
 

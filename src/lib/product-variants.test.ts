@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import {
+  accumulateVariantQuantities,
   defaultVariantSelection,
   getVariantQuantityLimit,
   normalizeVariantOptions,
@@ -41,4 +42,16 @@ test("variantes sin cantidad y productos simples mantienen el límite general", 
   assert.equal(getVariantQuantityLimit(unlimited, defaultVariantSelection(unlimited)), null)
   assert.equal(getVariantQuantityLimit([], []), null)
   assert.equal(getVariantQuantityLimit(unlimited, []), 0)
+})
+
+test("una solicitud rechazada no consume límites para intentos posteriores", () => {
+  const requested = new Map<string, number>()
+  const medium = defaultVariantSelection(options)
+  const large = [{ name: "Talla", value: "L" }, { name: "Color", value: "Azul" }]
+  assert.equal(accumulateVariantQuantities("product-a", options, medium, 2, requested), true)
+  const previous = [...requested]
+  assert.equal(accumulateVariantQuantities("product-a", options, large, 3, requested), false)
+  assert.deepEqual([...requested], previous)
+  assert.equal(accumulateVariantQuantities("product-a", options, large, 2, requested), true)
+  assert.equal(accumulateVariantQuantities("product-b", options, medium, 2, requested), true)
 })

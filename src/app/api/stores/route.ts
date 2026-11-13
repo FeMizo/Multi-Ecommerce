@@ -1,3 +1,4 @@
+import { isStripeTestMode } from "@/lib/stripe-test-mode"
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -13,6 +14,7 @@ export async function GET(req: Request) {
   const store = await db.store.findUnique({
     where: { id: storeId },
     select: {
+      address: true, phone: true, openingHours: true, deliveryZone: true, deliveryFee: true, latitude: true, longitude: true,
       id: true,
       name: true,
       isActive: true,
@@ -23,11 +25,11 @@ export async function GET(req: Request) {
     },
   })
 
-  if (!store) {
+  if (!store || !store.isActive || store.deletedAt) {
     return NextResponse.json({ message: "Tienda no encontrada" }, { status: 404 })
   }
 
-  return NextResponse.json(store)
+  return NextResponse.json({ ...store, stripeOnboarded: isStripeTestMode() })
 }
 
 export async function POST(req: Request) {
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const { name, slug, description, cityId } = parsed.data
+  const { name, slug, description, cityId, address, phone, openingHours } = parsed.data
 
   if (RESERVED_STORE_SLUGS.has(slug)) {
     return NextResponse.json({ message: "Ese slug esta reservado por el sistema" }, { status: 409 })
@@ -57,6 +59,7 @@ export async function POST(req: Request) {
     const newStore = await tx.store.create({
       data: {
         name,
+        address, phone, openingHours,
         slug,
         description,
         cityId: cityId || null,

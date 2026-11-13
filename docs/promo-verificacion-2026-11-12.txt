@@ -1,0 +1,83 @@
+Shop AionSite: verificación de promoción y tarjeta TEST
+Fecha: 12 de noviembre de 2026 (Ciudad de México)
+Rama observada: codex/shop-promo-test
+Estado: implementación parcial compartida; no lista para aprobar pagos.
+
+1. Compilación, lint y tipos
+   npm test: 60 pruebas aprobadas, cero fallos.
+   npm run lint: cero errores, 19 avisos.
+   npx tsc --noEmit --incremental false: salida 0.
+   npx next build --webpack en copia aislada: salida 0. Usó el cliente
+   Prisma ya generado; no ejecutó migraciones ni conectó a la base real.
+   Evidencia: outputs/promo-review-build.log. No equivale a QA de pagos.
+   Durante prerender hay errores de conexión Prisma a la URL local ficticia;
+   las páginas los capturan y el proceso termina con salida 0. No acredita
+   un build sin mensajes de error ni disponibilidad de datos reales.
+
+2. Ocho planes en /plans
+   El catálogo contiene cuatro originales y cuatro ofertas de 40, 80, 320
+   y 800 MXN. Las pruebas confirman precios y copia de límites/comisiones.
+   La página incluye etiqueta -20% Lanzamiento, precio tachado y ahorro.
+   La migración solo inserta clones. No se ejecutó sobre la base existente.
+   Mostrar ocho planes en navegador queda pendiente de una base de pruebas
+   con la migración aplicada. El catálogo por sí solo no alimenta /plans.
+
+3. Adquirir una promoción
+   La ruta de suscripción utiliza precio mensual normal y cupón
+   LANZAMIENTO20: 20% por tres meses; Stripe vuelve al importe normal.
+   Las fechas usan límites de Ciudad de México: del 13 al 30 de noviembre.
+   El 12 de noviembre debe rechazar altas promocionales correctamente.
+   Importe efectivo y renovación en Stripe: pendientes de claves TEST.
+
+4. Invitado / ISLA PAPEL / FOAMY DIAMANTADO / Verde / 4242
+   No ejecutado. Solo se encontró una clave LIVE en el entorno existente.
+   No se usó, no se hicieron cargos ni se escribieron pedidos o productos.
+   Faltan STRIPE_TEST_SECRET_KEY, STRIPE_TEST_WEBHOOK_SECRET y una base
+   STRIPE_TEST_DATABASE_URL aislada con datos de prueba autorizados.
+   La ruta de compra admite invitado; eso no demuestra el flujo completo.
+
+5. Tarjeta 4000 0000 0000 0002
+   No ejecutado por las mismas dependencias.
+   Incumplimiento observado: el flujo actual crea un Order PENDING como
+   reserva antes de abrir Stripe Checkout. Un rechazo no crea un pedido
+   pagado, pero sí conserva esa reserva hasta expirar. Por tanto todavía
+   no satisface literalmente «sin crear pedido».
+
+6. Contraentrega y transferencia
+   Se conservan sus rutas. No se ejecutaron compras de prueba en la base
+   existente: hacerlo alteraría pedidos, inventario y enviaría avisos.
+   Verificación completa pendiente en la base aislada.
+
+7. Móvil, 390px
+   No verificado en este chat con los ocho planes y Stripe configurado.
+   Las capturas previas del directorio outputs no se consideran evidencia
+   fresca de esta implementación.
+
+8. Entrega y publicación
+   Rama codex/shop-promo-test. Sin push, PR ni despliegue desde este chat.
+   Se preservaron los cambios existentes de otros trabajos.
+   Otro chat, «Add Shop AionSite promo plans», edita simultáneamente los
+   mismos archivos; se solicitó elegir dónde continuar antes de solapar
+   más cambios. Este chat aportó verificación independiente y este informe.
+
+Hallazgos que siguen pendientes de resolver/verificar
+   - El catálogo original local Business tiene comisión 0%, mientras el
+     encargo describe 1%. No se modificó el original; los clones heredan
+     el valor real de la base. Confirmar origen de la discrepancia.
+   - La pantalla de éxito anuncia pago procesado sin comprobar PAID.
+     Debe esperar confirmación del webhook antes de confirmar tarjeta.
+   - Emails y WhatsApp siguen habilitados con sus credenciales habituales.
+     Deshabilitarlos en TEST antes de ejecutar compras de prueba.
+   - prisma.config.ts sigue seleccionando la URL habitual para migrar;
+     no ejecutar migraciones TEST sin seleccionar explícitamente la base
+     aislada. El selector de base del runtime no protege la CLI.
+   - Las URL de retorno usan NEXT_PUBLIC_APP_URL. Para las pruebas locales
+     debe ser http://localhost:1500 y AUTH_URL debe apuntar también a local.
+   - El cupón se crea con ID fijo e idempotencia. Tras expirar la ventana
+     de idempotencia de Stripe, recuperar y validar el cupón existente
+     antes de crearlo evita errores de identificador duplicado.
+
+Documentación consultada: https://docs.stripe.com/api/coupons/create
+Guía local Next.js: node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md
+Evidencia: outputs/promo-review-tests.log, outputs/promo-review-lint.log,
+outputs/promo-review-types.log y outputs/promo-review-build.log.

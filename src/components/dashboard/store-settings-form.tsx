@@ -19,6 +19,13 @@ import { StoreVerificationCard } from "@/components/dashboard/store-verification
 
 const schema = z
   .object({
+  address: z.string().trim().min(5, "Dirección requerida").max(500),
+  phone: z.string().trim().min(9, "Teléfono requerido").max(30),
+  openingHours: z.string().trim().min(3, "Horario requerido").max(300),
+    deliveryZone: z.string().max(500).optional(),
+    deliveryFee: z.number().finite().min(0).max(100000).nullable().optional(),
+    latitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    longitude: z.number().finite().min(-180).max(180).nullable().optional(),
     name: z.string().min(2, "Minimo 2 caracteres").max(60, "Maximo 60 caracteres"),
     description: z.string().max(300, "Maximo 300 caracteres").optional(),
     logoUrl: z.string().url("URL invalida").or(z.literal("")).optional(),
@@ -95,6 +102,8 @@ export function StoreSettingsForm({
     resolver: zodResolver(schema),
     defaultValues: {
       name: initialData.name,
+      address: initialData.address ?? "", phone: initialData.phone ?? "", openingHours: initialData.openingHours ?? "",
+      deliveryZone: initialData.deliveryZone ?? "", deliveryFee: initialData.deliveryFee ?? null, latitude: initialData.latitude ?? null, longitude: initialData.longitude ?? null,
       description: initialData.description ?? "",
       logoUrl: initialData.logoUrl ?? "",
       bannerUrl: initialData.bannerUrl ?? "",
@@ -238,6 +247,14 @@ export function StoreSettingsForm({
               <CardTitle className="text-base">Información general</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {([['address', 'Dirección de la tienda'], ['phone', 'Teléfono de contacto'], ['openingHours', 'Horario de atención']] as const).map(([field, label]) => (
+                <div key={field} className="space-y-1"><Label htmlFor={field}>{label}</Label><Input id={field} {...register(field)} required />{errors[field] && <p className="text-sm text-destructive">{errors[field]?.message}</p>}</div>
+              ))}
+
+              <Label htmlFor="deliveryZone">Zona de entrega local</Label><Input id="deliveryZone" {...register("deliveryZone")} placeholder="Colonias o localidades atendidas" />
+              {([['deliveryFee', 'Costo de envío (MXN)', 0, 100000], ['latitude', 'Latitud de la tienda', -90, 90], ['longitude', 'Longitud de la tienda', -180, 180]] as const).map(([field, label, min, max]) => (
+                <div key={field} className="space-y-1"><Label htmlFor={field}>{label}</Label><Input id={field} type="number" step="any" min={min} max={max} {...register(field, { setValueAs: (value) => value === '' ? null : Number(value) })} />{errors[field] && <p className="text-sm text-destructive">{errors[field]?.message}</p>}</div>
+              ))}
               <div className="space-y-1">
                 <Label>Nombre de la tienda *</Label>
                 <Input placeholder="Mi tienda" {...register("name")} />

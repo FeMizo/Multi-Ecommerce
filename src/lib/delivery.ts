@@ -2,6 +2,20 @@ export const DELIVERY_METHODS = ["PICKUP", "LOCAL_DELIVERY"] as const
 
 export type DeliveryMethodValue = (typeof DELIVERY_METHODS)[number]
 
+export function isValidDeliveryCoordinates(lat: unknown, lng: unknown) {
+  return typeof lat === "number" && Number.isFinite(lat) && Math.abs(lat) <= 90 &&
+    typeof lng === "number" && Number.isFinite(lng) && Math.abs(lng) <= 180
+}
+
+export function isLocalDeliveryConfigured(store: {
+  deliveryFee?: number | null; deliveryZone?: string | null
+  latitude?: number | null; longitude?: number | null
+} | null | undefined) {
+  return Boolean(store && typeof store.deliveryFee === "number" && Number.isFinite(store.deliveryFee) &&
+    store.deliveryFee >= 0 && store.deliveryZone?.trim() &&
+    isValidDeliveryCoordinates(store.latitude, store.longitude))
+}
+
 export const DELIVERY_METHOD_LABELS: Record<DeliveryMethodValue, string> = {
   PICKUP: "Recoger en tienda",
   LOCAL_DELIVERY: "Entrega local",
@@ -97,7 +111,7 @@ export function buildDeliveryAssignmentMessage(input: {
     `Pedido: ${input.orderId}`,
     `Cliente: ${input.customerName}`,
     input.customerPhone ? `Telefono: ${input.customerPhone}` : null,
-    input.address ? `Direccion: ${input.address}` : null,
+    input.address ? `Dirección: ${input.address}` : null,
     input.notes ? `Referencias: ${input.notes}` : null,
     input.mapUrl ? `Mapa: ${input.mapUrl}` : null,
     `Total: ${input.totalLabel}`,

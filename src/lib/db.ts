@@ -1,9 +1,13 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { createPgPool } from "@/lib/pg-pool"
+import { getStripeTestDatabaseUrl } from "@/lib/stripe-test-mode"
 
 function createPrismaClient() {
-  const rawValue = process.env.MULTI_POSTGRES_PRISMA_URL ?? process.env.MULTI_POSTGRES_URL_NON_POOLING ?? process.env.DATABASE_URL
+  // TEST checkout must never reserve stock or write orders in the existing database.
+  const rawValue = process.env.STRIPE_MODE === "test"
+    ? getStripeTestDatabaseUrl()
+    : process.env.MULTI_POSTGRES_PRISMA_URL ?? process.env.MULTI_POSTGRES_URL_NON_POOLING ?? process.env.DATABASE_URL
   if (!rawValue) {
     throw new Error("Set MULTI_POSTGRES_PRISMA_URL, MULTI_POSTGRES_URL_NON_POOLING, or DATABASE_URL")
   }

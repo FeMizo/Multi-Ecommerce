@@ -1,5 +1,6 @@
 export type ProductVariantValue = {
   value: string
+  imageUrl?: string | null
   quantity?: number | null
 }
 
@@ -24,10 +25,12 @@ function normalizeVariantValue(entry: unknown): ProductVariantValue | null {
   }
 
   if (!entry || typeof entry !== "object") return null
-  const candidate = entry as { value?: unknown; quantity?: unknown }
+  const candidate = entry as { value?: unknown; quantity?: unknown; imageUrl?: unknown; image?: unknown }
   const value = typeof candidate.value === "string" ? candidate.value.trim() : ""
   if (!value) return null
-  return { value, quantity: normalizeQuantity(candidate.quantity) }
+  const image = candidate.imageUrl ?? candidate.image
+  const imageUrl = typeof image === "string" && /^(https?:\/\/|\/)/i.test(image) ? image : null
+  return { value, quantity: normalizeQuantity(candidate.quantity), ...(imageUrl ? { imageUrl } : {}) }
 }
 
 export function normalizeVariantOptions(input: unknown): ProductVariantOption[] {
@@ -147,3 +150,37 @@ export function sumVariantQuantities(options: ProductVariantOption[]) {
   }, 0)
 }
 
+export function accumulateVariantQuantities(
+  productId: string,
+  options: ProductVariantOption[],
+  selection: ProductVariantSelection[],
+  quantity: number,
+  requested: Map<string, number>,
+) {
+  if (!Number.isSafeInteger(quantity) || quantity < 1 || !isValidVariantSelection(options, selection)) return false
+  const selected = new Map(selection.map((entry) => [entry.name.trim().toLowerCase(), entry.value.trim().toLowerCase()]))
+  const pending: Array<{ key: string; quantity: number }> = []
+  for (const option of options) {
+    const name = option.name.trim().toLowerCase()
+    const value = selected.get(name)
+    const limit = normalizeQuantity(option.values.find((entry) => entry.value.trim().toLowerCase() === value)?.quantity)
+    if (limit === null) continue
+    const key = JSON.stringify([productId, name, value])
+    const combined = (requested.get(key) ?? 0) + quantity
+    if (!Number.isSafeInteger(combined) || combined > limit) return false
+    pending.push({ key, quantity: combined })
+  }
+  for (const entry of pending) requested.set(entry.key, entry.quantity)
+  return true
+}
+
+
+export function getVariantImage(options: ProductVariantOption[], selection: ProductVariantSelection[], images: string[]) {
+  for (const option of options) {
+    const selected = selection.find((entry) => entry.name.trim().toLowerCase() === option.name.trim().toLowerCase())
+    const value = option.values.find((entry) => entry.value.trim().toLowerCase() === selected?.value.trim().toLowerCase())
+    if (value?.imageUrl) return value.imageUrl
+  }
+  const variantImages = new Set(options.flatMap((option) => option.values.map((value) => value.imageUrl).filter(Boolean)))
+  return images.find((image) => !variantImages.has(image)) ?? ""
+}

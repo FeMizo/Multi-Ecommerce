@@ -24,6 +24,10 @@ export const RESERVED_STORE_SLUGS = new Set([
 ])
 
 export const storeCreateSchema = z.object({
+  address: z.string().trim().min(5, "Dirección requerida").max(500),
+  phone: z.string().trim().min(9, "Teléfono requerido").max(30),
+  openingHours: z.string().trim().min(3, "Horario requerido").max(300),
+
   name: z.string().min(2, "Minimo 2 caracteres").max(60),
   slug: z
     .string()
@@ -35,6 +39,13 @@ export const storeCreateSchema = z.object({
 })
 
 export const storeUpdateSchema = z.object({
+  address: z.string().trim().min(5, "Dirección requerida").max(500),
+  phone: z.string().trim().min(9, "Teléfono requerido").max(30),
+  openingHours: z.string().trim().min(3, "Horario requerido").max(300),
+  deliveryZone: nullableText(500),
+  deliveryFee: z.number().finite().min(0).max(100000).nullish(),
+  latitude: z.number().finite().min(-90).max(90).nullish(),
+  longitude: z.number().finite().min(-180).max(180).nullish(),
   name: z.string().min(2, "Minimo 2 caracteres").max(60, "Maximo 60 caracteres"),
   description: nullableText(300),
   logoUrl: nullableUrl,
@@ -55,6 +66,7 @@ export const storeUpdateSchema = z.object({
 })
 
 const productVariantValueSchema = z.object({
+  imageUrl: z.string().url().optional().nullable(),
   value: z.string().min(1).max(40),
   quantity: z.number().int().positive().optional().nullable(),
 })

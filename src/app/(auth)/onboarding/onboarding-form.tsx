@@ -13,6 +13,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const schema = z.object({
+  address: z.string().trim().min(5, "Dirección requerida").max(500),
+  phone: z.string().trim().min(9, "Teléfono requerido").max(30),
+  openingHours: z.string().trim().min(3, "Horario requerido").max(300),
+
   name: z.string().min(2, "Mínimo 2 caracteres").max(60, "Máximo 60 caracteres"),
   slug: z
     .string()
@@ -155,6 +159,10 @@ export function OnboardingForm({ planId }: { planId: string | null }) {
                 {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
               </div>
 
+
+              {([['address', 'Dirección de la tienda'], ['phone', 'Teléfono de contacto'], ['openingHours', 'Horario de atención']] as const).map(([field, label]) => (
+                <div key={field} className="space-y-1"><Label htmlFor={field}>{label}</Label><Input id={field} {...register(field)} required />{errors[field] && <p className="text-sm text-destructive">{errors[field]?.message}</p>}</div>
+              ))}
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
                 {loading
                   ? "Creando tienda y abriendo pago..."

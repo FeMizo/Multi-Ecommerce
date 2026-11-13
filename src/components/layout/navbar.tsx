@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { signOut } from "next-auth/react"
-import { ShoppingCart, User, Package, LogOut, Search, Store, Menu, X, LayoutDashboard, Heart, Truck } from "lucide-react"
+import { User, Package, LogOut, LayoutDashboard, Heart, Truck } from "lucide-react"
 import { InteractiveMorphIcon } from "@/components/ui/interactive-morph-icon"
 import {
   Menu as MorphMenu,
@@ -92,6 +92,7 @@ function NavbarSearch({ autoFocus = false, submitLabel = "Buscar" }: { autoFocus
             }
           }}
           autoFocus={autoFocus}
+          aria-label="Buscar productos"
           placeholder="Buscar productos, tiendas..."
           className="w-full h-10 rounded-full border border-input bg-muted/50 pl-10 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
         />
@@ -370,7 +371,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
+              ) : pathname === "/checkout" ? null : (
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm" className="hidden sm:inline-flex rounded-full" asChild>
                     <Link href="/login">Entrar</Link>
@@ -436,7 +437,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
         )}
       </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-lg md:hidden">
+      {pathname !== "/checkout" && <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-lg md:hidden">
         <div className="grid grid-cols-5 gap-1">
           {mobileNavItems.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)
@@ -446,7 +447,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                 key={href}
                 variant="ghost"
                 className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
-                  active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                  active ? "bg-primary/10 text-foreground" : "text-muted-foreground"
                 }`}
                 asChild
               >
@@ -462,7 +463,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
             type="button"
             variant="ghost"
             className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
-              itemCount > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              itemCount > 0 ? "bg-primary/10 text-foreground" : "text-muted-foreground"
             }`}
             onClick={openCart}
             aria-label="Abrir carrito"
@@ -481,7 +482,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
           <Button
             variant="ghost"
             className={`h-auto flex-col gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium ${
-              pathname.startsWith("/account") || pathname.startsWith("/login") ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              pathname.startsWith("/account") || pathname.startsWith("/login") ? "bg-primary/10 text-foreground" : "text-muted-foreground"
             }`}
             asChild
           >
@@ -491,7 +492,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
             </Link>
           </Button>
         </div>
-      </nav>
+      </nav>}
     </>
   )
 }

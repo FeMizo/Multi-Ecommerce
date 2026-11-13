@@ -7,7 +7,7 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Centro de ayuda",
   description: "Soporte para compradores y vendedores de AionSite Shop.",
-  keywords: buildKeywords("Centro de ayuda", ["soporte", "ayuda", "atencion al cliente"]),
+  keywords: buildKeywords("Centro de ayuda", ["soporte", "ayuda", "atención al cliente"]),
   alternates: { canonical: "/help" },
 }
 
@@ -18,9 +18,9 @@ export default function HelpPage() {
         title="Centro de ayuda"
         description="Soporte para compradores y vendedores de AionSite Shop."
         sections={[
-          { title: "Compradores", body: "Revisa tus pedidos desde tu cuenta. Si necesitas ayuda con una compra, ten a la mano el numero de pedido y la tienda donde compraste." },
-          { title: "Vendedores", body: "Desde tu panel puedes administrar productos, pedidos, datos de tienda, facturacion y conexion de pagos." },
-          { title: "Pagos", body: "Las ventas directas en la pagina se procesan con el proveedor de pago configurado. Las comisiones aplican solo a esas ventas directas." },
+          { title: "Compradores", body: "Revisa tus pedidos desde tu cuenta. Si necesitas ayuda con una compra, ten a la mano el número de pedido y la tienda donde compraste." },
+          { title: "Vendedores", body: "Desde tu panel puedes administrar productos, pedidos, datos de tienda, facturación y conexión de pagos." },
+          { title: "Pagos", body: "Las ventas directas en la página se procesan con el proveedor de pago configurado. Las comisiones aplican solo a esas ventas directas." },
         ]}
       />
       <div className="container mx-auto px-4 pb-12">

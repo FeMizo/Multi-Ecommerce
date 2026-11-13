@@ -11,15 +11,19 @@ function loadValidationLoop(path: string) {
   const source = ts.createSourceFile(path, readFileSync(resolve(path), "utf8"), ts.ScriptTarget.Latest, true)
   let loop: ts.ForOfStatement | undefined
   let availability: ts.IfStatement | undefined
+  const declarations: string[] = []
   function visit(node: ts.Node) {
     if (ts.isForOfStatement(node) && node.getText(source).includes("product.manageStock")) loop = node
     if (ts.isIfStatement(node) && node.expression.getText(source).startsWith("products.length !==")) availability = node
+    if (ts.isVariableStatement(node) && node.declarationList.declarations.some((entry) =>
+      ["requestedVariants", "requestedVariantQuantities"].includes(entry.name.getText(source))
+    )) declarations.push(node.getText(source))
     ts.forEachChild(node, visit)
   }
   visit(source)
   assert.ok(loop, `Bucle de validación no encontrado: ${path}`)
   assert.ok(availability, `Comprobación de productos no encontrada: ${path}`)
-  return ts.transpileModule(`(async () => { ${availability.getText(source)} const requestedVariants = new Set(); ${loop.getText(source)} })()`, {
+  return ts.transpileModule(`(async () => { ${availability.getText(source)} ${declarations.join("\n")} ${loop.getText(source)} })()`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   }).outputText
 }
@@ -63,5 +67,23 @@ for (const path of ["src/app/api/checkout/route.ts", "src/app/api/webhooks/strip
     await run([makeItem("M"), makeItem("L")])
     await assert.rejects(run([makeItem("M"), makeItem(" m ")]), /VARIANT_UNAVAILABLE|Variante/)
     await assert.rejects(run([makeItem("M"), { ...makeItem("L"), productId: "missing-product" }]), /PRODUCTS_UNAVAILABLE|Productos/)
+  })
+
+  test(`${path}: acumula límites de opciones compartidas sin mezclar productos`, async () => {
+    const code = loadValidationLoop(path)
+    const product = { id: "product-a", stock: 20, manageStock: true, variantOptions: [
+      { name: "Talla", values: [{ value: "M", quantity: 4 }, { value: "L", quantity: 4 }] },
+      { name: "Color", values: [{ value: "Azul", quantity: 3 }] },
+    ] }
+    const makeItem = (size: string, quantity: number, productId = "product-a") => ({ productId, quantity,
+      variantSelection: [{ name: "Talla", value: size }, { name: " color ", value: " AZUL " }] })
+    const run = (items: unknown[], products = [product]) => runInNewContext(code, {
+      ...variants, items, products, storeId: "test-store", metadata: { storeId: "test-store" },
+      tx: { product: { updateMany: async () => ({ count: 1 }) } },
+    }, { timeout: 1_000 })
+    await assert.rejects(run([makeItem("M", 2), makeItem("L", 2)]), /STOCK_UNAVAILABLE|Stock/)
+    await run([makeItem("M", 2), makeItem("L", 1)])
+    await run([makeItem("M", 2), makeItem("L", 2, "product-b")], [product, { ...product, id: "product-b" }])
+    await run([makeItem("M", 2), makeItem("L", 2)], [{ ...product, manageStock: false }])
   })
 }
