@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-const accountTypes = ["SELLER", "RIDER", "BUYER"] as const
+const accountTypes = ["BUYER", "SELLER", "RIDER"] as const
 type AccountType = (typeof accountTypes)[number]
 
 const baseSchema = z.object({
@@ -79,10 +79,11 @@ const TYPE_META: Record<
 export function RegisterForm({ planId, role }: { planId: string | null; role: string | null }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const initialType = accountTypes.includes(role as AccountType) ? (role as AccountType) : "SELLER"
+  const initialType = accountTypes.includes(role as AccountType) ? (role as AccountType) : planId ? "SELLER" : "BUYER"
   const [accountType, setAccountType] = useState<AccountType>(initialType)
   const {
     register,
+    setValue,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>({
@@ -196,7 +197,11 @@ export function RegisterForm({ planId, role }: { planId: string | null; role: st
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setAccountType(type)}
+                    aria-pressed={selected}
+                    onClick={() => {
+                      setAccountType(type)
+                      setValue("accountType", type)
+                    }}
                     className={`rounded-2xl border p-3 text-left transition-all ${
                       selected ? "border-primary bg-primary/10 shadow-sm" : "border-border hover:bg-accent/60"
                     }`}

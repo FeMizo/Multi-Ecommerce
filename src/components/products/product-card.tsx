@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { ImageOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart"
-import { withProductPlaceholder } from "@/lib/placeholders"
+import { DEFAULT_PRODUCT_IMAGE, withProductPlaceholder } from "@/lib/placeholders"
 import type { FavoriteProduct } from "@/lib/favorites"
 import {
   defaultVariantSelection,
@@ -56,6 +57,8 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isFavoriteHovered, setIsFavoriteHovered] = useState(false)
   const imageSrc = withProductPlaceholder(product.images)
+  const [failedImageSrc, setFailedImageSrc] = useState<string | null>(null)
+  const hasProductImage = imageSrc !== DEFAULT_PRODUCT_IMAGE && failedImageSrc !== imageSrc
   const variantOptions = useMemo(() => normalizeVariantOptions(product.variantOptions ?? []), [product.variantOptions])
   const defaultSelection = defaultVariantSelection(variantOptions)
   const variantKey = variantSelectionKey(defaultSelection)
@@ -172,17 +175,25 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
     >
       <div className="rounded-2xl border border-border/50 bg-card overflow-hidden hover-lift">
         <div className="relative aspect-square bg-muted/30 overflow-hidden">
-          {!imageLoaded && <div className="absolute inset-0 shimmer" />}
+          {hasProductImage && !imageLoaded && <div className="absolute inset-0 shimmer" />}
 
-          <Image
+          {hasProductImage ? <Image
+            key={imageSrc}
             src={imageSrc}
-            alt={product.images[0] ? product.name : `Imagen generica de ${product.name}`}
+            alt={product.name}
             fill
+            sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
             className={`object-cover transition-all duration-700 ${
               isHovered ? "scale-110" : "scale-100"
             } ${imageLoaded ? "opacity-100" : "opacity-0"}`}
             onLoad={() => setImageLoaded(true)}
-          />
+            onError={() => setFailedImageSrc(imageSrc)}
+          /> : (
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-4 py-12 text-center text-muted-foreground">
+              <ImageOff className="h-8 w-8" aria-hidden="true" />
+              <span className="text-sm font-medium">Sin fotografía</span>
+            </div>
+          )}
 
           <div
             className={`absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent transition-opacity duration-300 ${

@@ -84,7 +84,7 @@ export default async function StoresPage() {
               Se el primero en abrir una tienda
             </p>
             <MorphLink
-              href="/register"
+              href="/register?role=seller"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               icon={MorphArrowRight}
               iconClassName="h-4 w-4"

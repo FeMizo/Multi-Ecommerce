@@ -376,7 +376,7 @@ export function Navbar({ session, dashboardSlug }: NavbarProps) {
                     <Link href="/login">Entrar</Link>
                   </Button>
                   <Button size="sm" className="rounded-full px-5" asChild>
-                    <Link href="/register">Registrarse</Link>
+                    <Link href="/register?role=buyer">Registrarse</Link>
                   </Button>
                 </div>
               )}
